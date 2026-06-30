@@ -713,16 +713,18 @@ export default function CasesPage() {
 
         {editing && (
           <div
+            aria-labelledby="edit-case-title"
+            aria-modal="true"
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-            onClick={closeEdit}
+            role="dialog"
           >
-            <div
-              className="cv-card w-full max-w-md p-6"
-              onClick={(e) => e.stopPropagation()}
-            >
+            <div className="cv-card w-full max-w-md p-6">
               <div className="flex items-start justify-between gap-3 mb-5">
                 <div>
-                  <h2 className="text-base font-bold text-[var(--text)]">
+                  <h2
+                    className="text-base font-bold text-[var(--text)]"
+                    id="edit-case-title"
+                  >
                     Editar caso
                   </h2>
                   <p className="mt-1 text-xs text-[var(--text2)]">

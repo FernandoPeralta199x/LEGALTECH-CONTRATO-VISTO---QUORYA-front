@@ -4,6 +4,7 @@ import { Check, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/Button";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { FormField, SelectInput, TextInput } from "@/components/FormField";
 import {
   isValidCnpj,
@@ -35,7 +36,25 @@ export function PartyForm({
   onRemove
 }: PartyFormProps) {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [confirmRemove, setConfirmRemove] = useState(false);
   const today = new Date().toISOString().slice(0, 10);
+
+  const hasData = Boolean(
+    party.nome.trim() ||
+      (party.documento ?? "").trim() ||
+      (party.rg ?? "").trim() ||
+      (party.email ?? "").trim() ||
+      (party.telefone ?? "").trim() ||
+      (party.birthDate ?? "").trim()
+  );
+
+  function requestRemove() {
+    if (hasData) {
+      setConfirmRemove(true);
+    } else {
+      onRemove();
+    }
+  }
 
   const errors = useMemo(() => {
     const e: Record<string, string> = {};
@@ -96,7 +115,7 @@ export function PartyForm({
         {totalParties > 1 && (
           <button
             className="flex items-center gap-1.5 text-[11px] font-medium text-red-400 transition hover:text-red-300"
-            onClick={onRemove}
+            onClick={requestRemove}
             type="button"
           >
             <Trash2 size={12} />
@@ -251,6 +270,19 @@ export function PartyForm({
           Salvar parte
         </Button>
       </div>
+
+      <ConfirmDialog
+        confirmLabel="Remover"
+        description="Os dados preenchidos desta parte serão descartados. Esta ação não pode ser desfeita."
+        onCancel={() => setConfirmRemove(false)}
+        onConfirm={() => {
+          setConfirmRemove(false);
+          onRemove();
+        }}
+        open={confirmRemove}
+        title="Remover esta parte?"
+        variant="danger"
+      />
     </div>
   );
 }
