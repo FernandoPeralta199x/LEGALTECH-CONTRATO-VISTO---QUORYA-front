@@ -126,7 +126,12 @@ function reportStatusLabel(legalCase: Case): string {
     failed: "Falhou",
     generating: "Gerando",
     not_started: "Pendente",
-    ready: "Pronto"
+    ready: "Pronto",
+    in_review: "Em revisão",
+    approved: "Aprovado",
+    rejected: "Rejeitado",
+    delivered: "Entregue",
+    draft: "Rascunho"
   };
 
   return labels[reportStatus] ?? reportStatus;

@@ -150,7 +150,12 @@ function reportStatusLabel(report: Report | null): string {
     failed: "Falhou",
     generating: "Gerando",
     not_started: "Não iniciado",
-    ready: "Pronto"
+    ready: "Pronto",
+    in_review: "Em revisão",
+    approved: "Aprovado",
+    rejected: "Rejeitado",
+    delivered: "Entregue",
+    draft: "Rascunho"
   };
 
   return labels[report.status] ?? report.status;
