@@ -6,7 +6,8 @@ import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/cn";
 import { listCases } from "@/src/services/cases";
-import type { Case } from "@/types";
+import { listDocuments } from "@/src/services/documents";
+import type { Case, Document } from "@/types";
 
 const READ_NOTICES_KEY = "legaltech_read_notices";
 
@@ -39,25 +40,53 @@ function saveReadIds(ids: string[]) {
   }
 }
 
-function buildNotices(cases: Case[]): Notice[] {
+function buildNotices(cases: Case[], documents: Document[]): Notice[] {
   const readIds = getReadIds();
-  return cases
-    .filter((c) => c.status === "triage_completed" || c.progress === 100)
-    .slice(0, 8)
-    .map((c) => ({
-      id: `case-${c.id}`,
-      caseId: c.id,
-      title: c.title || "Caso finalizado",
-      message: "Triagem concluída — pronto para revisão.",
-      date: c.updatedAt || c.createdAt || new Date().toISOString(),
-      read: readIds.has(`case-${c.id}`),
-    }));
+  const notices: Notice[] = [];
+
+  for (const c of cases) {
+    let n: Omit<Notice, "read"> | null = null;
+    if (c.status === "report_ready") {
+      n = { id: `report-${c.id}`, caseId: c.id, title: c.title || "Relatório gerado",
+            message: "Relatório gerado — aguardando revisão.",
+            date: c.updatedAt || c.createdAt || new Date().toISOString() };
+    } else if (c.status === "triage_completed") {
+      n = { id: `triage-${c.id}`, caseId: c.id, title: c.title || "Triagem concluída",
+            message: "Triagem concluída — pronto para revisão.",
+            date: c.updatedAt || c.createdAt || new Date().toISOString() };
+    } else if (c.status === "completed" || c.progress === 100) {
+      n = { id: `done-${c.id}`, caseId: c.id, title: c.title || "Caso concluído",
+            message: "Caso concluído.",
+            date: c.updatedAt || c.createdAt || new Date().toISOString() };
+    }
+    if (n) notices.push({ ...n, read: readIds.has(n.id) });
+  }
+
+  for (const d of documents) {
+    if (d.status !== "processed") continue;
+    const id = `doc-${d.id}`;
+    notices.push({
+      id,
+      caseId: d.caseId,
+      title: d.filename || "Documento processado",
+      message: "Documento processado — pronto para análise.",
+      date: d.processedAt || d.updatedAt || d.uploadedAt || new Date().toISOString(),
+      read: readIds.has(id),
+    });
+  }
+
+  return notices
+    .sort((a, b) => (b.date || "").localeCompare(a.date || ""))
+    .slice(0, 12);
 }
 
 async function fetchNotices(): Promise<Notice[]> {
   try {
-    const result = await listCases();
-    return buildNotices(result.data ?? []);
+    const [cases, documents] = await Promise.all([
+      listCases().catch(() => ({ data: [] as Case[] })),
+      listDocuments().catch(() => ({ data: [] as Document[] })),
+    ]);
+    return buildNotices(cases.data ?? [], documents.data ?? []);
   } catch {
     return [];
   }
