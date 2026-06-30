@@ -39,6 +39,10 @@ type BackendCase = {
   case_type: string;
   status: string;
   priority: "low" | "normal" | "high" | "urgent";
+  code?: string | null;
+  title?: string | null;
+  product_type?: string | null;
+  product_label?: string | null;
   metadata: Record<string, unknown>;
   submitted_at: string | null;
   completed_at: string | null;
@@ -499,13 +503,20 @@ export function mapBackendCase(
 ): Case {
   const client = clients.find((item) => item.id === legalCase.client_id);
 
+  const product = legalCase.product_type
+    ? productAliases[legalCase.product_type] ?? productFromMetadata(legalCase.metadata)
+    : productFromMetadata(legalCase.metadata);
+
   return {
     id: legalCase.id,
-    code: caseCodeFromId(legalCase.id),
+    code: legalCase.code || caseCodeFromId(legalCase.id),
     clientId: legalCase.client_id,
     clientName: client?.name ?? `Cliente ${legalCase.client_id.slice(0, 8)}`,
     caseType: legalCase.case_type,
-    product: productFromMetadata(legalCase.metadata),
+    product,
+    productType: product,
+    productLabel: legalCase.product_label ?? undefined,
+    title: legalCase.title ?? undefined,
     status: legalCase.status as Case["status"],
     priority: legalCase.priority,
     documentsCount: 0,

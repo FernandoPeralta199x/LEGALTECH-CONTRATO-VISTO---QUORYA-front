@@ -344,11 +344,26 @@ export default function DocumentsPage() {
                 <input
                   aria-invalid={Boolean(formErrors.file) || undefined}
                   accept={acceptedUploadTypes}
-                  className={`cv-input w-full px-3 ${formErrors.file ? "cv-input-invalid" : ""}`}
+                  className="sr-only"
+                  id="cv-file-upload"
                   onChange={handleFileChange}
                   ref={fileInputRef}
                   type="file"
                 />
+                <div className="flex items-center gap-3">
+                  <label
+                    htmlFor="cv-file-upload"
+                    className={`cv-btn cv-btn-secondary inline-flex cursor-pointer items-center gap-2 px-3 py-2 text-xs font-semibold ${
+                      formErrors.file ? "border-red-500/60 text-red-400" : ""
+                    }`}
+                  >
+                    <Upload aria-hidden="true" size={14} />
+                    Escolher arquivo
+                  </label>
+                  <span className="min-w-0 flex-1 truncate text-xs text-[var(--text3)]">
+                    {selectedFile ? selectedFile.name : "Nenhum arquivo selecionado"}
+                  </span>
+                </div>
               </FormField>
               <FormField label="Observação">
                 <TextInput
