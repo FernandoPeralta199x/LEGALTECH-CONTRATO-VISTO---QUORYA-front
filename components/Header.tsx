@@ -5,9 +5,12 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/cn";
 import { clearStoredSession } from "@/src/lib/authStorage";
 import { useDevSession } from "@/src/lib/useDevSession";
-import { LogOut, Menu, Search, X } from "lucide-react";
+import { listCases } from "@/src/services/cases";
+import { listClients } from "@/src/services/clients";
+import type { Case, Client } from "@/types";
+import { Briefcase, LogOut, Menu, Search, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type HeaderProps = { onMenuClick?: () => void };
 
@@ -24,6 +27,57 @@ export function Header({ onMenuClick }: HeaderProps) {
   const session       = useDevSession();
   const [query, setQuery]           = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [cases, setCases]           = useState<Case[]>([]);
+  const [clients, setClients]       = useState<Client[]>([]);
+  const [loading, setLoading]       = useState(false);
+  const [resultsOpen, setResultsOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  // busca real (debounced) em casos + clientes; mín. 2 caracteres
+  useEffect(() => {
+    const term = query.trim();
+    if (term.length < 2) {
+      setCases([]); setClients([]); setResultsOpen(false); setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    const t = setTimeout(async () => {
+      try {
+        const [c, cl] = await Promise.all([
+          listCases({ q: term, pageSize: 6 }).catch(() => ({ data: [] as Case[] })),
+          listClients({ q: term }).catch(() => ({ data: [] as Client[] }))
+        ]);
+        if (cancelled) return;
+        setCases(c.data.slice(0, 6));
+        setClients(cl.data.slice(0, 6));
+        setResultsOpen(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }, 250);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [query]);
+
+  // fecha o dropdown ao clicar fora
+  useEffect(() => {
+    function onDown(e: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setResultsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, []);
+
+  function go(href: string) {
+    setResultsOpen(false);
+    setSearchOpen(false);
+    setQuery("");
+    router.push(href);
+  }
+
+  const hasResults = cases.length > 0 || clients.length > 0;
 
   function handleLogout() {
     clearStoredSession();
@@ -54,8 +108,9 @@ export function Header({ onMenuClick }: HeaderProps) {
           </button>
         )}
 
-        {/* Search — desktop always visible, mobile toggleable */}
+        {/* Search — busca real em casos + clientes (dropdown de resultados) */}
         <div
+          ref={searchRef}
           className={cn(
             "relative transition-all duration-base ease-smooth",
             searchOpen
@@ -76,6 +131,14 @@ export function Header({ onMenuClick }: HeaderProps) {
               "focus:shadow-glow-teal"
             )}
             onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => { if (hasResults) setResultsOpen(true); }}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") { setResultsOpen(false); }
+              if (e.key === "Enter") {
+                if (cases[0]) go(`/cases/${cases[0].id}`);
+                else if (clients[0]) go("/clients");
+              }
+            }}
             placeholder="Buscar casos, clientes..."
             type="search"
             value={query}
@@ -84,10 +147,74 @@ export function Header({ onMenuClick }: HeaderProps) {
             <button
               aria-label="Fechar busca"
               className="absolute right-2.5 top-1/2 flex h-8 min-h-8 w-8 min-w-8 -translate-y-1/2 items-center justify-center rounded-lg text-[var(--text3)] transition-colors duration-fast hover:bg-[var(--surf3)] hover:text-[var(--text)]"
-              onClick={() => { setSearchOpen(false); setQuery(""); }}
+              onClick={() => { setSearchOpen(false); setQuery(""); setResultsOpen(false); }}
             >
               <X size={14} />
             </button>
+          )}
+
+          {/* Dropdown de resultados */}
+          {resultsOpen && query.trim().length >= 2 && (
+            <div className="absolute left-0 right-0 top-full z-40 mt-1.5 max-h-96 overflow-auto rounded-lg border border-[var(--bd)] bg-[var(--surf)] py-1 shadow-xl">
+              {loading && (
+                <p className="px-3 py-2 text-xs text-[var(--text3)]">Buscando…</p>
+              )}
+              {!loading && !hasResults && (
+                <p className="px-3 py-2 text-xs text-[var(--text3)]">
+                  Nenhum resultado para “{query.trim()}”.
+                </p>
+              )}
+              {!loading && cases.length > 0 && (
+                <div>
+                  <p className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--text3)]">
+                    Casos
+                  </p>
+                  {cases.map((c) => (
+                    <button
+                      key={c.id}
+                      className="flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors hover:bg-[var(--surf3)]"
+                      onClick={() => go(`/cases/${c.id}`)}
+                      type="button"
+                    >
+                      <Briefcase className="shrink-0 text-[var(--teal)]" size={14} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-xs font-medium text-[var(--text)]">
+                          {c.title || c.code}
+                        </span>
+                        <span className="block truncate text-[11px] text-[var(--text3)]">
+                          {c.code}
+                        </span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {!loading && clients.length > 0 && (
+                <div>
+                  <p className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--text3)]">
+                    Clientes
+                  </p>
+                  {clients.map((cl) => (
+                    <button
+                      key={cl.id}
+                      className="flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors hover:bg-[var(--surf3)]"
+                      onClick={() => go("/clients")}
+                      type="button"
+                    >
+                      <Users className="shrink-0 text-[var(--blue)]" size={14} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-xs font-medium text-[var(--text)]">
+                          {cl.name}
+                        </span>
+                        <span className="block truncate text-[11px] text-[var(--text3)]">
+                          {cl.documentMasked || cl.documentLabel || "—"}
+                        </span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
 

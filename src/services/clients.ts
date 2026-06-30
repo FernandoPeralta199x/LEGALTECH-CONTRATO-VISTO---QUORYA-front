@@ -160,9 +160,12 @@ function sanitizeClientPayload<T extends ClientCreate | ClientUpdate>(
   return sanitized as T;
 }
 
-export async function listClients(): Promise<ServiceResult<Client[]>> {
+export async function listClients(
+  params: { q?: string } = {}
+): Promise<ServiceResult<Client[]>> {
+  const qs = params.q ? `?q=${encodeURIComponent(params.q)}` : "";
   try {
-    const response = await apiClient.get<BackendClient[]>("/api/v1/clients");
+    const response = await apiClient.get<BackendClient[]>(`/api/v1/clients${qs}`);
     return {
       data: response.data.map(mapBackendClient),
       source: "api"
