@@ -1,17 +1,14 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Save,
-  AlertTriangle,
-  CheckCircle,
   Settings,
   Layers,
   Shield,
   RotateCcw,
-  Info,
 } from "lucide-react";
 
 import { AuthGuard } from "@/components/AuthGuard";
@@ -19,6 +16,10 @@ import { AppLayout } from "@/components/AppLayout";
 import { PageTitle } from "@/components/PageTitle";
 import { Card } from "@/components/Card";
 import { CurrencyInput, centsToReaisLabel } from "@/components/CurrencyInput";
+import { Button } from "@/components/Button";
+import { Notification } from "@/components/Notification";
+import { LoadingState } from "@/components/LoadingState";
+import { ErrorState } from "@/components/ErrorState";
 
 import {
   getPricingCatalog,
@@ -57,6 +58,7 @@ export default function AdminPricingPage() {
   const [config, setConfig] = useState<PricingConfig | null>(null);
   const [limitCheck, setLimitCheck] = useState<CasesLimitCheck | null>(null);
   const [status, setStatus] = useState<Status>("loading");
+  const [loadErr, setLoadErr] = useState<string | null>(null);
   const { message, setMessage } = useToast();
 
   // Form state
@@ -67,44 +69,45 @@ export default function AdminPricingPage() {
   >({});
   const [notes, setNotes] = useState("");
 
+  const loadAll = useCallback(async () => {
+    setStatus("loading");
+    setLoadErr(null);
+    try {
+      const [cat, cfg, lim] = await Promise.all([
+        getPricingCatalog(),
+        getPricingConfig(),
+        checkCasesLimit(),
+      ]);
+      setCatalog(cat);
+      setConfig(cfg);
+      setLimitCheck(lim);
+
+      const unlimited = cfg.cases_limit === null;
+      setUnlimitedCases(unlimited);
+      setCasesLimit(unlimited ? null : cfg.cases_limit);
+
+      setModuleOverrides(
+        Object.fromEntries(
+          Object.entries(cfg.module_overrides).map(([k, v]) => [k, v.price_cents])
+        )
+      );
+
+      setNotes(cfg.notes ?? "");
+      setStatus("idle");
+    } catch (err) {
+      setLoadErr(
+        errorMessage(
+          err,
+          "API local indisponível. Verifique se o backend e o PostgreSQL estão rodando e se você está logado."
+        )
+      );
+      setStatus("error");
+    }
+  }, []);
+
   useEffect(() => {
-    let cancelled = false;
-    Promise.all([
-      getPricingCatalog(),
-      getPricingConfig(),
-      checkCasesLimit(),
-    ])
-      .then(([cat, cfg, lim]) => {
-        if (cancelled) return;
-        setCatalog(cat);
-        setConfig(cfg);
-        setLimitCheck(lim);
-
-        const unlimited = cfg.cases_limit === null;
-        setUnlimitedCases(unlimited);
-        setCasesLimit(unlimited ? null : cfg.cases_limit);
-
-        setModuleOverrides(
-          Object.fromEntries(
-            Object.entries(cfg.module_overrides).map(([k, v]) => [k, v.price_cents])
-          )
-        );
-
-        setNotes(cfg.notes ?? "");
-        setStatus("idle");
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setMessage({
-          text: errorMessage(err, "API local indisponível. Verifique se o backend e o PostgreSQL estão rodando e se você está logado."),
-          type: "error",
-        });
-        setStatus("error");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [setMessage]);
+    void loadAll();
+  }, [loadAll]);
 
   const hasChanges = useMemo(() => {
     if (!config) return false;
@@ -189,11 +192,12 @@ export default function AdminPricingPage() {
           {/* Header */}
           <div className="flex items-center gap-3">
             <button
+              aria-label="Voltar para Administração"
               onClick={() => router.push("/admin")}
-              className="rounded-lg p-2 transition-opacity hover:opacity-80"
-              style={{ color: "var(--text2)" }}
+              className="cv-icon-btn"
+              type="button"
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={18} />
             </button>
             <PageTitle
               title="Configuração de Pricing"
@@ -202,38 +206,24 @@ export default function AdminPricingPage() {
             />
           </div>
 
-          {/* Toast */}
+          {/* Feedback de salvamento (carregamento usa ErrorState abaixo) */}
           {message && (
-            <div
-              className="flex items-center gap-2 rounded-lg p-3 text-sm"
-              style={{
-                background:
-                  message.type === "error"
-                    ? "rgba(239, 68, 68, 0.1)"
-                    : "rgba(34, 197, 94, 0.1)",
-                color: message.type === "error" ? "#ef4444" : "#22c55e",
-                border:
-                  message.type === "error"
-                    ? "1px solid rgba(239, 68, 68, 0.2)"
-                    : "1px solid rgba(34, 197, 94, 0.2)",
-              }}
+            <Notification
+              onDismiss={() => setMessage(null)}
+              tone={message.type}
             >
-              {message.type === "error" ? (
-                <AlertTriangle size={16} />
-              ) : (
-                <CheckCircle size={16} />
-              )}
               {message.text}
-            </div>
+            </Notification>
           )}
 
           {isLoading ? (
-            <div
-              className="py-12 text-center text-sm"
-              style={{ color: "var(--text2)" }}
-            >
-              Carregando...
-            </div>
+            <LoadingState label="Carregando configuração de pricing..." />
+          ) : status === "error" && !config ? (
+            <ErrorState
+              description="Não foi possível carregar a configuração de pricing."
+              details={loadErr ?? undefined}
+              action={<Button onClick={() => void loadAll()}>Tentar novamente</Button>}
+            />
           ) : (
             <>
               {/* Cases Limit + Status */}
@@ -268,10 +258,17 @@ export default function AdminPricingPage() {
                         <input
                           type="number"
                           min={1}
+                          max={100000}
                           value={casesLimit ?? ""}
                           onChange={(e) => {
                             const v = e.target.value;
-                            setCasesLimit(v === "" ? null : parseInt(v, 10));
+                            if (v === "") {
+                              setCasesLimit(null);
+                              return;
+                            }
+                            const n = parseInt(v, 10);
+                            if (Number.isNaN(n)) return;
+                            setCasesLimit(Math.min(100000, Math.max(1, n)));
                           }}
                           placeholder="Ex: 100"
                           className="w-full rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-3 py-2 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
@@ -423,25 +420,23 @@ export default function AdminPricingPage() {
               {/* Save */}
               <div className="flex items-center justify-end gap-3">
                 {hasChanges && (
-                  <button
-                    type="button"
-                    onClick={handleReset}
+                  <Button
                     disabled={isSaving}
-                    className="flex items-center gap-2 rounded-lg border border-[var(--bd)] bg-[var(--surf)] px-4 py-2.5 text-sm font-medium text-[var(--text)] transition hover:border-[var(--accent)]/40 disabled:opacity-50"
+                    icon={<RotateCcw size={15} />}
+                    onClick={handleReset}
+                    variant="secondary"
                   >
-                    <RotateCcw size={15} />
                     Descartar alterações
-                  </button>
+                  </Button>
                 )}
-                <button
-                  onClick={handleSave}
-                  disabled={isSaving || !hasChanges}
-                  className="flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
-                  style={{ background: "var(--accent)" }}
+                <Button
+                  disabled={!hasChanges}
+                  icon={<Save size={16} />}
+                  loading={isSaving}
+                  onClick={() => void handleSave()}
                 >
-                  <Save size={16} />
                   {isSaving ? "Salvando..." : "Salvar Configuração"}
-                </button>
+                </Button>
               </div>
             </>
           )}

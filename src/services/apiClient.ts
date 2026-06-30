@@ -297,9 +297,42 @@ export async function apiRequest<T>(
   return normalizeApiSuccess(payload);
 }
 
+// Coalescência de GETs em voo: chamadas idênticas e simultâneas (ex.: o
+// NotificationBell global + a própria tela buscando a mesma lista no load)
+// compartilham uma única requisição de rede. A entrada é removida assim que a
+// promise resolve, então não há cache nem risco de dados desatualizados.
+const inFlightGets = new Map<string, Promise<ApiSuccessResponse<unknown>>>();
+
+function coalescedGet<T>(
+  path: string,
+  options?: ApiClientOptions
+): Promise<ApiSuccessResponse<T>> {
+  // Não coalesce quando há signal custom: evita que o abort de um chamador
+  // cancele a requisição compartilhada de outro.
+  if (options?.signal) {
+    return apiRequest<T>(path, { ...options, method: "GET" });
+  }
+
+  const key = `GET ${path}`;
+  const existing = inFlightGets.get(key) as
+    | Promise<ApiSuccessResponse<T>>
+    | undefined;
+  if (existing) {
+    return existing;
+  }
+
+  const promise = apiRequest<T>(path, { ...options, method: "GET" }).finally(
+    () => {
+      inFlightGets.delete(key);
+    }
+  );
+  inFlightGets.set(key, promise as Promise<ApiSuccessResponse<unknown>>);
+  return promise;
+}
+
 export const apiClient = {
   get: <T>(path: string, options?: ApiClientOptions) =>
-    apiRequest<T>(path, { ...options, method: "GET" }),
+    coalescedGet<T>(path, options),
   post: <T>(path: string, body: unknown, options?: ApiClientOptions) =>
     apiRequest<T>(path, {
       ...options,
