@@ -66,6 +66,7 @@ export function NewCaseWizard() {
 
   const [parties, setParties] = useState<Party[]>(() => [newParty()]);
   const [arquivo, setArquivo] = useState<WizardFile | null>(null);
+  const [anexarContrato, setAnexarContrato] = useState(true);
   const [produto, setProduto] = useState<Produto | null>(null);
   const [modulos, setModulos] = useState<Record<Modulo, boolean>>(
     () => ({}) as Record<Modulo, boolean>
@@ -83,7 +84,8 @@ export function NewCaseWizard() {
       return parties.length > 0 && parties.every(partyIsComplete);
     }
     if (step === 2) {
-      return Boolean(arquivo && arquivo.status === "done");
+      // contrato é opcional: só exige arquivo quando o anexo está ativado
+      return !anexarContrato || Boolean(arquivo && arquivo.status === "done");
     }
     if (step === 3) {
       return Boolean(produto);
@@ -92,10 +94,10 @@ export function NewCaseWizard() {
       return Boolean(produto);
     }
     if (step === 5) {
-      return Boolean(produto && arquivo?.status === "done");
+      return Boolean(produto) && (!anexarContrato || arquivo?.status === "done");
     }
     return false;
-  }, [step, parties, arquivo, produto]);
+  }, [step, parties, arquivo, produto, anexarContrato]);
 
   async function handleSubmit() {
     if (!canAdvance || !produto || submitting) return;
@@ -157,7 +159,17 @@ export function NewCaseWizard() {
         )}
 
         {step === 1 && <PartiesStep onChange={setParties} parties={parties} />}
-        {step === 2 && <ContractStep arquivo={arquivo} onChange={setArquivo} />}
+        {step === 2 && (
+          <ContractStep
+            anexarContrato={anexarContrato}
+            arquivo={arquivo}
+            onChange={setArquivo}
+            onToggle={(v) => {
+              setAnexarContrato(v);
+              if (!v) setArquivo(null);
+            }}
+          />
+        )}
         {step === 3 && (
           <ProductStep
             onChange={handleProductChange}

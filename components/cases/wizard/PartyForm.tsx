@@ -45,7 +45,9 @@ export function PartyForm({
           ? "Informe a razão social."
           : "Informe o nome completo.";
     }
-    if (party.documento) {
+    if (!party.documento || !party.documento.trim()) {
+      e.documento = party.tipoPessoa === "pj" ? "Informe o CNPJ." : "Informe o CPF.";
+    } else {
       const ok =
         party.tipoPessoa === "pj"
           ? isValidCnpj(party.documento)
@@ -157,6 +159,7 @@ export function PartyForm({
         <FormField
           error={touched.documento ? errors.documento : undefined}
           label={party.tipoPessoa === "pj" ? "CNPJ" : "CPF"}
+          required
         >
           <TextInput
             inputMode="numeric"
