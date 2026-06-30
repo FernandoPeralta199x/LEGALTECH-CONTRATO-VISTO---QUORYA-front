@@ -8,8 +8,11 @@ type BackendCaseParty = {
   party_type: string;
   name: string;
   document: string | null;
+  document_masked: string | null;
   email: string | null;
+  email_masked: string | null;
   phone: string | null;
+  phone_masked: string | null;
   notes: string | null;
   metadata: Record<string, unknown>;
   created_at: string;
@@ -64,14 +67,15 @@ function makeMockCaseParty(caseId: string, payload: CasePartyCreate): CaseParty 
 }
 
 export function mapBackendCaseParty(party: BackendCaseParty): CaseParty {
+  // LGPD: o backend devolve PII mascarada (*_masked) e os campos crus como null.
   return {
     id: party.id,
     caseId: party.case_id,
     name: party.name,
-    document: party.document ?? "",
+    document: party.document ?? party.document_masked ?? "",
     type: party.party_type,
-    email: party.email ?? "",
-    phone: party.phone ?? "",
+    email: party.email ?? party.email_masked ?? "",
+    phone: party.phone ?? party.phone_masked ?? "",
     notes: party.notes ?? "",
     metadata: party.metadata,
     createdAt: party.created_at,
