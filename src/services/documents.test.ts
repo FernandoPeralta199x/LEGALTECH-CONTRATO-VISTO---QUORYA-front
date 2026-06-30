@@ -73,9 +73,12 @@ test("createDocument sends metadata-only backend payload without organization_id
   assert.equal(payload.organization_id, undefined);
 });
 
-test("uploadDocument sends multipart payload through apiClient without organization_id", async () => {
-  let requestUrl = "";
-  let requestBody: BodyInit | null | undefined;
+test("uploadDocument segue o fluxo presign (registra JSON, faz PUT, busca) sem organization_id", async () => {
+  let registerUrl = "";
+  let registerBody = "";
+  let putUrl = "";
+  let putMethod = "";
+  let getUrl = "";
   let authorizationHeader: string | null = null;
 
   Object.defineProperty(globalThis, "localStorage", {
@@ -98,36 +101,51 @@ test("uploadDocument sends multipart payload through apiClient without organizat
     }
   });
 
-  globalThis.fetch = (async (url, init) => {
-    requestUrl = String(url);
-    requestBody = init?.body;
-    authorizationHeader = new Headers(init?.headers).get("Authorization");
+  const uploadUrl = "https://storage.local/put/doc-uploaded?sig=abc123";
+  const backendDocument = {
+    id: "doc-uploaded",
+    case_id: "case-api-1",
+    filename: "contrato.pdf",
+    content_type: "application/pdf",
+    size_bytes: 1024,
+    file_hash: "sha256:abc123",
+    status: "uploaded",
+    uploaded_by: "22222222-2222-4222-8222-222222222222",
+    uploaded_at: "2026-05-30T12:00:00.000Z",
+    metadata: { notes: "Teste local", source: "frontend_local_upload" },
+    created_at: "2026-05-30T12:00:00.000Z",
+    updated_at: "2026-05-30T12:00:00.000Z"
+  };
 
-    return Response.json(
-      {
-        success: true,
-        data: {
-          id: "doc-uploaded",
-          case_id: "case-api-1",
-          filename: "contrato.pdf",
-          content_type: "application/pdf",
-          size_bytes: 1024,
-          file_hash: "sha256:abc123",
-          status: "uploaded",
-          uploaded_by: "22222222-2222-4222-8222-222222222222",
-          uploaded_at: "2026-05-30T12:00:00.000Z",
-          metadata: { notes: "Teste local", source: "frontend_local_upload" },
-          created_at: "2026-05-30T12:00:00.000Z",
-          updated_at: "2026-05-30T12:00:00.000Z"
-        }
-      },
-      { status: 201 }
-    );
+  globalThis.fetch = (async (url, init) => {
+    const u = String(url);
+    const method = (init?.method ?? "GET").toUpperCase();
+
+    // 1) registro (presign): POST /api/v1/documents (JSON) -> {document_id, upload_url}
+    if (u.endsWith("/api/v1/documents") && method === "POST") {
+      registerUrl = u;
+      registerBody = String(init?.body ?? "");
+      authorizationHeader = new Headers(init?.headers).get("Authorization");
+      return Response.json(
+        { success: true, data: { document_id: "doc-uploaded", upload_url: uploadUrl } },
+        { status: 201 }
+      );
+    }
+    // 2) binário sobe direto ao storage via PUT na URL pré-assinada
+    if (u === uploadUrl && method === "PUT") {
+      putUrl = u;
+      putMethod = method;
+      return new Response(null, { status: 200 });
+    }
+    // 3) leitura do documento registrado
+    if (u.endsWith("/api/v1/documents/doc-uploaded") && method === "GET") {
+      getUrl = u;
+      return Response.json({ success: true, data: backendDocument });
+    }
+    throw new Error(`URL inesperada no mock: ${method} ${u}`);
   }) as typeof fetch;
 
-  const file = new File(["conteudo"], "contrato.pdf", {
-    type: "application/pdf"
-  });
+  const file = new File(["conteudo"], "contrato.pdf", { type: "application/pdf" });
 
   const result = await uploadDocument({
     caseId: "case-api-1",
@@ -137,14 +155,18 @@ test("uploadDocument sends multipart payload through apiClient without organizat
 
   assert.equal(result.source, "api");
   assert.equal(result.data.status, "uploaded");
-  assert.match(requestUrl, /\/api\/v1\/documents\/upload$/);
+  // registro é JSON (presign), nunca multipart; sem organization_id (autoridade do back)
+  assert.match(registerUrl, /\/api\/v1\/documents$/);
   assert.equal(authorizationHeader, "Bearer valid.dev.jwt");
-  assert.ok(requestBody instanceof FormData);
-  const form = requestBody as FormData;
-  assert.equal(form.get("case_id"), "case-api-1");
-  assert.equal(form.get("file"), file);
-  assert.equal(form.get("organization_id"), null);
-  assert.deepEqual(JSON.parse(String(form.get("metadata"))), {
-    notes: "Teste local"
-  });
+  const reg = JSON.parse(registerBody);
+  assert.equal(reg.case_id, "case-api-1");
+  assert.equal(reg.file_name, "contrato.pdf");
+  assert.equal(reg.file_type, "pdf");
+  assert.equal(reg.file_size_bytes, file.size);
+  assert.equal(reg.organization_id, undefined);
+  // binário enviado via PUT à URL pré-assinada
+  assert.equal(putUrl, uploadUrl);
+  assert.equal(putMethod, "PUT");
+  // leitura final do documento
+  assert.match(getUrl, /\/api\/v1\/documents\/doc-uploaded$/);
 });
