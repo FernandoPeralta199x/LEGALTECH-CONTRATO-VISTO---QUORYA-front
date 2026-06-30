@@ -78,39 +78,6 @@ const ACTIVE_STATUSES = new Set<string>([
   "approved"
 ]);
 
-const funnelSteps = [
-  {
-    title: "Novo Pedido",
-    description: "Início no wizard",
-    href: "/cases/new",
-    icon: Plus
-  },
-  {
-    title: "Caso",
-    description: "Acompanhamento",
-    href: "/cases",
-    icon: BriefcaseBusiness
-  },
-  {
-    title: "Documento",
-    description: "Insumos locais",
-    href: "/documents",
-    icon: Upload
-  },
-  {
-    title: "Análise",
-    description: "Triagem local",
-    href: "/analyst",
-    icon: ClipboardCheck
-  },
-  {
-    title: "Relatório",
-    description: "Entrega/revisão",
-    href: "/reports",
-    icon: FileText
-  }
-] as const;
-
 const processAreas = [
   {
     title: "Novo Pedido",
@@ -168,14 +135,6 @@ const processAreas = [
     badge: "Governança" as ActionBadge,
     primary: false
   }
-] as const;
-
-const nextSteps = [
-  { label: "Iniciar Novo Pedido", href: "/cases/new", icon: Plus },
-  { label: "Ver Casos", href: "/cases", icon: BriefcaseBusiness },
-  { label: "Enviar Documento", href: "/documents", icon: Upload },
-  { label: "Ver Relatórios", href: "/reports", icon: FileText },
-  { label: "Ver Clientes", href: "/clients", icon: UsersRound }
 ] as const;
 
 function caseTitle(legalCase: Case): string {
@@ -336,68 +295,6 @@ export default function DashboardPage() {
         ) : (
           <div className="space-y-8">
 
-            {/* ── Operational funnel ── */}
-            <section aria-labelledby="funnel-heading">
-              <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <h2
-                    className="text-sm font-semibold text-[var(--text)]"
-                    id="funnel-heading"
-                  >
-                    Fluxo operacional
-                  </h2>
-                  <p className="text-xs leading-5 text-[var(--text2)]">
-                    Novo Pedido abre o fluxo; o dashboard orienta as etapas de
-                    acompanhamento, insumos locais, triagem e entrega/revisão.
-                  </p>
-                </div>
-                <Link
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--teal)] transition hover:opacity-80"
-                  href="/cases/new"
-                >
-                  Começar pelo wizard
-                  <ArrowRight aria-hidden="true" size={12} />
-                </Link>
-              </div>
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-                {funnelSteps.map((step, index) => {
-                  const Icon = step.icon;
-                  const isEntry = index === 0;
-                  return (
-                    <Link
-                      className={`group relative rounded-lg border px-4 py-3 transition hover:-translate-y-0.5 hover:bg-[var(--surf3)] ${
-                        isEntry
-                          ? "border-[rgba(32,201,151,0.32)] bg-[var(--teal-dim)]"
-                          : "border-[var(--bd)] bg-[var(--surf2)]"
-                      }`}
-                      href={step.href}
-                      key={step.href}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span
-                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${
-                            isEntry
-                              ? "border-[rgba(32,201,151,0.3)] bg-[var(--surf)] text-[var(--teal)]"
-                              : "border-[var(--bd)] bg-[var(--surf)] text-[var(--text2)]"
-                          }`}
-                        >
-                          <Icon aria-hidden="true" size={15} />
-                        </span>
-                        <span className="min-w-0">
-                          <span className="block text-xs font-semibold text-[var(--text)]">
-                            {step.title}
-                          </span>
-                          <span className="block truncate text-[11px] text-[var(--text2)]">
-                            {step.description}
-                          </span>
-                        </span>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </section>
-
             {/* ── Metrics ── */}
             <section aria-labelledby="metrics-heading">
               <div className="mb-4">
@@ -495,9 +392,8 @@ export default function DashboardPage() {
                   Atalhos para operar o ciclo sem sair do contexto do cockpit.
                 </p>
               </div>
-              <div className="grid gap-4 xl:grid-cols-[1fr_280px]">
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {processAreas.map((area) => {
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {processAreas.map((area) => {
                     const Icon = area.icon;
                     return (
                       <Link
@@ -535,38 +431,7 @@ export default function DashboardPage() {
                         </div>
                       </Link>
                     );
-                  })}
-                </div>
-
-                <div className="rounded-lg border border-[var(--bd)] bg-[var(--surf2)] p-4">
-                  <p className="text-xs font-semibold text-[var(--text)]">
-                    Próximos passos
-                  </p>
-                  <div className="mt-3 space-y-2">
-                    {nextSteps.map((step) => {
-                      const Icon = step.icon;
-                      return (
-                        <Link
-                          className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-xs font-semibold text-[var(--text2)] transition hover:bg-[var(--surf3)] hover:text-[var(--text)]"
-                          href={step.href}
-                          key={step.href}
-                        >
-                          <Icon
-                            aria-hidden="true"
-                            className="shrink-0 text-[var(--text3)]"
-                            size={14}
-                          />
-                          <span className="flex-1">{step.label}</span>
-                          <ArrowRight
-                            aria-hidden="true"
-                            className="shrink-0 text-[var(--text3)]"
-                            size={12}
-                          />
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
+                })}
               </div>
             </section>
 
