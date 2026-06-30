@@ -56,6 +56,9 @@ export function PartyForm({
         e.documento = party.tipoPessoa === "pj" ? "CNPJ inválido." : "CPF inválido.";
       }
     }
+    if (party.tipoPessoa === "pf" && !(party.rg ?? "").trim()) {
+      e.rg = "Informe o RG.";
+    }
     if (party.email && !isValidEmail(party.email)) {
       e.email = "E-mail inválido.";
     }
@@ -71,6 +74,7 @@ export function PartyForm({
   const canSave =
     !errors.nome &&
     !errors.documento &&
+    !errors.rg &&
     !errors.email &&
     !errors.telefone &&
     !errors.birthDate;
@@ -173,8 +177,14 @@ export function PartyForm({
 
         {party.tipoPessoa === "pf" && (
           <>
-            <FormField label="RG">
+            <FormField
+              error={touched.rg ? errors.rg : undefined}
+              label="RG"
+              required
+            >
               <TextInput
+                invalid={touched.rg && Boolean(errors.rg)}
+                onBlur={() => setError("rg")}
                 onChange={(e) => update("rg", e.target.value)}
                 placeholder="Informe o RG"
                 value={party.rg ?? ""}

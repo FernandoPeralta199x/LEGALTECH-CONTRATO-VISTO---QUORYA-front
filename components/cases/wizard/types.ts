@@ -55,5 +55,11 @@ export function newParty(papel: Papel = "contratante"): Party {
 }
 
 export function partyIsComplete(party: Party): boolean {
-  return Boolean(party.nome.trim() && party.papel && party.tipoPessoa);
+  const base = Boolean(party.nome.trim() && party.papel && party.tipoPessoa);
+  // RG é obrigatório para pessoa física (empresa não tem RG)
+  if (party.tipoPessoa === "pf" && !(party.rg ?? "").trim()) {
+    return false;
+  }
+  return base;
 }
+
