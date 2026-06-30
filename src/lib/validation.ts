@@ -125,7 +125,9 @@ export function validateClientForm(input: ClientFormValidationInput): Validation
     if (!legalName) {
       errors.legalName = "Informe a razão social.";
     }
-    if (cnpj && digitsOnly(cnpj).length !== 14) {
+    if (!cnpj) {
+      errors.cnpj = "Informe o CNPJ.";
+    } else if (digitsOnly(cnpj).length !== 14) {
       errors.cnpj = "Informe um CNPJ com 14 dígitos.";
     }
   } else {
@@ -137,7 +139,9 @@ export function validateClientForm(input: ClientFormValidationInput): Validation
         errors.name = "Informe o nome do cliente.";
       }
     }
-    if (cpf && digitsOnly(cpf).length !== 11) {
+    if (!cpf) {
+      errors.cpf = "Informe o CPF.";
+    } else if (digitsOnly(cpf).length !== 11) {
       errors.cpf = "Informe um CPF com 11 dígitos.";
     }
     if (birthDate) {

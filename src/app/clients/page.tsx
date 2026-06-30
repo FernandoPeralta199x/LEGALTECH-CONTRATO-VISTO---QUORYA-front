@@ -316,7 +316,7 @@ export default function ClientsPage() {
                       value={form.fullName}
                     />
                   </FormField>
-                  <FormField error={formErrors.cpf} label="CPF">
+                  <FormField error={formErrors.cpf} label="CPF" required>
                     <TextInput
                       inputMode="numeric"
                       invalid={Boolean(formErrors.cpf)}
@@ -359,7 +359,7 @@ export default function ClientsPage() {
                       value={form.tradeName}
                     />
                   </FormField>
-                  <FormField error={formErrors.cnpj} label="CNPJ">
+                  <FormField error={formErrors.cnpj} label="CNPJ" required>
                     <TextInput
                       inputMode="numeric"
                       invalid={Boolean(formErrors.cnpj)}
