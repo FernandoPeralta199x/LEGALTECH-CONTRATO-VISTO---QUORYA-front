@@ -29,6 +29,7 @@ type ClientFormValidationInput = {
   name?: string | null;
   personType?: string | null;
   phone?: string | null;
+  rg?: string | null;
 };
 
 const allowedPriorities = new Set(["low", "normal", "high", "urgent"]);
@@ -143,6 +144,9 @@ export function validateClientForm(input: ClientFormValidationInput): Validation
       errors.cpf = "Informe o CPF.";
     } else if (digitsOnly(cpf).length !== 11) {
       errors.cpf = "Informe um CPF com 11 dígitos.";
+    }
+    if (!(input.rg ?? "").trim()) {
+      errors.rg = "Informe o RG.";
     }
     if (birthDate) {
       const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(birthDate);

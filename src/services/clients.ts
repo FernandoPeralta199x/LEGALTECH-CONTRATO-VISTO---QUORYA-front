@@ -48,6 +48,20 @@ function protectedDocumentLabel(client: BackendClient): string {
   return client.document_masked ?? maskDocumentForDisplay(client.document);
 }
 
+// O backend devolve address como objeto {street, city, state, zip}; achata para string
+// legível (evita "[object Object]" no formulário/exibição).
+function flattenAddress(value: unknown): string | null {
+  if (typeof value === "string") return value.trim() || null;
+  if (value && typeof value === "object") {
+    const a = value as Record<string, unknown>;
+    const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+    const cityState = [str(a.city), str(a.state)].filter(Boolean).join(" - ");
+    const parts = [str(a.street), cityState, str(a.zip)].filter(Boolean);
+    return parts.length ? parts.join(", ") : null;
+  }
+  return null;
+}
+
 export function mapBackendClient(client: BackendClient): Client {
   const personType = client.person_type ?? metadataString(client, "person_type");
   const contractRole = client.contract_role ?? metadataString(client, "contract_role");
@@ -55,7 +69,7 @@ export function mapBackendClient(client: BackendClient): Client {
   const documentMasked = client.document_masked ?? maskDocumentForDisplay(client.document);
 
   return {
-    address: client.address ?? metadataString(client, "address"),
+    address: flattenAddress(client.address) ?? metadataString(client, "address"),
     birthDate: client.birth_date ?? metadataString(client, "birth_date"),
     cnpj: client.cnpj ?? metadataString(client, "cnpj"),
     companyName: client.company_name ?? metadataString(client, "company_name"),

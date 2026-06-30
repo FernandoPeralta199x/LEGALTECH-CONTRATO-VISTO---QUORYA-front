@@ -325,8 +325,9 @@ export default function ClientsPage() {
                       value={form.cpf}
                     />
                   </FormField>
-                  <FormField label="RG">
+                  <FormField error={formErrors.rg} label="RG" required>
                     <TextInput
+                      invalid={Boolean(formErrors.rg)}
                       onChange={(event) => updateForm("rg", event.target.value)}
                       placeholder="00.000.000-0"
                       value={form.rg}
