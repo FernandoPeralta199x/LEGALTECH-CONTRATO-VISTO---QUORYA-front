@@ -333,7 +333,7 @@ export default function SettingsPage() {
                             newPassword: event.target.value
                           }))
                         }
-                        placeholder="Mínimo 8, maiúscula, minúscula e especial"
+                        placeholder="Mínimo 12, maiúscula, minúscula e especial"
                         type="password"
                         value={passwordForm.newPassword}
                       />

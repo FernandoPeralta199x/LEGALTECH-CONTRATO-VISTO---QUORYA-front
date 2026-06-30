@@ -1,3 +1,5 @@
+import { isValidCnpj, isValidCpf } from "../../lib/cpfCnpj";
+
 export type ValidationErrors = Record<string, string>;
 
 export type ValidationResult = {
@@ -130,6 +132,8 @@ export function validateClientForm(input: ClientFormValidationInput): Validation
       errors.cnpj = "Informe o CNPJ.";
     } else if (digitsOnly(cnpj).length !== 14) {
       errors.cnpj = "Informe um CNPJ com 14 dígitos.";
+    } else if (!isValidCnpj(cnpj)) {
+      errors.cnpj = "Informe um CNPJ válido.";
     }
   } else {
     if (!fullName) {
@@ -144,6 +148,8 @@ export function validateClientForm(input: ClientFormValidationInput): Validation
       errors.cpf = "Informe o CPF.";
     } else if (digitsOnly(cpf).length !== 11) {
       errors.cpf = "Informe um CPF com 11 dígitos.";
+    } else if (!isValidCpf(cpf)) {
+      errors.cpf = "Informe um CPF válido.";
     }
     if (!(input.rg ?? "").trim()) {
       errors.rg = "Informe o RG.";

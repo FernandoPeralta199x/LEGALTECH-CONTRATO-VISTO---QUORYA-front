@@ -78,6 +78,54 @@ test("validateClientForm validates optional document format lightly", () => {
   assert.equal(result.errors.document, "Use apenas números, letras, pontos, barras ou hífens.");
 });
 
+test("validateClientForm rejects CPF with invalid check digit", () => {
+  const result = validateClientForm({
+    contractRole: "contractor",
+    cpf: "123.456.789-01",
+    fullName: "Cliente Teste",
+    personType: "individual",
+    rg: "12.345.678-9"
+  });
+
+  assert.equal(result.valid, false);
+  assert.equal(result.errors.cpf, "Informe um CPF válido.");
+});
+
+test("validateClientForm accepts CPF with valid check digit", () => {
+  const result = validateClientForm({
+    contractRole: "contractor",
+    cpf: "123.456.789-09",
+    fullName: "Cliente Teste",
+    personType: "individual",
+    rg: "12.345.678-9"
+  });
+
+  assert.equal(result.errors.cpf, undefined);
+});
+
+test("validateClientForm rejects CNPJ with invalid check digit", () => {
+  const result = validateClientForm({
+    cnpj: "11.222.333/0001-00",
+    contractRole: "contractor",
+    legalName: "Empresa Teste",
+    personType: "company"
+  });
+
+  assert.equal(result.valid, false);
+  assert.equal(result.errors.cnpj, "Informe um CNPJ válido.");
+});
+
+test("validateClientForm accepts CNPJ with valid check digit", () => {
+  const result = validateClientForm({
+    cnpj: "11.222.333/0001-81",
+    contractRole: "contractor",
+    legalName: "Empresa Teste",
+    personType: "company"
+  });
+
+  assert.equal(result.errors.cnpj, undefined);
+});
+
 test("validateCaseForm requires title and linked client", () => {
   const result = validateCaseForm({
     caseType: "contract_analysis",

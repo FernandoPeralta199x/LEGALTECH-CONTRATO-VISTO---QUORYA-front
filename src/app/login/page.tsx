@@ -388,7 +388,7 @@ function LoginContent() {
                   autoComplete="new-password"
                   className={`${inputClass} pr-10`}
                   onChange={(event) => setRegisterPassword(event.target.value)}
-                  placeholder="Mínimo 8 caracteres"
+                  placeholder="Mínimo 12 caracteres"
                   required
                   type={showRegisterPassword ? "text" : "password"}
                   value={registerPassword}
@@ -480,8 +480,8 @@ function Field({
 }
 
 const passwordRequirements = [
-  ["hasMinLength", "Mínimo de 8 caracteres"],
-  ["hasMaxLength", "Máximo de 16 caracteres"],
+  ["hasMinLength", "Mínimo de 12 caracteres"],
+  ["hasMaxLength", "Máximo de 128 caracteres"],
   ["hasLowercase", "Pelo menos 1 letra minúscula"],
   ["hasUppercase", "Pelo menos 1 letra maiúscula"],
   ["hasSpecial", "Pelo menos 1 caractere especial"]

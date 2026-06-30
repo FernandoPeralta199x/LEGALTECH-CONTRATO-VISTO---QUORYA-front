@@ -17,7 +17,7 @@ export default function NewCasePage() {
             Este wizard guia o pedido: partes, contrato, produto jurídico,
             módulos e revisão antes da criação operacional.
           </p>
-          <p className="mt-2 text-[11px] leading-5 text-[var(--text3)]">
+          <p className="mt-2 text-[11px] leading-5 text-[var(--text2)]">
             Use apenas dados demonstrativos. Ao concluir, o backend local/mock
             cria o request, o caso e os recursos necessários para continuar a
             operação pelo mesmo case_id.

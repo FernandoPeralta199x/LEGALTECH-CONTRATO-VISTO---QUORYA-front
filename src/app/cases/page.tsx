@@ -537,6 +537,7 @@ export default function CasesPage() {
                 size={13}
               />
               <select
+                aria-label="Filtrar casos por status"
                 className="cv-input w-full pl-9 pr-3 text-xs font-medium [&_option]:bg-[var(--surf)]"
                 onChange={(event) => setFilter(event.target.value)}
                 value={filter}

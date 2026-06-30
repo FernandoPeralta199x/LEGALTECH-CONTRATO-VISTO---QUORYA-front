@@ -656,9 +656,11 @@ textarea:-webkit-autofill:focus {
     color: var(--teal);
   }
 
+  /* botoes primarios: teal mais escuro p/ contraste AA com texto branco (>=4.5:1) */
   .cv-app-shell .bg-brand-teal,
-  .cv-public-shell .bg-brand-teal {
-    background-color: var(--teal-d);
+  .cv-public-shell .bg-brand-teal,
+  .cv-login-shell .bg-brand-teal {
+    background-color: var(--teal-dd);
   }
 
   .cv-app-shell .border-brand-teal\/20,
