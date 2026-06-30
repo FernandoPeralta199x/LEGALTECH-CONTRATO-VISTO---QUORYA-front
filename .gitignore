@@ -1,0 +1,22 @@
+# dependências
+/node_modules
+
+# build / cache do Next
+/.next
+/out
+*.tsbuildinfo
+next-env.d.ts
+
+# ambiente local (não versionar segredos/local)
+.env.local
+.env*.local
+
+# logs / caches de ferramentas
+*.log
+.npm-cache
+.playwright-cli
+ruvector.db
+
+# SO / editor
+.DS_Store
+Thumbs.db
