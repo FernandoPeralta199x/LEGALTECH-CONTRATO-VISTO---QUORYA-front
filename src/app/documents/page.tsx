@@ -32,7 +32,8 @@ import {
   enqueueDocumentProcessing,
   getDocumentDownloadUrl,
   listDocuments,
-  uploadDocument
+  uploadDocument,
+  type UploadProgress
 } from "@/src/services/documents";
 import { validateDocumentUploadForm, type ValidationErrors } from "@/src/lib/validation";
 import type { Case, Document } from "@/types";
@@ -74,6 +75,17 @@ function documentTypeLabel(contentType: string): string {
   return labels[contentType] ?? contentType.split("/")[1]?.toUpperCase() ?? "Arquivo";
 }
 
+function uploadPhaseLabel(phase: UploadProgress["phase"]): string {
+  const labels: Record<UploadProgress["phase"], string> = {
+    registrando: "Registrando documento…",
+    enviando: "Enviando arquivo…",
+    finalizando: "Finalizando…",
+    concluido: "Concluído"
+  };
+
+  return labels[phase];
+}
+
 function documentSourceLabel(document: Document): string {
   if (document.status === "uploaded") {
     return "Anexo local do caso";
@@ -97,6 +109,7 @@ export default function DocumentsPage() {
   const [selectedCase, setSelectedCase] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const refreshDocuments = useCallback(async () => {
@@ -189,18 +202,22 @@ export default function DocumentsPage() {
     }
 
     setSubmitting(true);
+    setUploadProgress({ percent: 5, phase: "registrando" });
     setError("");
     setActionMessage("");
 
     try {
-      const result = await uploadDocument({
-        caseId: form.caseId,
-        file: selectedFile as File,
-        metadata: {
-          notes: form.notes.trim(),
-          source: "frontend_local_upload"
-        }
-      });
+      const result = await uploadDocument(
+        {
+          caseId: form.caseId,
+          file: selectedFile as File,
+          metadata: {
+            notes: form.notes.trim(),
+            source: "frontend_local_upload"
+          }
+        },
+        (progress) => setUploadProgress(progress)
+      );
       setDocuments((current) => [result.data, ...current]);
       setFallbackReason("");
       setActionMessage("Documento enviado e vinculado ao caso no armazenamento local do MVP.");
@@ -212,6 +229,7 @@ export default function DocumentsPage() {
       setError(errorMessage(err, "Não foi possível enviar o documento."));
     } finally {
       setSubmitting(false);
+      setUploadProgress(null);
     }
   }
 
@@ -394,6 +412,27 @@ export default function DocumentsPage() {
                 >
                   <X size={14} />
                 </button>
+              </div>
+            )}
+            {uploadProgress && (
+              <div className="mt-4" aria-live="polite">
+                <div className="mb-1 flex items-center justify-between text-[11px] text-[var(--text3)]">
+                  <span>{uploadPhaseLabel(uploadProgress.phase)}</span>
+                  <span>{uploadProgress.percent}%</span>
+                </div>
+                <div
+                  aria-label="Progresso do envio do documento"
+                  aria-valuemax={100}
+                  aria-valuemin={0}
+                  aria-valuenow={uploadProgress.percent}
+                  className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--surf3)]"
+                  role="progressbar"
+                >
+                  <div
+                    className="h-full rounded-full bg-[var(--teal-dd)] transition-all duration-300 ease-out"
+                    style={{ width: `${uploadProgress.percent}%` }}
+                  />
+                </div>
               </div>
             )}
             <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

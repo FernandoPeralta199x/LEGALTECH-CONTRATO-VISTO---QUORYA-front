@@ -126,15 +126,3 @@ export function usePricingMatrix(): Record<string, Record<string, { required?: b
     return MATRIZ as unknown as Record<string, Record<string, { obrigatorio?: boolean }>>;
   }, [catalog]);
 }
-
-/** Returns whether a module is required/locked for a given product. */
-export function useModuleRequired(
-  productCode: string,
-  moduleCode: string
-): boolean {
-  const matrix = usePricingMatrix();
-  return useMemo(() => {
-    const config = matrix[productCode]?.[moduleCode];
-    return config?.required === true || config?.obrigatorio === true;
-  }, [matrix, productCode, moduleCode]);
-}

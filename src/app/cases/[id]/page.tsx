@@ -36,6 +36,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { Timeline } from "@/components/Timeline";
 import { formatBytes, caseDisplayTitle, formatDate } from "@/lib/formatters";
 import { errorMessage } from "@/src/lib/errorMessage";
+import { isValidEmail } from "@/src/lib/validation";
 import {
   createCaseParty,
   updateCaseParty
@@ -207,7 +208,7 @@ function validatePartyForm(form: CasePartyCreate): PartyFormErrors {
     errors.document = "Use apenas números, letras, pontos, barras ou hífens.";
   }
 
-  if (email && !email.includes("@")) {
+  if (email && !isValidEmail(email)) {
     errors.email = "Informe um e-mail válido ou deixe o campo vazio.";
   }
 
@@ -783,6 +784,7 @@ export default function CaseDetailPage({ params }: PageProps) {
             )}
             {showPartyForm && (
               <div
+                aria-labelledby="party-form-title"
                 aria-modal="true"
                 className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 py-8 backdrop-blur-sm"
                 role="dialog"
@@ -792,7 +794,7 @@ export default function CaseDetailPage({ params }: PageProps) {
                   onSubmit={handlePartySubmit}
                 >
                   <div className="mb-5">
-                    <h2 className="text-sm font-semibold text-[var(--text)]">
+                    <h2 className="text-sm font-semibold text-[var(--text)]" id="party-form-title">
                       {editingParty ? "Editar parte" : "Adicionar parte"}
                     </h2>
                     <p className="mt-1 text-xs leading-5 text-[var(--text2)]">

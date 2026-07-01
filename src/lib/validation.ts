@@ -73,6 +73,13 @@ function digitsOnly(value: string): string {
   return value.replace(/\D/g, "");
 }
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Valida e-mail com a mesma regra usada em clientes e no wizard (local@domínio.tld). */
+export function isValidEmail(value: string): boolean {
+  return EMAIL_PATTERN.test(value.trim());
+}
+
 function fileExtension(filename: string): string {
   const lastDotIndex = filename.lastIndexOf(".");
   if (lastDotIndex < 0) {
@@ -174,7 +181,7 @@ export function validateClientForm(input: ClientFormValidationInput): Validation
     errors.document = "Use apenas números, letras, pontos, barras ou hífens.";
   }
 
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (email && !isValidEmail(email)) {
     errors.email = "Informe um e-mail válido ou deixe o campo vazio.";
   }
 

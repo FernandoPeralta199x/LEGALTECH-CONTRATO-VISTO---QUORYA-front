@@ -31,6 +31,7 @@ export function ConfirmDialog({
 
   return (
     <div
+      aria-labelledby="confirm-dialog-title"
       aria-modal="true"
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 py-8 backdrop-blur-sm"
       role="dialog"
@@ -41,7 +42,7 @@ export function ConfirmDialog({
             <AlertTriangle aria-hidden="true" size={18} />
           </span>
           <div>
-            <h2 className="text-sm font-semibold text-[var(--text)]">{title}</h2>
+            <h2 className="text-sm font-semibold text-[var(--text)]" id="confirm-dialog-title">{title}</h2>
             <p className="mt-1 text-xs leading-5 text-[var(--text2)]">{description}</p>
           </div>
         </div>

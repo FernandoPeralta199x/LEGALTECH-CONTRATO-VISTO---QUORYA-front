@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  isValidEmail,
   validateCaseForm,
   validateClientForm,
   validateDevJwtForm,
@@ -313,4 +314,15 @@ test("validatePasswordChange accepts valid local password change input", () => {
     hasSpecial: true,
     hasUppercase: true
   });
+});
+
+test("isValidEmail accepts real addresses and rejects malformed ones", () => {
+  assert.equal(isValidEmail("contato@empresa.com.br"), true);
+  assert.equal(isValidEmail("  dev.local@example.test  "), true);
+  // o antigo `includes(\"@\")` deixava passar estes casos:
+  assert.equal(isValidEmail("@"), false);
+  assert.equal(isValidEmail("nome@"), false);
+  assert.equal(isValidEmail("nome@dominio"), false);
+  assert.equal(isValidEmail("sem-arroba.com"), false);
+  assert.equal(isValidEmail("a b@dominio.com"), false);
 });

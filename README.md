@@ -144,6 +144,22 @@ GET/POST /api/v1/cases/{id}/report[/generate|/review]   parecer + revisão human
 GET/POST/PUT /api/v1/pricing[...]           catálogo, estimativa, config
 ```
 
+## Segurança de dependências (npm audit)
+
+Estado em 2026-07-01: **2 vulnerabilidades moderadas**, ambas do mesmo pacote transitivo.
+
+- **Pacote:** `postcss <8.5.10` — XSS via `</style>` não escapado na saída do stringify de CSS
+  ([GHSA-qx2v-qp2m-jg93](https://github.com/advisories/GHSA-qx2v-qp2m-jg93)).
+- **Como entra:** apenas de forma transitiva, por dentro do `next` (`node_modules/next/node_modules/postcss`).
+  Não é dependência direta do projeto.
+- **Exposição real:** baixa. O advisory afeta quem processa CSS não confiável com o PostCSS;
+  aqui o PostCSS roda apenas no build do Tailwind sobre CSS próprio (sem input de terceiros).
+- **Decisão:** **não corrigir agora.** O único remediador oferecido pelo npm é
+  `npm audit fix --force`, que **rebaixa o `next` para 9.3.3** — uma mudança quebrada
+  (incompatível com Next 16 / React 19 / App Router usados aqui). A correção correta é aguardar
+  um release do Next que traga `postcss >= 8.5.10` e então subir o `next` normalmente.
+- **Não rode `npm audit fix --force` neste repositório.**
+
 ## Limites desta fase (MVP local)
 
 - Sem Cognito/auth gerenciado, sem S3/SQS/OCR/IA/RAG/e-mail reais (adapters mock no backend).

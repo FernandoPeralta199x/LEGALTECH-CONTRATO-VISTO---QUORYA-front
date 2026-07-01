@@ -37,6 +37,13 @@ export type DocumentUploadPayload = {
   metadata?: Record<string, unknown>;
 };
 
+export type UploadPhase = "registrando" | "enviando" | "finalizando" | "concluido";
+
+export type UploadProgress = {
+  percent: number;
+  phase: UploadPhase;
+};
+
 const AUTHORITATIVE_METADATA_FIELDS = new Set([
   "organization_id",
   "tenant_id",
@@ -169,14 +176,18 @@ export async function createDocument(
 }
 
 export async function uploadDocument(
-  payload: DocumentUploadPayload
+  payload: DocumentUploadPayload,
+  onProgress?: (progress: UploadProgress) => void
 ): Promise<ServiceResult<Document>> {
   // Backend serverless: registra o documento (JSON) e devolve uma URL pré-assinada;
   // o binário sobe direto ao storage via PUT (requer S3 configurado — fase AWS).
+  // O progresso é reportado por etapas do fluxo presign (o PUT via fetch não expõe
+  // progresso por bytes; a barra por bytes real fica para a fase AWS/S3 com XHR).
   const file = payload.file;
   const ext = file.name.includes(".")
     ? file.name.split(".").pop()!.toLowerCase()
     : "pdf";
+  onProgress?.({ percent: 15, phase: "registrando" });
   const reg = await apiClient.post<{ document_id: string; upload_url: string }>(
     "/api/v1/documents",
     {
@@ -186,14 +197,17 @@ export async function uploadDocument(
       file_size_bytes: file.size
     }
   );
+  onProgress?.({ percent: 55, phase: "enviando" });
   await fetch(reg.data.upload_url, {
     method: "PUT",
     body: file,
     headers: { "Content-Type": file.type || "application/octet-stream" }
   });
+  onProgress?.({ percent: 85, phase: "finalizando" });
   const response = await apiClient.get<BackendDocument>(
     `/api/v1/documents/${reg.data.document_id}`
   );
+  onProgress?.({ percent: 100, phase: "concluido" });
   return {
     data: mapBackendDocument(response.data),
     source: "api"
