@@ -174,14 +174,30 @@ function sanitizeClientPayload<T extends ClientCreate | ClientUpdate>(
   return sanitized as T;
 }
 
+type BackendClientListEnvelope = {
+  items: BackendClient[];
+  page?: number;
+  page_size?: number;
+  total?: number;
+  total_pages?: number;
+};
+
+function clientListItems(
+  raw: BackendClient[] | BackendClientListEnvelope
+): BackendClient[] {
+  return Array.isArray(raw) ? raw : raw.items ?? [];
+}
+
 export async function listClients(
   params: { q?: string } = {}
 ): Promise<ServiceResult<Client[]>> {
   const qs = params.q ? `?q=${encodeURIComponent(params.q)}` : "";
   try {
-    const response = await apiClient.get<BackendClient[]>(`/api/v1/clients${qs}`);
+    const response = await apiClient.get<BackendClient[] | BackendClientListEnvelope>(
+      `/api/v1/clients${qs}`
+    );
     return {
-      data: response.data.map(mapBackendClient),
+      data: clientListItems(response.data).map(mapBackendClient),
       source: "api"
     };
   } catch (error) {
@@ -193,6 +209,55 @@ export async function listClients(
       data: getStoredLocalClients(),
       fallbackReason: fallbackReason(error),
       source: "mock"
+    };
+  }
+}
+
+export type ClientListPageResult = {
+  data: Client[];
+  total: number;
+  page: number;
+  totalPages: number;
+  source: "api" | "mock";
+  fallbackReason?: string;
+};
+
+export async function listClientsPaged(
+  params: { q?: string; page?: number; pageSize?: number } = {}
+): Promise<ClientListPageResult> {
+  const search = new URLSearchParams();
+  if (params.q) search.set("q", params.q);
+  if (params.page) search.set("page", String(params.page));
+  if (params.pageSize) search.set("page_size", String(params.pageSize));
+  const qs = search.toString() ? `?${search.toString()}` : "";
+  try {
+    const response = await apiClient.get<BackendClient[] | BackendClientListEnvelope>(
+      `/api/v1/clients${qs}`
+    );
+    const raw = response.data;
+    const items = clientListItems(raw).map(mapBackendClient);
+    if (Array.isArray(raw)) {
+      return { data: items, total: items.length, page: 1, totalPages: 1, source: "api" };
+    }
+    return {
+      data: items,
+      total: raw.total ?? items.length,
+      page: raw.page ?? params.page ?? 1,
+      totalPages: raw.total_pages ?? 1,
+      source: "api"
+    };
+  } catch (error) {
+    if (!shouldUseMockFallback(error)) {
+      throw error;
+    }
+    const local = getStoredLocalClients();
+    return {
+      data: local,
+      total: local.length,
+      page: 1,
+      totalPages: 1,
+      source: "mock",
+      fallbackReason: fallbackReason(error)
     };
   }
 }

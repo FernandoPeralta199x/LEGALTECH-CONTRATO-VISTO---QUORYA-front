@@ -2,6 +2,8 @@
 
 import {
   BriefcaseBusiness,
+  ChevronLeft,
+  ChevronRight,
   Pencil,
   Mail,
   Phone,
@@ -11,7 +13,7 @@ import {
   UsersRound
 } from "lucide-react";
 import type { FormEvent } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
@@ -25,7 +27,7 @@ import { PageTitle } from "@/components/PageTitle";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatDate } from "@/lib/formatters";
 import { errorMessage } from "@/src/lib/errorMessage";
-import { createClient, listClients, updateClient } from "@/src/services/clients";
+import { createClient, listClientsPaged, updateClient } from "@/src/services/clients";
 import { validateClientForm, type ValidationErrors } from "@/src/lib/validation";
 import {
   buildClientCreatePayload,
@@ -50,6 +52,8 @@ const riskConfig: Record<string, { label: string; className: string }> = {
 
 const contractRoleOptions = Object.entries(clientContractRoleLabels);
 
+const CLIENTS_PAGE_SIZE = 24;
+
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [error, setError] = useState("");
@@ -59,6 +63,10 @@ export default function ClientsPage() {
   const [formErrors, setFormErrors] = useState<ValidationErrors>({});
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -69,8 +77,14 @@ export default function ClientsPage() {
     setSuccessMessage("");
 
     try {
-      const result = await listClients();
+      const result = await listClientsPaged({
+        q: debouncedQuery || undefined,
+        page,
+        pageSize: CLIENTS_PAGE_SIZE
+      });
       setClients(result.data);
+      setTotal(result.total);
+      setTotalPages(result.totalPages);
       setFallbackReason(result.source === "mock" ? result.fallbackReason ?? "" : "");
     } catch (err) {
       setError(errorMessage(err, "Não foi possível carregar clientes."));
@@ -78,37 +92,22 @@ export default function ClientsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [debouncedQuery, page]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void refreshClients();
-    }, 0);
-
-    return () => window.clearTimeout(timer);
+    void refreshClients();
   }, [refreshClients]);
 
-  const filteredClients = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    if (!normalized) {
-      return clients;
-    }
+  // busca server-side com debounce (acha em toda a base, não só na página)
+  useEffect(() => {
+    const t = window.setTimeout(() => setDebouncedQuery(query.trim()), 350);
+    return () => window.clearTimeout(t);
+  }, [query]);
 
-    return clients.filter((client) =>
-      [
-        client.displayName,
-        client.name,
-        client.email,
-        client.phone,
-        client.documentLabel,
-        clientContractRoleLabels[client.contractRole ?? "other"],
-        client.personType ? clientPersonTypeLabels[client.personType] : ""
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(normalized)
-    );
-  }, [clients, query]);
+  // ao mudar a busca, volta para a 1a página
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedQuery]);
 
   function updateForm<K extends keyof ClientFormState>(
     field: K,
@@ -187,6 +186,9 @@ export default function ClientsPage() {
             )
           : [result.data, ...current]
       );
+      if (!editingClient) {
+        setTotal((t) => t + 1);
+      }
       setFallbackReason(result.source === "mock" ? result.fallbackReason ?? "" : "");
       setSuccessMessage(
         result.source === "mock"
@@ -425,7 +427,8 @@ export default function ClientsPage() {
           </div>
           {!loading && (
             <p className="text-xs text-[var(--text2)]">
-              {filteredClients.length} cliente{filteredClients.length !== 1 ? "s" : ""} exibido{filteredClients.length !== 1 ? "s" : ""}
+              {total} cliente{total !== 1 ? "s" : ""} no total
+              {totalPages > 1 ? ` · página ${page} de ${totalPages}` : ""}
             </p>
           )}
         </div>
@@ -445,7 +448,7 @@ export default function ClientsPage() {
             description="A listagem de clientes não pôde ser carregada. Erros de autorização e validação da API local são exibidos sem fallback."
             details={error}
           />
-        ) : filteredClients.length === 0 ? (
+        ) : clients.length === 0 ? (
           <EmptyState
             action={
               query ? (
@@ -473,7 +476,7 @@ export default function ClientsPage() {
           />
         ) : (
           <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-            {filteredClients.map((client) => {
+            {clients.map((client) => {
               const risk = riskConfig[client.riskLevel] ?? riskConfig.low;
               const displayName = client.displayName ?? client.name;
               const personTypeLabel = client.personType
@@ -551,6 +554,30 @@ export default function ClientsPage() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {!loading && clients.length > 0 && totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-center gap-4 text-sm text-[var(--text2)]">
+            <Button
+              disabled={page <= 1}
+              icon={<ChevronLeft size={15} />}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              variant="secondary"
+            >
+              Anterior
+            </Button>
+            <span>
+              Página {page} de {totalPages}
+            </span>
+            <Button
+              disabled={page >= totalPages}
+              iconRight={<ChevronRight size={15} />}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              variant="secondary"
+            >
+              Próxima
+            </Button>
           </div>
         )}
       </AppLayout>

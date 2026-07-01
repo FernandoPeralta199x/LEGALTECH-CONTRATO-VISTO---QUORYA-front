@@ -4,6 +4,8 @@ import {
   ArrowRight,
   BriefcaseBusiness,
   Calendar,
+  ChevronLeft,
+  ChevronRight,
   FileText,
   Filter,
   Pencil,
@@ -17,7 +19,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import type { FormEvent } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
@@ -33,7 +35,7 @@ import { PriorityBadge } from "@/components/PriorityBadge";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatDate, caseDisplayTitle } from "@/lib/formatters";
 import { errorMessage } from "@/src/lib/errorMessage";
-import { createCase, deleteCase, listCases, updateCase } from "@/src/services/cases";
+import { createCase, deleteCase, listCasesPaged, updateCase } from "@/src/services/cases";
 import { listClients } from "@/src/services/clients";
 import { validateCaseForm, type ValidationErrors } from "@/src/lib/validation";
 import type { Case, CaseCreate, CaseStatus, CaseUpdate, Client, Priority, ProductType } from "@/types";
@@ -93,6 +95,8 @@ const statusFilterOptions: Array<{ id: CaseStatus; label: string }> = [
   { id: "failed", label: "Falha" },
   { id: "cancelled", label: "Cancelado" }
 ];
+
+const CASES_PAGE_SIZE = 24;
 
 type CaseForm = {
   caseType: string;
@@ -164,6 +168,10 @@ export default function CasesPage() {
   const [formErrors, setFormErrors] = useState<ValidationErrors>({});
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -230,6 +238,7 @@ export default function CasesPage() {
     try {
       const result = await deleteCase(legalCase.id);
       setCases((current) => current.filter((c) => c.id !== legalCase.id));
+      setTotal((t) => Math.max(0, t - 1));
       setSuccessMessage(
         result.source === "mock"
           ? "Caso removido do fallback local."
@@ -254,9 +263,19 @@ export default function CasesPage() {
 
     try {
       const clientsResult = await listClients();
-      const casesResult = await listCases(clientsResult.data);
+      const casesResult = await listCasesPaged(
+        {
+          q: debouncedQuery || undefined,
+          status: (filter || undefined) as CaseStatus | undefined,
+          page,
+          pageSize: CASES_PAGE_SIZE
+        },
+        clientsResult.data
+      );
       setClients(clientsResult.data);
       setCases(casesResult.data);
+      setTotal(casesResult.total);
+      setTotalPages(casesResult.totalPages);
       setForm((current) => ({
         ...current,
         clientId: current.clientId || clientsResult.data[0]?.id || ""
@@ -272,34 +291,22 @@ export default function CasesPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [debouncedQuery, filter, page]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void refreshCases();
-    }, 0);
-
-    return () => window.clearTimeout(timer);
+    void refreshCases();
   }, [refreshCases]);
 
-  const filteredCases = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    return cases.filter((legalCase) => {
-      const matchesStatus = filter ? legalCase.status === filter : true;
-      const matchesQuery = normalized
-        ? [
-            legalCase.code,
-            legalCase.clientName,
-            legalCase.caseType,
-            caseDisplayTitle(legalCase)
-          ]
-            .join(" ")
-            .toLowerCase()
-            .includes(normalized)
-        : true;
-      return matchesStatus && matchesQuery;
-    });
-  }, [cases, filter, query]);
+  // busca server-side com debounce (acha em toda a base, não só na página)
+  useEffect(() => {
+    const t = window.setTimeout(() => setDebouncedQuery(query.trim()), 350);
+    return () => window.clearTimeout(t);
+  }, [query]);
+
+  // ao mudar busca/filtro, volta para a 1a página
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedQuery, filter]);
 
   function updateForm<K extends keyof CaseForm>(field: K, value: CaseForm[K]) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -343,6 +350,7 @@ export default function CasesPage() {
         priority: form.priority
       };
       const result = await createCase(payload, clients);
+      setTotal((t) => t + 1);
       setCases((current) => [result.data, ...current]);
       setFallbackReason(result.source === "mock" ? result.fallbackReason ?? "" : "");
       setSuccessMessage(
@@ -553,7 +561,8 @@ export default function CasesPage() {
           </div>
           {!loading && (
             <p className="text-xs text-[var(--text2)]">
-              {filteredCases.length} caso{filteredCases.length !== 1 ? "s" : ""} exibido{filteredCases.length !== 1 ? "s" : ""}
+              {total} caso{total !== 1 ? "s" : ""} no total
+              {totalPages > 1 ? ` · página ${page} de ${totalPages}` : ""}
             </p>
           )}
         </div>
@@ -573,7 +582,7 @@ export default function CasesPage() {
             description="A listagem de casos não pôde ser carregada pela API local. Se for 401/403, faça login novamente com uma conta autorizada."
             details={error}
           />
-        ) : filteredCases.length === 0 ? (
+        ) : cases.length === 0 ? (
           <EmptyState
             action={
               query || filter ? (
@@ -609,7 +618,7 @@ export default function CasesPage() {
           />
         ) : (
           <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-            {filteredCases.map((c) => (
+            {cases.map((c) => (
               <Link
                 className="cv-card cv-card-hover group block p-5"
                 href={`/cases/${c.id}`}
@@ -708,6 +717,30 @@ export default function CasesPage() {
                 </div>
               </Link>
             ))}
+          </div>
+        )}
+
+        {!loading && cases.length > 0 && totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-center gap-4 text-sm text-[var(--text2)]">
+            <Button
+              disabled={page <= 1}
+              icon={<ChevronLeft size={15} />}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              variant="secondary"
+            >
+              Anterior
+            </Button>
+            <span>
+              Página {page} de {totalPages}
+            </span>
+            <Button
+              disabled={page >= totalPages}
+              iconRight={<ChevronRight size={15} />}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              variant="secondary"
+            >
+              Próxima
+            </Button>
           </div>
         )}
 

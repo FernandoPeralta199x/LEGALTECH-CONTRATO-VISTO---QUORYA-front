@@ -1175,6 +1175,51 @@ export async function listCases(
   }
 }
 
+export type CaseListPageResult = {
+  data: Case[];
+  total: number;
+  page: number;
+  totalPages: number;
+  source: "api" | "mock";
+  fallbackReason?: string;
+};
+
+export async function listCasesPaged(
+  filters: CaseListFilters = {},
+  clients: Client[] = []
+): Promise<CaseListPageResult> {
+  try {
+    const response = await apiClient.get<BackendCaseListPayload>(
+      `/api/v1/cases${buildCaseListQuery(filters)}`
+    );
+    const payload = response.data;
+    const data = mapCaseListPayload(payload, clients);
+    if (isPaginatedCaseList(payload)) {
+      return {
+        data,
+        total: payload.total,
+        page: payload.page,
+        totalPages: payload.total_pages,
+        source: "api"
+      };
+    }
+    return { data, total: data.length, page: 1, totalPages: 1, source: "api" };
+  } catch (error) {
+    if (!shouldUseMockFallback(error)) {
+      throw error;
+    }
+    const local = getStoredLocalCases();
+    return {
+      data: local,
+      total: local.length,
+      page: 1,
+      totalPages: 1,
+      source: "mock",
+      fallbackReason: fallbackReason(error)
+    };
+  }
+}
+
 export async function submitWizardRequest(
   input: WizardOperationalSubmitInput
 ): Promise<ServiceResult<WizardOperationalSubmitResult>> {

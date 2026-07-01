@@ -32,6 +32,7 @@ import { formatDate } from "@/lib/formatters";
 import { errorMessage } from "@/src/lib/errorMessage";
 import { listCases } from "@/src/services/cases";
 import { listClients } from "@/src/services/clients";
+import { getDashboardStats, type DashboardStats } from "@/src/services/dashboard";
 import { listDocuments } from "@/src/services/documents";
 import type { Case, Client, Document } from "@/types";
 
@@ -149,6 +150,7 @@ export default function DashboardPage() {
   const [error, setError] = useState("");
   const [fallbackActive, setFallbackActive] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
 
   const refreshDashboard = useCallback(async () => {
     setLoading(true);
@@ -156,10 +158,12 @@ export default function DashboardPage() {
 
     try {
       const clientsResult = await listClients();
-      const [casesResult, documentsResult] = await Promise.all([
+      const [casesResult, documentsResult, statsResult] = await Promise.all([
         listCases(clientsResult.data),
-        listDocuments()
+        listDocuments(),
+        getDashboardStats().catch(() => ({ data: null, source: "mock" as const }))
       ]);
+      setStats(statsResult.data);
       setClients(clientsResult.data);
       setDocuments(documentsResult.data);
       setCases(
@@ -194,6 +198,17 @@ export default function DashboardPage() {
     () => cases.filter((c) => ACTIVE_STATUSES.has(c.status)).length,
     [cases]
   );
+  // Totais reais vêm de /dashboard/stats (a lista carregada é só a 1ª página).
+  const totalCasesDisplay = stats?.totalCases ?? cases.length;
+  const totalClientsDisplay = stats?.totalClients ?? clients.length;
+  const activeCasesDisplay = stats
+    ? Math.max(
+        0,
+        stats.totalCases -
+          (stats.casesByStatus["completed"] ?? 0) -
+          (stats.casesByStatus["closed"] ?? 0)
+      )
+    : activeCasesCount;
   const recentCases = useMemo(() => cases.slice(0, 4), [cases]);
   const recentDocuments = useMemo(() => documents.slice(0, 3), [documents]);
   const hasData =
@@ -314,7 +329,7 @@ export default function DashboardPage() {
                   [
                     {
                       label: "Total de casos",
-                      value: cases.length,
+                      value: totalCasesDisplay,
                       detail: "Pedidos já convertidos em casos",
                       icon: BriefcaseBusiness,
                       color: "text-[var(--teal)]",
@@ -322,7 +337,7 @@ export default function DashboardPage() {
                     },
                     {
                       label: "Clientes",
-                      value: clients.length,
+                      value: totalClientsDisplay,
                       detail: "Base de relacionamento",
                       icon: UsersRound,
                       color: "text-[var(--blue)]",
@@ -338,7 +353,7 @@ export default function DashboardPage() {
                     },
                     {
                       label: "Casos em andamento",
-                      value: activeCasesCount,
+                      value: activeCasesDisplay,
                       detail: "Acompanhamento operacional",
                       icon: ClipboardCheck,
                       color: "text-[var(--orange)]",
