@@ -469,13 +469,13 @@ function LoginContent() {
             />
           </div>
           <div className="text-center">
-            <p className="text-sm font-semibold tracking-[0.18em] text-[var(--text)]">
+            <p className="text-base font-semibold tracking-[0.18em] text-[var(--text)]">
               QUORYA
             </p>
-            <p className="mt-0.5 text-[11px] text-[var(--teal)]">
+            <p className="mt-1 text-[13px] text-[var(--teal)]">
               Inteligência para Vendas
             </p>
-            <p className="mt-1 text-[10px] text-[var(--text3)]">© 2026</p>
+            <p className="mt-1 text-[13px] text-[var(--text3)]">© 2026</p>
           </div>
         </div>
       </section>
@@ -505,7 +505,7 @@ function Field({
 
 const passwordRequirements = [
   ["hasMinLength", "Mínimo de 12 caracteres"],
-  ["hasMaxLength", "Máximo de 128 caracteres"],
+  ["hasMaxLength", "Máximo de 18 caracteres"],
   ["hasLowercase", "Pelo menos 1 letra minúscula"],
   ["hasUppercase", "Pelo menos 1 letra maiúscula"],
   ["hasSpecial", "Pelo menos 1 caractere especial"]

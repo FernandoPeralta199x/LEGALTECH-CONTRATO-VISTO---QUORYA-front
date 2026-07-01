@@ -336,7 +336,7 @@ export function validateDevJwtForm(token: string): ValidationResult {
 export function getPasswordRequirements(password: string): PasswordRequirementState {
   return {
     hasLowercase: /[a-z]/.test(password),
-    hasMaxLength: password.length <= 128,
+    hasMaxLength: password.length <= 18,
     hasMinLength: password.length >= 12,
     hasSpecial: /[^A-Za-z0-9]/.test(password),
     hasUppercase: /[A-Z]/.test(password)
@@ -352,8 +352,8 @@ export function validatePasswordCreate(input: {
 
   if (!password) {
     errors.newPassword = "Informe a senha.";
-  } else if (password.length < 12 || password.length > 128) {
-    errors.newPassword = "A senha deve ter entre 12 e 128 caracteres.";
+  } else if (password.length < 12 || password.length > 18) {
+    errors.newPassword = "A senha deve ter entre 12 e 18 caracteres.";
   } else if (!Object.values(requirements).every(Boolean)) {
     errors.newPassword = "A senha deve atender todos os requisitos.";
   }
@@ -382,8 +382,8 @@ export function validatePasswordChange(input: {
 
   if (!newPassword) {
     errors.newPassword = "Informe a nova senha.";
-  } else if (newPassword.length < 12 || newPassword.length > 128) {
-    errors.newPassword = "A senha deve ter entre 12 e 128 caracteres.";
+  } else if (newPassword.length < 12 || newPassword.length > 18) {
+    errors.newPassword = "A senha deve ter entre 12 e 18 caracteres.";
   } else if (!meetsAllRequirements) {
     errors.newPassword = "A senha deve atender todos os requisitos.";
   }
