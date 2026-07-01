@@ -68,32 +68,15 @@ const productOptions: Array<{ id: ProductType; label: string }> = [
   { id: "reuniao_equipe", label: "Reunião com equipe" }
 ];
 
+// Status reais que um caso assume no banco. Usado no filtro (server-side, ?status=)
+// e no modal de edição — todos aceitos pelo CaseUpdate (CASE_STATUS_PATTERN).
 const statusFilterOptions: Array<{ id: CaseStatus; label: string }> = [
-  { id: "draft", label: "Rascunho" },
-  { id: "created", label: "Criado" },
-  { id: "document_attached", label: "Documento anexado" },
   { id: "awaiting_triage", label: "Aguardando triagem" },
-  { id: "triage_running", label: "Triagem em andamento" },
-  { id: "triage_partial", label: "Triagem parcial" },
-  { id: "triage_completed", label: "Triagem concluída" },
-  { id: "ai_running", label: "IA mock em andamento" },
+  { id: "open", label: "Aberto" },
+  { id: "in_progress", label: "Em andamento" },
   { id: "report_ready", label: "Relatório pronto" },
-  { id: "needs_human_review", label: "Revisão humana necessária" },
-  { id: "submitted", label: "Enviado no MVP" },
-  { id: "triagem_pendente", label: "Triagem" },
-  { id: "coleta_pendente", label: "Coleta" },
-  { id: "processamento_documental", label: "Processamento local de documentos" },
-  { id: "analise_contratual", label: "Análise local" },
-  { id: "compliance", label: "Compliance" },
-  { id: "minuta_relatorio", label: "Minuta de relatório" },
-  { id: "revisao_humana", label: "Revisão conceitual" },
-  { id: "processing", label: "Processamento local" },
-  { id: "review", label: "Revisão local" },
-  { id: "approved", label: "Aprovação local" },
-  { id: "delivered", label: "Entrega local" },
-  { id: "completed", label: "Concluído no MVP" },
-  { id: "failed", label: "Falha" },
-  { id: "cancelled", label: "Cancelado" }
+  { id: "completed", label: "Concluído" },
+  { id: "closed", label: "Fechado" }
 ];
 
 const CASES_PAGE_SIZE = 24;

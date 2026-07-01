@@ -30,6 +30,9 @@ export const CASE_STATUS_VALUES = [
 export type StandardCaseStatus = (typeof CASE_STATUS_VALUES)[number];
 
 export type LegacyCaseStatus =
+  | "open"
+  | "in_progress"
+  | "closed"
   | "submitted"
   | "triagem_pendente"
   | "coleta_pendente"

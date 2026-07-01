@@ -21,6 +21,12 @@ const triageMap: Record<string, Cfg> = {
 };
 
 const otherMap: Record<string, Cfg> = {
+  /* ── Case (status reais do banco) ──────────────────────────────── */
+  open:                     { label: "Aberto",                  dot: "bg-blue-500",               tone: "cv-badge-blue" },
+  in_progress:              { label: "Em andamento",            dot: "bg-amber-500 animate-pulse", tone: "cv-badge-orange" },
+  awaiting_triage:          { label: "Aguardando triagem",      dot: "bg-slate-400",              tone: "cv-badge-muted" },
+  report_ready:             { label: "Relatório pronto",        dot: "bg-teal-500",               tone: "cv-badge-teal" },
+  closed:                   { label: "Fechado",                 dot: "bg-slate-600",              tone: "cv-badge-muted" },
   /* ── Case ──────────────────────────────────────────────────────── */
   draft:                    { label: "Rascunho",                dot: "bg-slate-500",              tone: "cv-badge-muted" },
   submitted:                { label: "Registrado localmente",   dot: "bg-blue-500",               tone: "cv-badge-blue" },
