@@ -454,6 +454,30 @@ function LoginContent() {
           simulada localmente; em produção o link será enviado por e-mail. O
           token de sessão fica apenas no navegador.
         </div>
+
+        <div className="mt-6 flex flex-col items-center gap-2 border-t border-[var(--bd)] pt-5">
+          <div className="relative h-16 w-16">
+            <span
+              aria-hidden="true"
+              className="absolute -inset-[3px] rounded-full border border-[rgba(95,200,152,0.4)]"
+            />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              alt="QUORYA — Inteligência para Vendas"
+              className="h-16 w-16 rounded-full object-cover"
+              src="/quorya-emblem.png"
+            />
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-semibold tracking-[0.18em] text-[var(--text)]">
+              QUORYA
+            </p>
+            <p className="mt-0.5 text-[11px] text-[var(--teal)]">
+              Inteligência para Vendas
+            </p>
+            <p className="mt-1 text-[10px] text-[var(--text3)]">© 2026</p>
+          </div>
+        </div>
       </section>
     </main>
   );
