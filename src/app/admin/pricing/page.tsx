@@ -106,7 +106,9 @@ export default function AdminPricingPage() {
   }, []);
 
   useEffect(() => {
-    void loadAll();
+    // defer (setTimeout 0) evita cascade render sincrono dentro do efeito
+    const t = window.setTimeout(() => void loadAll(), 0);
+    return () => window.clearTimeout(t);
   }, [loadAll]);
 
   const hasChanges = useMemo(() => {

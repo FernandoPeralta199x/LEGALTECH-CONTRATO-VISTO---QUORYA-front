@@ -95,7 +95,9 @@ export default function ClientsPage() {
   }, [debouncedQuery, page]);
 
   useEffect(() => {
-    void refreshClients();
+    // defer (setTimeout 0) evita cascade render sincrono dentro do efeito
+    const t = window.setTimeout(() => void refreshClients(), 0);
+    return () => window.clearTimeout(t);
   }, [refreshClients]);
 
   // busca server-side com debounce (acha em toda a base, não só na página)
@@ -104,9 +106,10 @@ export default function ClientsPage() {
     return () => window.clearTimeout(t);
   }, [query]);
 
-  // ao mudar a busca, volta para a 1a página
+  // ao mudar a busca, volta para a 1a página (deferido)
   useEffect(() => {
-    setPage(1);
+    const t = window.setTimeout(() => setPage(1), 0);
+    return () => window.clearTimeout(t);
   }, [debouncedQuery]);
 
   function updateForm<K extends keyof ClientFormState>(

@@ -277,7 +277,9 @@ export default function CasesPage() {
   }, [debouncedQuery, filter, page]);
 
   useEffect(() => {
-    void refreshCases();
+    // defer (setTimeout 0) evita cascade render sincrono dentro do efeito
+    const t = window.setTimeout(() => void refreshCases(), 0);
+    return () => window.clearTimeout(t);
   }, [refreshCases]);
 
   // busca server-side com debounce (acha em toda a base, não só na página)
@@ -286,9 +288,10 @@ export default function CasesPage() {
     return () => window.clearTimeout(t);
   }, [query]);
 
-  // ao mudar busca/filtro, volta para a 1a página
+  // ao mudar busca/filtro, volta para a 1a página (deferido)
   useEffect(() => {
-    setPage(1);
+    const t = window.setTimeout(() => setPage(1), 0);
+    return () => window.clearTimeout(t);
   }, [debouncedQuery, filter]);
 
   function updateForm<K extends keyof CaseForm>(field: K, value: CaseForm[K]) {

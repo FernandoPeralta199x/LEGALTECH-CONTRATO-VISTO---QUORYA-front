@@ -36,13 +36,19 @@ export function Header({ onMenuClick }: HeaderProps) {
   // busca real (debounced) em casos + clientes; mín. 2 caracteres
   useEffect(() => {
     const term = query.trim();
-    if (term.length < 2) {
-      setCases([]); setClients([]); setResultsOpen(false); setLoading(false);
-      return;
-    }
     let cancelled = false;
-    setLoading(true);
+    // setState fica dentro do setTimeout (deferido) para nao disparar cascade
+    // render sincrono no corpo do efeito (react-hooks/set-state-in-effect)
     const t = setTimeout(async () => {
+      if (term.length < 2) {
+        if (cancelled) return;
+        setCases([]);
+        setClients([]);
+        setResultsOpen(false);
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
       try {
         const [c, cl] = await Promise.all([
           listCases({ q: term, pageSize: 6 }).catch(() => ({ data: [] as Case[] })),
@@ -55,7 +61,7 @@ export function Header({ onMenuClick }: HeaderProps) {
       } finally {
         if (!cancelled) setLoading(false);
       }
-    }, 250);
+    }, term.length < 2 ? 0 : 250);
     return () => { cancelled = true; clearTimeout(t); };
   }, [query]);
 

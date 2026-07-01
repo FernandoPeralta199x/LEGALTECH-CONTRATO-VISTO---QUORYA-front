@@ -1142,13 +1142,6 @@ function makeMockCase(payload: CaseCreate, clients: Client[] = []): Case {
   };
 }
 
-export function enrichCasesWithClients(cases: Case[], clients: Client[]): Case[] {
-  return cases.map((legalCase) => {
-    const client = clients.find((item) => item.id === legalCase.clientId);
-    return client ? { ...legalCase, clientName: client.name } : legalCase;
-  });
-}
-
 export async function listCases(
   filtersOrClients: CaseListFilters | Client[] = {},
   maybeClients: Client[] = []
