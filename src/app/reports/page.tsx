@@ -166,15 +166,11 @@ export default function ReportsPage() {
           ))}
         </div>
 
-        <div className="mb-6 flex items-start gap-3 rounded-lg border border-amber-500/25 bg-amber-500/10 px-5 py-4">
-          <Lock className="shrink-0 text-amber-700" size={18} />
+        <div className="mb-6 flex items-start gap-3 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-5 py-3">
+          <Lock aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--text3)]" size={15} />
           <p className="text-xs leading-5 text-[var(--text2)]">
-            <span className="font-semibold text-amber-700 dark:text-amber-300">
-              MVP local/mock:
-            </span>{" "}
-            IA real, revisão persistida e exportação PDF real ainda não estão
-            implementadas. Gere o relatório dentro do detalhe do caso para que
-            ele apareça nesta lista operacional.
+            Gere o relatório dentro do detalhe do caso (aba Relatório) para que
+            ele apareça nesta lista de entrega.
           </p>
         </div>
 
@@ -254,15 +250,13 @@ export default function ReportsPage() {
                         Ver caso
                         <ArrowRight size={13} />
                       </Link>
-                      <button
-                        className="cv-btn cv-btn-secondary min-h-11 cursor-not-allowed px-3 text-xs font-semibold opacity-60"
-                        disabled
+                      <span
+                        className="cv-badge cv-badge-muted"
                         title={meta.exportTitle}
-                        type="button"
                       >
-                        <Download size={13} />
+                        <Download aria-hidden="true" size={12} />
                         {meta.exportLabel}
-                      </button>
+                      </span>
                     </div>
                   </div>
 

@@ -564,52 +564,6 @@ export default function DashboardPage() {
               </Card>
             </div>
 
-            {/* ── MVP limits ── */}
-            <section aria-labelledby="mvp-limits-heading">
-              <div className="rounded-lg border border-blue-500/20 bg-blue-50 px-5 py-4 dark:bg-blue-500/10">
-                <div className="flex items-start gap-3">
-                  <Info
-                    aria-hidden="true"
-                    className="mt-0.5 shrink-0 text-blue-600 dark:text-blue-400"
-                    size={15}
-                  />
-                  <div>
-                    <p
-                      className="text-xs font-semibold text-blue-800 dark:text-blue-300"
-                      id="mvp-limits-heading"
-                    >
-                      Ambiente local de desenvolvimento
-                    </p>
-                    <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 sm:grid-cols-3">
-                      {[
-                        "Sem Cognito real",
-                        "Sem S3 real",
-                        "Sem SQS real",
-                        "Sem OCR real",
-                        "Sem IA / RAG real",
-                        "Sem e-mail (SES) real"
-                      ].map((item) => (
-                        <p
-                          className="flex items-center gap-1.5 text-[11px] text-blue-700 dark:text-blue-300/80"
-                          key={item}
-                        >
-                          <span
-                            aria-hidden="true"
-                            className="h-1 w-1 shrink-0 rounded-full bg-blue-400"
-                          />
-                          {item}
-                        </p>
-                      ))}
-                    </div>
-                    <p className="mt-2 text-[11px] text-blue-600 dark:text-blue-400/80">
-                      Use apenas dados fictícios neste ambiente. Nenhuma
-                      informação real deve ser inserida.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </section>
-
           </div>
         )}
       </AppLayout>

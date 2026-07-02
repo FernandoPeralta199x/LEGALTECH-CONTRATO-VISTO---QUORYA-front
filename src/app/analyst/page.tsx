@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  AlertTriangle,
   ClipboardCheck,
   Clock,
   FileText,
@@ -125,15 +124,6 @@ export default function AnalystPage() {
             API local indisponível: a fila abaixo usa apenas casos criados no fallback local deste navegador.
           </Notification>
         )}
-
-        <div className="mb-6 flex items-start gap-3 rounded-lg border border-amber-500/25 bg-amber-500/10 px-5 py-4">
-          <AlertTriangle className="mt-0.5 shrink-0 text-amber-400" size={18} />
-          <p className="text-sm leading-6 text-[var(--text2)]">
-            Área operacional do MVP local/mock. Os itens abaixo vêm de{" "}
-            <code>GET /api/v1/cases</code> ou do fallback local explícito; casos
-            demonstrativos fixos não são exibidos nesta fila.
-          </p>
-        </div>
 
         <div className="mb-6 grid gap-4 sm:grid-cols-3">
           {[

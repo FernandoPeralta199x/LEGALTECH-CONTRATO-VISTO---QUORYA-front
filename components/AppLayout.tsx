@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 
+import { EnvBanner } from "@/components/EnvBanner";
 import { Header } from "@/components/Header";
 import { MobileSidebar, Sidebar } from "@/components/Sidebar";
 
@@ -22,6 +23,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         <div className="min-w-0 flex-1">
           <Header onMenuClick={() => setMobileOpen(true)} />
           <main className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 sm:py-7">
+            <EnvBanner />
             {children}
           </main>
         </div>

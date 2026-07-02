@@ -11,7 +11,6 @@ import {
   MessageCircle,
   Moon,
   Palette,
-  Save,
   Shield,
   Sun,
   User,
@@ -98,7 +97,6 @@ const requirementLabels = [
 export default function SettingsPage() {
   const session = useDevSession();
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]["id"]>("org");
-  const [saved, setSaved] = useState(false);
   const [theme, setTheme] = useState<ThemePreference>(() => getStoredThemePreference());
   const [notificationPreferences, setNotificationPreferences] =
     useState<NotificationPreferences>(() => getStoredNotificationPreferences());
@@ -143,11 +141,6 @@ export default function SettingsPage() {
       }
     ];
   }, [session]);
-
-  function handleSave() {
-    setSaved(true);
-    window.setTimeout(() => setSaved(false), 2000);
-  }
 
   function handleThemeChange(nextTheme: ThemePreference) {
     setTheme(nextTheme);
@@ -238,9 +231,9 @@ export default function SettingsPage() {
                 <div className="max-w-lg space-y-4">
                   <Field label="Nome da organização">
                     <input
-                      className={inputClass}
-                      defaultValue="Organização MVP"
-                      type="text"
+                      className={`${inputClass} cursor-not-allowed opacity-60`}
+                      disabled
+                      value="Organização MVP"
                     />
                   </Field>
                   <Field label="CNPJ">
@@ -257,19 +250,13 @@ export default function SettingsPage() {
                         disabled
                         value="MVP Local"
                       />
-                      <Button type="button" variant="secondary">
-                        Upgrade em roadmap
-                      </Button>
+                      <span className="cv-badge cv-badge-muted shrink-0">Upgrade — roadmap</span>
                     </div>
                   </Field>
-                  <Button
-                    icon={<Save size={14} />}
-                    onClick={handleSave}
-                    type="button"
-                    variant={saved ? "secondary" : "primary"}
-                  >
-                    {saved ? "Registrado localmente" : "Registrar configuração local"}
-                  </Button>
+                  <p className="text-[11px] leading-5 text-[var(--text3)]">
+                    Dados da organização são somente leitura nesta fase. Edição,
+                    troca de plano e billing entram com o backend de produção.
+                  </p>
                 </div>
               </Card>
             )}
@@ -285,9 +272,10 @@ export default function SettingsPage() {
                   </p>
                 </div>
                 <div className="mt-4 border-t border-slate-200 pt-4 dark:border-slate-800">
-                  <Button icon={<User size={13} />} type="button" variant="secondary">
-                    Convite em roadmap
-                  </Button>
+                  <span className="cv-badge cv-badge-muted">
+                    <User aria-hidden="true" size={12} />
+                    Convite — roadmap
+                  </span>
                 </div>
               </Card>
             )}

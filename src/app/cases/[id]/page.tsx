@@ -1400,13 +1400,9 @@ export default function CaseDetailPage({ params }: PageProps) {
                     PDF/exportação real ainda não está implementado nesta versão;
                     permanece como etapa planejada do roadmap.
                   </p>
-                  <button
-                    className="ml-auto shrink-0 rounded-lg border border-[var(--bd)] bg-[var(--surf3)] px-3 py-1.5 text-xs font-medium text-[var(--text3)] cursor-not-allowed opacity-50"
-                    disabled
-                    type="button"
-                  >
-                    PDF no roadmap
-                  </button>
+                  <span className="ml-auto shrink-0 cv-badge cv-badge-muted">
+                    Roadmap
+                  </span>
                 </div>
               </div>
             )}
