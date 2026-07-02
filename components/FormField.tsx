@@ -1,8 +1,13 @@
-import type {
-  InputHTMLAttributes,
-  ReactNode,
-  SelectHTMLAttributes,
-  TextareaHTMLAttributes
+import {
+  Children,
+  cloneElement,
+  isValidElement,
+  useId,
+  type InputHTMLAttributes,
+  type ReactElement,
+  type ReactNode,
+  type SelectHTMLAttributes,
+  type TextareaHTMLAttributes
 } from "react";
 
 import { cn } from "@/lib/cn";
@@ -37,19 +42,40 @@ export function FormField({
   label,
   required = false
 }: FormFieldProps) {
+  const generatedId = useId();
+  // Associação explícita (label htmlFor -> control id) em vez de label implícito
+  // (que envolvia o controle e gerava HTML inválido quando o filho era composto,
+  // ex.: input + botão). Para um único filho-elemento sem id, injeta o id gerado.
+  const onlyChild =
+    Children.count(children) === 1 ? (Children.toArray(children)[0] as ReactNode) : null;
+  const childElement = isValidElement(onlyChild) ? (onlyChild as ReactElement<{ id?: string }>) : null;
+  const controlId = htmlFor ?? childElement?.props.id ?? generatedId;
+  const content =
+    childElement && !childElement.props.id && !htmlFor
+      ? cloneElement(childElement, { id: controlId })
+      : children;
+  const describedById = error || hint ? `${controlId}-desc` : undefined;
+
   return (
-    <label className="block" htmlFor={htmlFor}>
-      <span className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-[var(--text2)]">
+    <div className="block">
+      <label
+        className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-[var(--text2)]"
+        htmlFor={controlId}
+      >
         {label}
         {required && <span className="text-red-500">*</span>}
-      </span>
-      {children}
+      </label>
+      {content}
       {error ? (
-        <p className="mt-1.5 text-xs leading-5 text-red-700 dark:text-red-300">{error}</p>
+        <p className="mt-1.5 text-xs leading-5 text-red-700 dark:text-red-300" id={describedById}>
+          {error}
+        </p>
       ) : hint ? (
-        <p className="mt-1.5 text-xs leading-5 text-[var(--text2)]">{hint}</p>
+        <p className="mt-1.5 text-xs leading-5 text-[var(--text2)]" id={describedById}>
+          {hint}
+        </p>
       ) : null}
-    </label>
+    </div>
   );
 }
 
