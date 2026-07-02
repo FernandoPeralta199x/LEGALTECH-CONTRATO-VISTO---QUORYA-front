@@ -23,6 +23,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { formatDate } from "@/lib/formatters";
 import { errorMessage } from "@/src/lib/errorMessage";
 import { listCases } from "@/src/services/cases";
+import { triageStatusLabel as triageStatusText } from "@/src/lib/reportLabels";
 import type { Case } from "@/types";
 
 const REVIEW_RELEVANT_STATUSES = new Set([
@@ -42,7 +43,8 @@ function triageQueueCases(cases: Case[]): Case[] {
 
 function triageStatusLabel(legalCase: Case): string {
   const triageStatus = legalCase.metadata?.triageStatus;
-  return typeof triageStatus === "string" ? triageStatus : legalCase.status;
+  const raw = typeof triageStatus === "string" ? triageStatus : legalCase.status;
+  return triageStatusText(raw);
 }
 
 function metadataText(value: unknown, fallback: string): string {

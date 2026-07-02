@@ -587,7 +587,7 @@ export default function DashboardPage() {
                         "Sem SQS real",
                         "Sem OCR real",
                         "Sem IA / RAG real",
-                        "Wizard sem submit real"
+                        "Sem e-mail (SES) real"
                       ].map((item) => (
                         <p
                           className="flex items-center gap-1.5 text-[11px] text-blue-700 dark:text-blue-300/80"

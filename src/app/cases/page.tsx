@@ -35,21 +35,11 @@ import { PriorityBadge } from "@/components/PriorityBadge";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatDate, caseDisplayTitle } from "@/lib/formatters";
 import { errorMessage } from "@/src/lib/errorMessage";
+import { productLabel } from "@/src/lib/reportLabels";
 import { createCase, deleteCase, listCasesPaged, updateCase } from "@/src/services/cases";
 import { listClients } from "@/src/services/clients";
 import { validateCaseForm, type ValidationErrors } from "@/src/lib/validation";
 import type { Case, CaseCreate, CaseStatus, CaseUpdate, Client, Priority, ProductType } from "@/types";
-
-const caseTypeLabel: Record<string, string> = {
-  compra_venda: "Compra e Venda",
-  confidencialidade: "Confidencialidade (NDA)",
-  contract_analysis: "Análise Contratual",
-  due_diligence: "Due Diligence",
-  locacao: "Locação",
-  outro: "Outro",
-  parceria: "Parceria",
-  prestacao_servicos: "Prestação de Serviços"
-};
 
 const contractTypes = [
   { id: "contract_analysis", label: "Análise Contratual" },
@@ -98,10 +88,6 @@ const emptyCaseForm: CaseForm = {
   product: "analise_contratual",
   title: ""
 };
-
-function productDisplayLabel(product: ProductType): string {
-  return productOptions.find((option) => option.id === product)?.label ?? product;
-}
 
 function reportStatusLabel(legalCase: Case): string {
   const reportStatus = legalCase.metadata?.reportStatus;
@@ -648,9 +634,8 @@ export default function CasesPage() {
                 <h2 className="mt-1 line-clamp-2 min-h-10 text-sm font-semibold leading-5 text-[var(--text)]">
                   {caseDisplayTitle(c)}
                 </h2>
-                <p className="mt-1 truncate text-xs text-[var(--text2)]">{c.clientName}</p>
                 <p className="mt-1 text-[11px] text-[var(--text3)]">
-                  {caseTypeLabel[c.caseType] ?? c.caseType} · {c.productLabel ?? productDisplayLabel(c.product)}
+                  {c.productLabel ?? productLabel(c.caseType)}
                 </p>
 
                 <div className="mt-4">
@@ -682,7 +667,9 @@ export default function CasesPage() {
                   <div className="flex min-w-0 items-center gap-2 text-[var(--text2)]">
                     <FileText className="shrink-0 text-[var(--text3)]" size={12} />
                     <span className="truncate">
-                      Documentos: {c.documentsCount} na listagem
+                      {c.documentsCount === 0
+                        ? "Sem documentos"
+                        : `Documentos: ${c.documentsCount}`}
                     </span>
                   </div>
                   <div className="flex min-w-0 items-center gap-2 text-[var(--text2)]">

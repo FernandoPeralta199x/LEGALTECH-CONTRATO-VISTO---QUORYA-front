@@ -52,7 +52,7 @@ export function WizardShell({
               </p>
             )}
             <p className="text-xs text-[var(--text3)]">
-              Etapa {step} de {totalSteps} - simulação local, sem submit real.
+              Etapa {step} de {totalSteps} · dados fictícios; ao concluir, cria o caso no backend local.
             </p>
           </div>
         </div>

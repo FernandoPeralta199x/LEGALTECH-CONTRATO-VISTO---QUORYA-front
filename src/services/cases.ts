@@ -547,7 +547,7 @@ export function mapOperationalCase(legalCase: BackendOperationalCase): Case {
     id,
     code: legalCase.code ?? caseCodeFromId(id),
     clientId: legalCase.client_id ?? legalCase.request_id ?? id,
-    clientName: legalCase.client_name?.trim() || "Nao informado",
+    clientName: legalCase.client_name?.trim() || "Não informado",
     caseType: caseTypeFromProduct(product, legalCase.case_type),
     product,
     productLabel: legalCase.product_label,

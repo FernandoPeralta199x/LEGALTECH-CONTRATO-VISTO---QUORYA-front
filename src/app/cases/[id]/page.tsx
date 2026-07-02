@@ -51,7 +51,12 @@ import {
   runCaseTriage
 } from "@/src/services/caseWorkflow";
 import { useDevSession } from "@/src/lib/useDevSession";
-import { recommendationLabel } from "@/src/lib/reportLabels";
+import {
+  productLabel,
+  recommendationLabel,
+  riskLabel,
+  triageStatusLabel
+} from "@/src/lib/reportLabels";
 import {
   FINAL_REPORT_ACCEPT_ATTR,
   FINAL_REPORT_ACCEPTED_MIME,
@@ -79,17 +84,6 @@ const TABS = [
   { id: "agents", label: "Triagem local", icon: Bot },
   { id: "report", label: "Relatório", icon: Shield }
 ];
-
-const caseTypeLabel: Record<string, string> = {
-  compra_venda: "Compra e Venda",
-  prestacao_servicos: "Prestação de Serviços",
-  locacao: "Locação",
-  parceria: "Parceria",
-  confidencialidade: "Confidencialidade (NDA)",
-  due_diligence: "Due Diligence",
-  contract_analysis: "Análise Contratual",
-  outro: "Outro"
-};
 
 const partyTypeOptions = [
   { label: "Cliente", value: "cliente" },
@@ -659,7 +653,7 @@ export default function CaseDetailPage({ params }: PageProps) {
                 {caseDisplayTitle(caseData)}
               </h1>
               <p className="mt-1 text-sm text-[var(--text2)]">
-                {caseData.clientName} · {caseTypeLabel[caseData.caseType] ?? caseData.caseType}
+                {caseData.clientName} · {productLabel(caseData.caseType)}
               </p>
               {caseData.notes && (
                 <p className="mt-2 text-xs leading-5 text-[var(--text2)]">{caseData.notes}</p>
@@ -689,7 +683,7 @@ export default function CaseDetailPage({ params }: PageProps) {
               },
               { label: "Documentos", value: `${summary?.documentsCount ?? caseData.documentsCount}` },
               { label: "Partes", value: `${summary?.partiesCount ?? caseParties.length}` },
-              { label: "Risco", value: summary?.riskLevel ?? caseData.riskLevel ?? "unknown" },
+              { label: "Risco", value: riskLabel(summary?.riskLevel ?? caseData.riskLevel) },
               {
                 label: "Recomendação",
                 value: recommendationLabel(caseData.recommendation)
@@ -766,7 +760,7 @@ export default function CaseDetailPage({ params }: PageProps) {
                   { label: "Partes", value: summary?.partiesCount ?? caseParties.length },
                   {
                     label: "Triagem",
-                    value: summary?.triageStatus ?? "not_started"
+                    value: triageStatusLabel(summary?.triageStatus)
                   },
                   {
                     label: "Relatório",
