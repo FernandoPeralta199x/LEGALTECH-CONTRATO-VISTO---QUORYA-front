@@ -26,6 +26,7 @@ import { PageTitle } from "@/components/PageTitle";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatDate } from "@/lib/formatters";
 import { errorMessage } from "@/src/lib/errorMessage";
+import { recommendationLabel } from "@/src/lib/reportLabels";
 import {
   listOperationalReports,
   type OperationalReportListItem
@@ -275,7 +276,7 @@ export default function ReportsPage() {
                     <div>
                       <p className="text-[var(--text3)]">Recomendação</p>
                       <p className="mt-0.5 font-medium text-[var(--text2)]">
-                        {report.recommendation ?? "Revisão humana"}
+                        {recommendationLabel(report.recommendation)}
                       </p>
                     </div>
                     <div>

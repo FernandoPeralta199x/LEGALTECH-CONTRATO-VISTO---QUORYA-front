@@ -51,6 +51,7 @@ import {
   runCaseTriage
 } from "@/src/services/caseWorkflow";
 import { useDevSession } from "@/src/lib/useDevSession";
+import { recommendationLabel } from "@/src/lib/reportLabels";
 import {
   FINAL_REPORT_ACCEPT_ATTR,
   FINAL_REPORT_ACCEPTED_MIME,
@@ -133,21 +134,6 @@ function sourceModeLabel(value: unknown): string {
     mock: "mock",
     real: "real",
     simulated: "simulado"
-  };
-
-  return labels[value] ?? value;
-}
-
-function recommendationLabel(value: unknown): string {
-  if (typeof value !== "string" || !value) {
-    return "Pendente";
-  }
-
-  const labels: Record<string, string> = {
-    do_not_proceed: "Não prosseguir",
-    human_review_required: "Revisão humana obrigatória",
-    proceed: "Prosseguir",
-    proceed_with_caution: "Prosseguir com ressalvas"
   };
 
   return labels[value] ?? value;
