@@ -1,9 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { WizardActions, WizardShell } from "@/components/wizard";
+import { FormField, SelectInput } from "@/components/FormField";
 import { Notification } from "@/components/Notification";
 import { PricingCatalogProvider } from "@/components/pricing/PricingCatalogContext";
 import {
@@ -13,6 +14,8 @@ import {
   type Produto
 } from "@/lib/produtoConfig";
 import { submitWizardRequest } from "@/src/services/cases";
+import { listClients } from "@/src/services/clients";
+import type { Client } from "@/types";
 
 import { ContractStep } from "./ContractStep";
 import { ModulesStep } from "./ModulesStep";
@@ -65,7 +68,15 @@ export function NewCaseWizard() {
   const [idempotencyKey] = useState(makeIdempotencyKey);
 
   const [parties, setParties] = useState<Party[]>(() => [newParty()]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [clientId, setClientId] = useState("");
   const [arquivo, setArquivo] = useState<WizardFile | null>(null);
+
+  useEffect(() => {
+    listClients()
+      .then((result) => setClients(result.data ?? []))
+      .catch(() => setClients([]));
+  }, []);
   const [anexarContrato, setAnexarContrato] = useState(true);
   const [produto, setProduto] = useState<Produto | null>(null);
   const [modulos, setModulos] = useState<Record<Modulo, boolean>>(
@@ -107,6 +118,7 @@ export function NewCaseWizard() {
     try {
       const result = await submitWizardRequest({
         arquivo,
+        clientId: clientId || null,
         idempotencyKey,
         modulos,
         parties,
@@ -158,7 +170,27 @@ export function NewCaseWizard() {
           </Notification>
         )}
 
-        {step === 1 && <PartiesStep onChange={setParties} parties={parties} />}
+        {step === 1 && (
+          <div className="space-y-5">
+            <FormField
+              hint="Opcional — vincule um cliente já cadastrado. Sem isso, o caso fica sem cliente."
+              label="Cliente vinculado"
+            >
+              <SelectInput
+                onChange={(event) => setClientId(event.target.value)}
+                value={clientId}
+              >
+                <option value="">Sem cliente vinculado</option>
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.name}
+                  </option>
+                ))}
+              </SelectInput>
+            </FormField>
+            <PartiesStep onChange={setParties} parties={parties} />
+          </div>
+        )}
         {step === 2 && (
           <ContractStep
             anexarContrato={anexarContrato}

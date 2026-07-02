@@ -107,6 +107,8 @@ type BackendAggregateCase = {
   code: string;
   organization_id: string;
   created_by: string;
+  client_id?: string | null;
+  client_name?: string | null;
   product_type: string;
   product_label: string;
   title: string;
@@ -283,6 +285,7 @@ type BackendWizardSubmitResponse = BackendLegalRequest & {
 
 export type WizardOperationalSubmitInput = LocalCaseWizardInput & {
   idempotencyKey: string;
+  clientId?: string | null;
 };
 
 export type WizardOperationalSubmitResult = {
@@ -402,6 +405,7 @@ function mapWizardSubmitPayload(input: WizardOperationalSubmitInput) {
 
   return {
     product_type: input.produto,
+    client_id: input.clientId ?? null,
     product_label: productLabel,
     title: wizardTitle(input),
     description: wizardDescription(input),
@@ -595,7 +599,7 @@ function mapAggregateCase(payload: BackendCaseAggregate): Case {
     case_type: payload.case.product_type,
     product_type: payload.case.product_type,
     product_label: payload.case.product_label,
-    client_name: firstParty?.name,
+    client_name: payload.case.client_name ?? firstParty?.name,
     status: payload.case.status,
     progress: payload.summary.progress,
     risk_level: payload.summary.risk_level,
