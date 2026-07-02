@@ -13,7 +13,9 @@ import {
   Mail,
   Pencil,
   Phone,
+  Play,
   Plus,
+  RefreshCw,
   Shield,
   Upload,
   Users
@@ -26,6 +28,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { FormField, SelectInput, TextArea, TextInput } from "@/components/FormField";
@@ -42,6 +45,12 @@ import {
   updateCaseParty
 } from "@/src/services/caseParties";
 import { getCaseAggregate } from "@/src/services/cases";
+import {
+  generateCaseReport,
+  reviewCaseReport,
+  runCaseTriage
+} from "@/src/services/caseWorkflow";
+import { useDevSession } from "@/src/lib/useDevSession";
 import {
   FINAL_REPORT_ACCEPT_ATTR,
   FINAL_REPORT_ACCEPTED_MIME,
@@ -270,6 +279,18 @@ export default function CaseDetailPage({ params }: PageProps) {
   const [finalReportError, setFinalReportError] = useState("");
   const [finalReportSuccess, setFinalReportSuccess] = useState("");
 
+  const session = useDevSession();
+  const canWrite = session ? ["admin", "analyst"].includes(session.role) : false;
+  const [triageRunning, setTriageRunning] = useState(false);
+  const [reportBusy, setReportBusy] = useState(false);
+  const [approveOpen, setApproveOpen] = useState(false);
+  const [approving, setApproving] = useState(false);
+  const [workflowNotice, setWorkflowNotice] = useState<{
+    tone: "success" | "error";
+    title: string;
+    description: string;
+  } | null>(null);
+
   const refreshFinalReports = useCallback(async () => {
     try {
       const reports = await listFinalReports(id);
@@ -358,6 +379,76 @@ export default function CaseDetailPage({ params }: PageProps) {
       setLoading(false);
     }
   }, [id, refreshFinalReports]);
+
+  async function handleRunTriage() {
+    if (triageRunning) return;
+    setTriageRunning(true);
+    setWorkflowNotice(null);
+    try {
+      const result = await runCaseTriage(id);
+      await refreshCase();
+      setWorkflowNotice({
+        tone: "success",
+        title: "Triagem executada",
+        description: `${result.modules_executed} módulos processados. Risco estimado: ${result.risk_level}.`
+      });
+    } catch (err) {
+      setWorkflowNotice({
+        tone: "error",
+        title: "Falha na triagem",
+        description: errorMessage(err, "Não foi possível executar a triagem.")
+      });
+    } finally {
+      setTriageRunning(false);
+    }
+  }
+
+  async function handleGenerateReport() {
+    if (reportBusy) return;
+    setReportBusy(true);
+    setWorkflowNotice(null);
+    try {
+      await generateCaseReport(id);
+      await refreshCase();
+      setWorkflowNotice({
+        tone: "success",
+        title: "Relatório gerado",
+        description: "Parecer consolidado a partir das evidências da triagem."
+      });
+    } catch (err) {
+      setWorkflowNotice({
+        tone: "error",
+        title: "Falha ao gerar relatório",
+        description: errorMessage(err, "Não foi possível gerar o relatório.")
+      });
+    } finally {
+      setReportBusy(false);
+    }
+  }
+
+  async function handleApproveReport() {
+    if (approving) return;
+    setApproving(true);
+    setWorkflowNotice(null);
+    try {
+      await reviewCaseReport(id, { status: "approved" });
+      await refreshCase();
+      setApproveOpen(false);
+      setWorkflowNotice({
+        tone: "success",
+        title: "Relatório aprovado",
+        description: "Revisão humana registrada; o caso foi concluído."
+      });
+    } catch (err) {
+      setWorkflowNotice({
+        tone: "error",
+        title: "Falha ao aprovar",
+        description: errorMessage(err, "Não foi possível aprovar o relatório.")
+      });
+    } finally {
+      setApproving(false);
+    }
+  }
 
   function syncCaseParties(updater: (current: CaseParty[]) => CaseParty[]) {
     setCaseParties((current) => {
@@ -514,6 +605,9 @@ export default function CaseDetailPage({ params }: PageProps) {
 
   const caseTimeline = caseAggregate?.timeline ?? [];
   const triageModules = caseAggregate?.triageModules ?? [];
+  // O mapper normaliza o "done" do backend para "completed" (StatusBadge).
+  const triageHasRun = triageModules.some((module) => module.status === "completed");
+  const caseIsCompleted = caseData?.status === "completed";
   const providerResults = caseAggregate?.providerResults ?? [];
   const caseReport = caseAggregate?.report ?? null;
   const summary = caseAggregate?.summary;
@@ -529,6 +623,15 @@ export default function CaseDetailPage({ params }: PageProps) {
         {error && (
           <Notification title="Atenção" tone="error">
             {error}
+          </Notification>
+        )}
+        {workflowNotice && (
+          <Notification
+            onDismiss={() => setWorkflowNotice(null)}
+            title={workflowNotice.title}
+            tone={workflowNotice.tone}
+          >
+            {workflowNotice.description}
           </Notification>
         )}
         {partySuccessMessage && (
@@ -928,11 +1031,28 @@ export default function CaseDetailPage({ params }: PageProps) {
         {/* Tab: Agents */}
         {activeTab === "agents" && (
           <div className="animate-in">
-            <div className="mb-4 flex items-center gap-2">
-              <Bot className="text-brand-teal" size={18} />
-              <h2 className="text-sm font-semibold text-[var(--text)]">
-                Módulos de triagem do caso
-              </h2>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Bot className="text-brand-teal" size={18} />
+                <h2 className="text-sm font-semibold text-[var(--text)]">
+                  Módulos de triagem do caso
+                </h2>
+              </div>
+              {canWrite && !caseIsCompleted && (
+                <Button
+                  icon={
+                    triageHasRun ? (
+                      <RefreshCw aria-hidden="true" size={15} />
+                    ) : (
+                      <Play aria-hidden="true" size={15} />
+                    )
+                  }
+                  loading={triageRunning}
+                  onClick={handleRunTriage}
+                >
+                  {triageHasRun ? "Reexecutar triagem" : "Rodar triagem"}
+                </Button>
+              )}
             </div>
             {triageModules.length === 0 ? (
               <EmptyState
@@ -1079,7 +1199,18 @@ export default function CaseDetailPage({ params }: PageProps) {
             {/* AI-generated preliminary report */}
             {!caseReport ? (
               <EmptyState
-                description="O resumo demonstrativo ainda não está disponível. Revisão humana persistida, IA real e PDF/exportação ficam no roadmap."
+                action={
+                  canWrite ? (
+                    <Button
+                      icon={<FileText aria-hidden="true" size={15} />}
+                      loading={reportBusy}
+                      onClick={handleGenerateReport}
+                    >
+                      Gerar relatório
+                    </Button>
+                  ) : undefined
+                }
+                description="O resumo demonstrativo ainda não está disponível. Gere o parecer a partir das evidências da triagem."
                 icon={<Shield size={20} />}
                 title="Relatório preliminar não disponível"
               />
@@ -1098,6 +1229,26 @@ export default function CaseDetailPage({ params }: PageProps) {
                     </div>
                     <StatusBadge status={caseReport.status} />
                   </div>
+
+                  {canWrite && !caseIsCompleted && (
+                    <div className="mb-5 flex flex-wrap gap-2">
+                      <Button
+                        icon={<RefreshCw aria-hidden="true" size={15} />}
+                        loading={reportBusy}
+                        onClick={handleGenerateReport}
+                        variant="secondary"
+                      >
+                        Regerar relatório
+                      </Button>
+                      <Button
+                        disabled={reportBusy}
+                        icon={<CheckCircle2 aria-hidden="true" size={15} />}
+                        onClick={() => setApproveOpen(true)}
+                      >
+                        Aprovar relatório
+                      </Button>
+                    </div>
+                  )}
 
                   {caseReport.status === "in_review" && (
                     <div className="mb-5 flex items-center gap-3 rounded-lg border border-[rgba(249,115,22,0.25)] bg-[var(--orange-dim)] px-4 py-3">
@@ -1226,6 +1377,17 @@ export default function CaseDetailPage({ params }: PageProps) {
             )}
           </div>
         )}
+        <ConfirmDialog
+          cancelLabel="Cancelar"
+          confirmLabel="Aprovar e concluir"
+          description="Aprovar registra a revisão humana e conclui o caso (status 'completed'). Um caso finalizado não aceita novas escritas."
+          loading={approving}
+          onCancel={() => setApproveOpen(false)}
+          onConfirm={handleApproveReport}
+          open={approveOpen}
+          title="Aprovar relatório do caso?"
+          variant="primary"
+        />
       </AppLayout>
     </AuthGuard>
   );

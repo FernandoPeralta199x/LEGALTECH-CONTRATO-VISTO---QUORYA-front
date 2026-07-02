@@ -716,7 +716,11 @@ function mapAggregateTriageModule(module: BackendAggregateTriageModule): TriageM
     moduleKey: module.module_key,
     moduleLabel: module.module_label,
     provider: module.provider,
-    status: module.status as TriageModule["status"],
+    // Backend grava o módulo executado como "done"; o front usa "completed"
+    // (StatusBadge mapeia "completed" -> "Dados recebidos"). Normaliza aqui.
+    status: (module.status === "done"
+      ? "completed"
+      : module.status) as TriageModule["status"],
     sourceMode: module.source_mode as TriageModule["sourceMode"],
     required: module.required,
     reason: module.reason,
