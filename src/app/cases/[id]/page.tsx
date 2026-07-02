@@ -605,6 +605,12 @@ export default function CaseDetailPage({ params }: PageProps) {
             {error}
           </Notification>
         )}
+        {!canWrite && (
+          <Notification title="Modo leitura" tone="warning">
+            Ações de escrita (rodar triagem, gerar/aprovar relatório, editar partes)
+            são restritas aos perfis admin e analista.
+          </Notification>
+        )}
         {workflowNotice && (
           <Notification
             onDismiss={() => setWorkflowNotice(null)}
@@ -773,6 +779,55 @@ export default function CaseDetailPage({ params }: PageProps) {
                   </div>
                 ))}
               </dl>
+            </Card>
+
+            <Card className="lg:col-span-2" title="Próximos passos">
+              {caseIsCompleted ? (
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 className="shrink-0 text-[var(--teal)]" size={18} />
+                  <p className="text-sm text-[var(--text2)]">
+                    Caso concluído — relatório aprovado. Nenhuma ação pendente.
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm text-[var(--text2)]">
+                    {!triageHasRun
+                      ? "Execute a triagem para coletar as evidências dos provedores."
+                      : !caseReport
+                        ? "Gere o parecer consolidando as evidências da triagem."
+                        : "Revise o parecer e aprove para concluir o caso."}
+                  </p>
+                  {canWrite ? (
+                    !triageHasRun ? (
+                      <Button
+                        icon={<Play aria-hidden="true" size={15} />}
+                        loading={triageRunning}
+                        onClick={handleRunTriage}
+                      >
+                        Rodar triagem
+                      </Button>
+                    ) : !caseReport ? (
+                      <Button
+                        icon={<FileText aria-hidden="true" size={15} />}
+                        loading={reportBusy}
+                        onClick={handleGenerateReport}
+                      >
+                        Gerar relatório
+                      </Button>
+                    ) : (
+                      <Button
+                        icon={<CheckCircle2 aria-hidden="true" size={15} />}
+                        onClick={() => setApproveOpen(true)}
+                      >
+                        Aprovar relatório
+                      </Button>
+                    )
+                  ) : (
+                    <span className="text-xs text-[var(--text3)]">Somente admin/analista</span>
+                  )}
+                </div>
+              )}
             </Card>
 
             {caseData.status === "revisao_humana" && (
