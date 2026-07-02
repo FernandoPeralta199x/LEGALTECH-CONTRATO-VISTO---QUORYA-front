@@ -295,12 +295,13 @@ function LoginContent() {
                   value={loginPassword}
                 />
                 <button
+                  aria-label={showLoginPassword ? "Ocultar senha" : "Mostrar senha"}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text3)] hover:text-[var(--text)]"
                   onClick={() => setShowLoginPassword((current) => !current)}
                   tabIndex={-1}
                   type="button"
                 >
-                  {showLoginPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  {showLoginPassword ? <EyeOff aria-hidden="true" size={16} /> : <Eye aria-hidden="true" size={16} />}
                 </button>
               </div>
             </Field>
@@ -394,12 +395,13 @@ function LoginContent() {
                   value={registerPassword}
                 />
                 <button
+                  aria-label={showRegisterPassword ? "Ocultar senha" : "Mostrar senha"}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text3)] hover:text-[var(--text)]"
                   onClick={() => setShowRegisterPassword((current) => !current)}
                   tabIndex={-1}
                   type="button"
                 >
-                  {showRegisterPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  {showRegisterPassword ? <EyeOff aria-hidden="true" size={16} /> : <Eye aria-hidden="true" size={16} />}
                 </button>
               </div>
             </Field>

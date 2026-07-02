@@ -78,14 +78,13 @@ export function ContractDropzone({ file, onChange }: ContractDropzoneProps) {
 
   return (
     <div className="space-y-3">
-      <div
+      <label
         className={cn(
-          "relative flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-14 text-center transition-all",
+          "relative flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-14 text-center transition-all focus-within:border-[var(--teal)]",
           dragging
             ? "border-[var(--teal)] bg-[var(--teal-dim)] shadow-glow-teal"
             : "border-[var(--bd2)] bg-[var(--surf2)] hover:border-[rgba(32,201,151,0.34)] hover:bg-[var(--surf3)]"
         )}
-        onClick={() => inputRef.current?.click()}
         onDragLeave={() => setDragging(false)}
         onDragOver={(e) => {
           e.preventDefault();
@@ -99,7 +98,8 @@ export function ContractDropzone({ file, onChange }: ContractDropzoneProps) {
       >
         <input
           accept={ACCEPTED}
-          className="hidden"
+          aria-label="Anexar contrato (PDF, DOCX, PNG, JPG ou JPEG, até 25 MB)"
+          className="sr-only"
           onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
           ref={inputRef}
           type="file"
@@ -131,7 +131,7 @@ export function ContractDropzone({ file, onChange }: ContractDropzoneProps) {
             S3 ou backend nesta versão.
           </p>
         </div>
-      </div>
+      </label>
 
       {error && (
         <p className="text-xs text-red-400" role="alert">
