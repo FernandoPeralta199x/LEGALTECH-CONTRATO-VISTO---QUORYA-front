@@ -15,6 +15,7 @@ import {
   Phone,
   Play,
   Plus,
+  Printer,
   RefreshCw,
   Shield,
   Upload,
@@ -29,6 +30,8 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { TriageModuleCard } from "@/components/cases/TriageModuleCard";
+import { TriagePrintSheet } from "@/components/cases/TriagePrintSheet";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { FormField, SelectInput, TextArea, TextInput } from "@/components/FormField";
@@ -265,6 +268,7 @@ export default function CaseDetailPage({ params }: PageProps) {
   const [reportBusy, setReportBusy] = useState(false);
   const [approveOpen, setApproveOpen] = useState(false);
   const [approving, setApproving] = useState(false);
+  const [printTarget, setPrintTarget] = useState<string | null>(null);
   const [workflowNotice, setWorkflowNotice] = useState<{
     tone: "success" | "error";
     title: string;
@@ -550,6 +554,17 @@ export default function CaseDetailPage({ params }: PageProps) {
     return () => window.clearTimeout(timer);
   }, [refreshCase]);
 
+  // Impressão/PDF das evidências: renderiza a folha, dispara o print e limpa no afterprint.
+  useEffect(() => {
+    if (!printTarget) {
+      return;
+    }
+    const done = () => setPrintTarget(null);
+    window.addEventListener("afterprint", done);
+    window.print();
+    return () => window.removeEventListener("afterprint", done);
+  }, [printTarget]);
+
   if (loading) {
     return (
       <AuthGuard>
@@ -589,6 +604,9 @@ export default function CaseDetailPage({ params }: PageProps) {
   const triageHasRun = triageModules.some((module) => module.status === "completed");
   const caseIsCompleted = caseData?.status === "completed";
   const providerResults = caseAggregate?.providerResults ?? [];
+  const resultByModule = new Map(
+    providerResults.map((result) => [result.triageModuleId, result])
+  );
   const caseReport = caseAggregate?.report ?? null;
   const summary = caseAggregate?.summary;
 
@@ -1073,21 +1091,32 @@ export default function CaseDetailPage({ params }: PageProps) {
                   Módulos de triagem do caso
                 </h2>
               </div>
-              {canWrite && !caseIsCompleted && (
-                <Button
-                  icon={
-                    triageHasRun ? (
-                      <RefreshCw aria-hidden="true" size={15} />
-                    ) : (
-                      <Play aria-hidden="true" size={15} />
-                    )
-                  }
-                  loading={triageRunning}
-                  onClick={handleRunTriage}
-                >
-                  {triageHasRun ? "Reexecutar triagem" : "Rodar triagem"}
-                </Button>
-              )}
+              <div className="flex flex-wrap items-center gap-2">
+                {providerResults.length > 0 && (
+                  <Button
+                    icon={<Printer aria-hidden="true" size={15} />}
+                    onClick={() => setPrintTarget("all")}
+                    variant="secondary"
+                  >
+                    Imprimir tudo
+                  </Button>
+                )}
+                {canWrite && !caseIsCompleted && (
+                  <Button
+                    icon={
+                      triageHasRun ? (
+                        <RefreshCw aria-hidden="true" size={15} />
+                      ) : (
+                        <Play aria-hidden="true" size={15} />
+                      )
+                    }
+                    loading={triageRunning}
+                    onClick={handleRunTriage}
+                  >
+                    {triageHasRun ? "Reexecutar triagem" : "Rodar triagem"}
+                  </Button>
+                )}
+              </div>
             </div>
             {triageModules.length === 0 ? (
               <EmptyState
@@ -1098,46 +1127,12 @@ export default function CaseDetailPage({ params }: PageProps) {
             ) : (
               <div className="grid gap-3 sm:grid-cols-2">
                 {triageModules.map((module) => (
-                  <Card key={module.id}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-[var(--text)]">
-                          {module.moduleLabel}
-                        </p>
-                        <p className="mt-1 text-[11px] text-[var(--text2)]">
-                          {module.provider} · {sourceModeLabel(module.sourceMode)}
-                        </p>
-                      </div>
-                      <StatusBadge status={module.status} />
-                    </div>
-                    <dl className="mt-4 grid grid-cols-2 gap-3 text-xs">
-                      <div>
-                        <dt className="text-[var(--text3)]">Tentativas</dt>
-                        <dd className="font-medium text-[var(--text2)]">{module.attempts}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-[var(--text3)]">Obrigatório</dt>
-                        <dd className="font-medium text-[var(--text2)]">
-                          {module.required ? "Sim" : "Não"}
-                        </dd>
-                      </div>
-                    </dl>
-                    {module.reason && (
-                      <p className="mt-3 text-xs leading-5 text-[var(--text2)]">
-                        {module.reason}
-                      </p>
-                    )}
-                    {module.summary && (
-                      <p className="mt-3 border-t border-[var(--bd)] pt-3 text-xs leading-5 text-[var(--text2)]">
-                        {module.summary}
-                      </p>
-                    )}
-                    {module.errorMessage && (
-                      <p className="mt-2 text-xs text-red-700">
-                        {module.errorMessage}
-                      </p>
-                    )}
-                  </Card>
+                  <TriageModuleCard
+                    key={module.id}
+                    module={module}
+                    onPrint={setPrintTarget}
+                    result={resultByModule.get(module.id)}
+                  />
                 ))}
               </div>
             )}
@@ -1408,6 +1403,14 @@ export default function CaseDetailPage({ params }: PageProps) {
             )}
           </div>
         )}
+        <TriagePrintSheet
+          caseCode={caseData.code}
+          caseTitle={caseDisplayTitle(caseData)}
+          clientName={caseData.clientName}
+          modules={triageModules}
+          resultByModule={resultByModule}
+          target={printTarget}
+        />
         <ConfirmDialog
           cancelLabel="Cancelar"
           confirmLabel="Aprovar e concluir"
