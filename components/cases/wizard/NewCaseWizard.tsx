@@ -173,7 +173,7 @@ export function NewCaseWizard() {
         {step === 1 && (
           <div className="space-y-5">
             <FormField
-              hint="Opcional — vincule um cliente já cadastrado. Sem isso, o caso fica sem cliente."
+              hint="Opcional — é o cliente/conta dona do caso (da base de Clientes), diferente das partes do contrato abaixo."
               label="Cliente vinculado"
             >
               <SelectInput
