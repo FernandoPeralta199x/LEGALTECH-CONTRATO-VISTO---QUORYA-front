@@ -12,7 +12,8 @@ import {
   Shield,
   Upload,
   UsersRound,
-  X
+  X,
+  type LucideIcon
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -20,8 +21,18 @@ import { usePathname, useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/cn";
 import { clearStoredSession } from "@/src/lib/authStorage";
+import { useDevSession } from "@/src/lib/useDevSession";
 
-const navGroups = [
+type NavItem = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  /** Visível apenas para o papel admin. */
+  adminOnly?: boolean;
+};
+type NavGroup = { label: string; items: NavItem[] };
+
+const navGroups: NavGroup[] = [
   {
     label: "Visão Geral",
     items: [
@@ -42,7 +53,7 @@ const navGroups = [
     label: "Gestão",
     items: [
       { href: "/clients", label: "Clientes",      icon: UsersRound },
-      { href: "/admin",   label: "Administração", icon: Shield }
+      { href: "/admin",   label: "Administração", icon: Shield, adminOnly: true }
     ]
   },
   {
@@ -52,6 +63,17 @@ const navGroups = [
     ]
   }
 ];
+
+/** Grupos visíveis para o papel: itens adminOnly só aparecem para admin.
+ *  (Filtro de UX — a segurança real é o backend, via require_role/require_writer.) */
+function visibleNavGroups(role: string | undefined): NavGroup[] {
+  return navGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => !item.adminOnly || role === "admin")
+    }))
+    .filter((group) => group.items.length > 0);
+}
 
 function isNavItemActive(pathname: string, href: string) {
   if (href === "/cases") {
@@ -116,6 +138,8 @@ function NavItem({
 
 export function Sidebar() {
   const pathname = usePathname();
+  const session = useDevSession();
+  const groups = visibleNavGroups(session?.role);
 
   const isActive = (href: string) => isNavItemActive(pathname, href);
 
@@ -146,7 +170,7 @@ export function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 pb-2">
-        {navGroups.map((group) => (
+        {groups.map((group) => (
           <div className="mt-4" key={group.label}>
             <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase text-[var(--text3)]">
               {group.label}
@@ -193,6 +217,8 @@ type MobileSidebarProps = { open: boolean; onClose: () => void };
 export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const session = useDevSession();
+  const groups = visibleNavGroups(session?.role);
 
   const isActive = (href: string) => isNavItemActive(pathname, href);
 
@@ -257,7 +283,7 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 pb-4">
-          {navGroups.map((group) => (
+          {groups.map((group) => (
             <div className="mt-4" key={group.label}>
               <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase text-[var(--text3)]">
                 {group.label}
