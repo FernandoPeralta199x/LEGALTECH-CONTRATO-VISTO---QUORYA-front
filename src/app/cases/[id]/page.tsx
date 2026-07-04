@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   ClipboardList,
   Clock,
+  CreditCard,
   Download,
   FileText,
   Mail,
@@ -27,9 +28,11 @@ import { use, useCallback, useEffect, useState } from "react";
 
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
+import { Badge } from "@/components/Badge";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { centsToReaisLabel } from "@/components/CurrencyInput";
 import { TriageModuleCard } from "@/components/cases/TriageModuleCard";
 import { TriagePrintSheet } from "@/components/cases/TriagePrintSheet";
 import { EmptyState } from "@/components/EmptyState";
@@ -134,6 +137,29 @@ function sourceModeLabel(value: unknown): string {
   };
 
   return labels[value] ?? value;
+}
+
+const paymentMethodLabel: Record<string, string> = {
+  boleto: "Boleto",
+  cartao: "Cartão",
+  pix: "Pix"
+};
+
+const paymentStatusLabel: Record<string, string> = {
+  canceled: "Cancelado",
+  expired: "Expirado",
+  failed: "Falhou",
+  paid: "Pago",
+  pending: "Pendente",
+  refunded: "Reembolsado",
+  simulated: "Simulado"
+};
+
+/** Formata "AAAA-MM-DD" como dd/mm/aaaa sem passar por Date (evita shift de fuso). */
+function formatDueDate(isoDate: string): string {
+  const [year, month, day] = isoDate.split("-");
+  if (!year || !month || !day) return isoDate;
+  return `${day}/${month}/${year}`;
 }
 
 function reportStatusLabel(report: Report | null): string {
@@ -250,6 +276,7 @@ export default function CaseDetailPage({ params }: PageProps) {
   const [editingParty, setEditingParty] = useState<CaseParty | null>(null);
   const [error, setError] = useState("");
   const [fallbackReason, setFallbackReason] = useState("");
+  const [aggregateSource, setAggregateSource] = useState<"api" | "mock">("api");
   const [loading, setLoading] = useState(true);
   const [partyError, setPartyError] = useState("");
   const [partyForm, setPartyForm] = useState<CasePartyCreate>(emptyPartyForm);
@@ -348,6 +375,7 @@ export default function CaseDetailPage({ params }: PageProps) {
       setCaseData(aggregateResult.data.case);
       setCaseDocuments(aggregateResult.data.documents);
       setCaseParties(aggregateResult.data.parties);
+      setAggregateSource(aggregateResult.source);
       setFallbackReason(
         aggregateResult.source === "mock" ? aggregateResult.fallbackReason ?? "" : ""
       );
@@ -609,6 +637,11 @@ export default function CaseDetailPage({ params }: PageProps) {
   );
   const caseReport = caseAggregate?.report ?? null;
   const summary = caseAggregate?.summary;
+  // Pagamento só é exibido com dados reais da API (fallback local não tem plano).
+  const paymentStatus = caseAggregate?.paymentStatus ?? "pending";
+  const installmentPlan = caseAggregate?.installmentPlan ?? null;
+  const showPayment = aggregateSource === "api";
+  const paymentPending = showPayment && paymentStatus === "pending";
 
   return (
     <AuthGuard>
@@ -672,6 +705,7 @@ export default function CaseDetailPage({ params }: PageProps) {
                 </span>
                 <StatusBadge status={caseData.status} />
                 <PriorityBadge priority={caseData.priority} />
+                {paymentPending && <Badge tone="orange">Pagamento pendente</Badge>}
               </div>
               <h1 className="text-xl font-bold text-[var(--text)]">
                 {caseDisplayTitle(caseData)}
@@ -798,6 +832,111 @@ export default function CaseDetailPage({ params }: PageProps) {
                 ))}
               </dl>
             </Card>
+
+            {showPayment && (
+              <Card
+                className="lg:col-span-2"
+                title={
+                  <span className="flex items-center gap-2">
+                    <CreditCard size={16} style={{ color: "var(--accent)" }} />
+                    Pagamento
+                  </span>
+                }
+              >
+                {installmentPlan ? (
+                  <div>
+                    <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                      {[
+                        {
+                          label: "Parcelas",
+                          value: `${installmentPlan.parcelas}x de ${centsToReaisLabel(
+                            installmentPlan.schedule[0]?.valorCents ??
+                              installmentPlan.valorTotalCents
+                          )}`
+                        },
+                        {
+                          label: "Valor total",
+                          value: centsToReaisLabel(installmentPlan.valorTotalCents)
+                        },
+                        {
+                          label: "Método",
+                          value:
+                            paymentMethodLabel[installmentPlan.method] ??
+                            installmentPlan.method
+                        },
+                        {
+                          label: "Status",
+                          value: paymentStatusLabel[paymentStatus] ?? paymentStatus
+                        }
+                      ].map((item) => (
+                        <div key={item.label}>
+                          <dt className="text-[11px] text-[var(--text3)]">
+                            {item.label}
+                          </dt>
+                          <dd className="mt-0.5 text-sm font-semibold text-[var(--text)]">
+                            {item.value}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                    {installmentPlan.hasJuros && (
+                      <p className="mt-3 text-[11px] text-[var(--text3)]">
+                        Juros de{" "}
+                        {(installmentPlan.jurosMensalBps / 100).toLocaleString(
+                          "pt-BR",
+                          { maximumFractionDigits: 2 }
+                        )}
+                        % a.m. · acréscimo de{" "}
+                        {centsToReaisLabel(installmentPlan.acrescimoCents)}
+                      </p>
+                    )}
+                    {installmentPlan.schedule.length > 0 && (
+                      <div className="mt-4 border-t border-[var(--bd)] pt-4">
+                        <p className="mb-2 text-[11px] uppercase tracking-wide text-[var(--text3)]">
+                          Cronograma
+                        </p>
+                        <div className="space-y-1.5">
+                          {installmentPlan.schedule.map((item) => (
+                            <div
+                              className="flex items-center justify-between gap-3 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-3 py-1.5 text-xs"
+                              key={item.numero}
+                            >
+                              <span className="text-[var(--text2)]">
+                                Parcela {item.numero}
+                              </span>
+                              <span className="text-[var(--text2)]">
+                                {formatDueDate(item.vencimento)}
+                              </span>
+                              <span className="font-semibold text-[var(--text)]">
+                                {centsToReaisLabel(item.valorCents)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : paymentPending ? (
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-sm text-[var(--text2)]">
+                      O pagamento deste caso ainda está pendente. Conclua para
+                      registrar o plano de parcelamento.
+                    </p>
+                    <Button
+                      href={`/cases/${caseData.id}/pagamento`}
+                      icon={<CreditCard aria-hidden="true" size={15} />}
+                    >
+                      Concluir pagamento
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-sm text-[var(--text2)]">
+                    Status do pagamento:{" "}
+                    {paymentStatusLabel[paymentStatus] ?? paymentStatus}.
+                  </p>
+                )}
+              </Card>
+            )}
 
             <Card className="lg:col-span-2" title="Próximos passos">
               {caseIsCompleted ? (
