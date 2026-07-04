@@ -20,15 +20,21 @@ import { Button } from "@/components/Button";
 import { Notification } from "@/components/Notification";
 import { LoadingState } from "@/components/LoadingState";
 import { ErrorState } from "@/components/ErrorState";
+import {
+  InstallmentConfigCard,
+  normalizeInstallmentConfig,
+} from "@/components/pricing/InstallmentConfigCard";
 
 import {
   getPricingCatalog,
   getPricingConfig,
   updatePricingConfig,
   checkCasesLimit,
+  estimatePricing,
   type PricingCatalog,
   type PricingConfig,
   type CasesLimitCheck,
+  type InstallmentConfig,
   type UpdatePricingConfigPayload,
 } from "@/src/services/pricing";
 import { errorMessage } from "@/src/lib/errorMessage";
@@ -67,6 +73,9 @@ export default function AdminPricingPage() {
   const [moduleOverrides, setModuleOverrides] = useState<
     Record<string, number | null>
   >({});
+  const [installmentConfig, setInstallmentConfig] =
+    useState<InstallmentConfig | null>(null);
+  const [paymentMode, setPaymentMode] = useState("mock");
   const [notes, setNotes] = useState("");
 
   const loadAll = useCallback(async () => {
@@ -91,6 +100,20 @@ export default function AdminPricingPage() {
           Object.entries(cfg.module_overrides).map(([k, v]) => [k, v.price_cents])
         )
       );
+
+      setInstallmentConfig(normalizeInstallmentConfig(cfg.installment_config));
+
+      // payment_mode só é exposto pelo estimate; falha aqui não bloqueia a tela
+      // e mantém o aviso conservador de simulação (fase local = seam mock).
+      try {
+        const est = await estimatePricing(
+          cat.products[0]?.code ?? "analise_contratual",
+          []
+        );
+        setPaymentMode(est.payment_mode || "mock");
+      } catch {
+        setPaymentMode("mock");
+      }
 
       setNotes(cfg.notes ?? "");
       setStatus("idle");
@@ -131,8 +154,15 @@ export default function AdminPricingPage() {
       if ((initialModules[key] ?? null) !== (moduleOverrides[key] ?? null)) return true;
     }
 
+    if (installmentConfig) {
+      const baseline = normalizeInstallmentConfig(config.installment_config);
+      if (JSON.stringify(installmentConfig) !== JSON.stringify(baseline)) {
+        return true;
+      }
+    }
+
     return false;
-  }, [config, unlimitedCases, casesLimit, moduleOverrides, notes]);
+  }, [config, unlimitedCases, casesLimit, moduleOverrides, installmentConfig, notes]);
 
   const handleReset = () => {
     if (!config) return;
@@ -144,6 +174,7 @@ export default function AdminPricingPage() {
         Object.entries(config.module_overrides).map(([k, v]) => [k, v.price_cents])
       )
     );
+    setInstallmentConfig(normalizeInstallmentConfig(config.installment_config));
     setNotes(config.notes ?? "");
   };
 
@@ -163,10 +194,15 @@ export default function AdminPricingPage() {
       }
       payload.module_overrides = modOv;
 
+      if (installmentConfig) {
+        payload.installment_config = installmentConfig;
+      }
+
       payload.notes = notes.trim() || null;
 
       const updated = await updatePricingConfig(payload);
       setConfig(updated);
+      setInstallmentConfig(normalizeInstallmentConfig(updated.installment_config));
       setMessage({
         text: `Configuração salva (versão ${updated.version}).`,
         type: "success",
@@ -399,6 +435,15 @@ export default function AdminPricingPage() {
                     })}
                   </div>
                 </Card>
+              )}
+
+              {/* Installments */}
+              {installmentConfig && (
+                <InstallmentConfigCard
+                  onChange={setInstallmentConfig}
+                  paymentMode={paymentMode}
+                  value={installmentConfig}
+                />
               )}
 
               {/* Notes */}
