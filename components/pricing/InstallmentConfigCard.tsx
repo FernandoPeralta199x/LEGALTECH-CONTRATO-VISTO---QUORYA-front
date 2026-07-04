@@ -59,9 +59,13 @@ export function normalizeInstallmentConfig(
   const methods: Record<string, MethodRule> = {};
   for (const key of METHOD_KEYS) {
     const rule = rawMethods[key];
+    // Só o cartão parcela — Pix/Boleto são sempre 1x (à vista).
     if (hasExplicitMethods) {
       methods[key] = rule
-        ? { enabled: rule.enabled, max_parcelas: rule.max_parcelas }
+        ? {
+            enabled: rule.enabled,
+            max_parcelas: key === "cartao" ? rule.max_parcelas : 1
+          }
         : { enabled: false, max_parcelas: 1 };
     } else {
       methods[key] = {
@@ -376,22 +380,28 @@ export function InstallmentConfigCard({
                           {METHOD_LABELS[key]}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      {key === "cartao" ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs" style={{ color: "var(--text3)" }}>
+                            Máx. parcelas
+                          </span>
+                          <IntField
+                            aria-label={`Máximo de parcelas no ${METHOD_LABELS[key]}`}
+                            className="w-20"
+                            disabled={!rule.enabled}
+                            max={value.max_parcelas}
+                            min={1}
+                            onCommit={(n) =>
+                              setMethodRule(key, { max_parcelas: n ?? 1 })
+                            }
+                            value={rule.max_parcelas}
+                          />
+                        </div>
+                      ) : (
                         <span className="text-xs" style={{ color: "var(--text3)" }}>
-                          Máx. parcelas
+                          À vista (1x)
                         </span>
-                        <IntField
-                          aria-label={`Máximo de parcelas no ${METHOD_LABELS[key]}`}
-                          className="w-20"
-                          disabled={!rule.enabled}
-                          max={value.max_parcelas}
-                          min={1}
-                          onCommit={(n) =>
-                            setMethodRule(key, { max_parcelas: n ?? 1 })
-                          }
-                          value={rule.max_parcelas}
-                        />
-                      </div>
+                      )}
                     </div>
                   );
                 })}
