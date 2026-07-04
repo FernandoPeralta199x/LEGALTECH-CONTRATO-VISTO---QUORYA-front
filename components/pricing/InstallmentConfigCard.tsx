@@ -361,19 +361,21 @@ export function InstallmentConfigCard({
                       className="flex flex-col gap-3 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] p-3 sm:flex-row sm:items-center sm:justify-between"
                       key={key}
                     >
-                      <label className="flex cursor-pointer items-center gap-2 text-sm">
-                        <input
+                      <div className="flex items-center gap-3">
+                        <Switch
                           checked={rule.enabled}
-                          className="rounded border-[var(--bd)] bg-[var(--surf2)] text-[var(--accent)]"
-                          onChange={(event) =>
-                            setMethodRule(key, { enabled: event.target.checked })
+                          label={`Habilitar ${METHOD_LABELS[key]}`}
+                          onCheckedChange={(checked) =>
+                            setMethodRule(key, { enabled: checked })
                           }
-                          type="checkbox"
                         />
-                        <span style={{ color: "var(--text2)" }}>
+                        <span
+                          className="text-sm font-medium"
+                          style={{ color: "var(--text)" }}
+                        >
                           {METHOD_LABELS[key]}
                         </span>
-                      </label>
+                      </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs" style={{ color: "var(--text3)" }}>
                           Máx. parcelas
