@@ -15,6 +15,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
+import { CreditCardForm } from "@/components/cases/payment/CreditCardForm";
 import { centsToReaisLabel } from "@/components/CurrencyInput";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingState } from "@/components/LoadingState";
@@ -24,6 +25,7 @@ import { caseDisplayTitle } from "@/lib/formatters";
 import { errorMessage } from "@/src/lib/errorMessage";
 import { ApiClientError } from "@/src/services/apiClient";
 import { createCasePayment, getCaseAggregate } from "@/src/services/cases";
+import { tokenizeCard, type RawCard } from "@/src/services/payment/tokenize";
 import {
   type InstallmentOption,
   type PricingEstimate
@@ -158,6 +160,39 @@ export default function CasePaymentPage({ params }: PageProps) {
       } else {
         setSubmitError(
           errorMessage(err, "Não foi possível registrar o pagamento.")
+        );
+      }
+      setSubmitting(false);
+    }
+  }
+
+  // Cartão (mock dev-only): tokeniza no cliente e envia SÓ token/last4/brand/holder.
+  // O objeto `card` cru NUNCA é logado, serializado nem persistido; qualquer erro
+  // (incl. de tokenização) vira mensagem genérica — jamais o erro cru.
+  async function handleCardSubmit(card: RawCard) {
+    if (submitting || !selectedOption) return;
+    setSubmitting(true);
+    setSubmitError("");
+    setConflict(false);
+    try {
+      const tok = await tokenizeCard(card);
+      await createCasePayment(id, {
+        parcelas: selectedOption.parcelas,
+        method: "cartao",
+        pricing_config_version: estimate?.pricing_config_version,
+        idempotency_key: idempotencyKey,
+        card_token: tok.token,
+        card_last4: tok.last4,
+        card_brand: tok.brand,
+        card_holder: card.holder
+      });
+      router.push(`/cases/${id}`);
+    } catch (err) {
+      if (err instanceof ApiClientError && err.status === 409) {
+        setConflict(true);
+      } else {
+        setSubmitError(
+          "Não foi possível validar o cartão. Confira os dados e tente novamente."
         );
       }
       setSubmitting(false);
@@ -449,22 +484,34 @@ export default function CasePaymentPage({ params }: PageProps) {
                   )}
 
                   {/* Confirm */}
-                  <div className="flex flex-col items-end gap-2">
-                    <Button
-                      disabled={!selectedOption || !method || submitting}
-                      icon={<CheckCircle2 aria-hidden="true" size={16} />}
-                      loading={submitting}
-                      onClick={() => void handleConfirm()}
-                    >
-                      {submitting ? "Registrando..." : "Confirmar pagamento"}
-                    </Button>
-                    {estimate.payment_mode === "mock" && (
-                      <p className="text-[11px] text-[var(--text3)]">
-                        Pagamento simulado para testes. Nenhuma cobrança real
-                        será gerada.
-                      </p>
-                    )}
-                  </div>
+                  {selectedOption &&
+                  method === "cartao" &&
+                  estimate.payment_mode === "mock" ? (
+                    <CreditCardForm
+                      onSubmit={(card) => void handleCardSubmit(card)}
+                      parcelasLabel={`${selectedOption.parcelas}x · total ${centsToReaisLabel(
+                        selectedOption.valor_total_cents
+                      )}`}
+                      submitting={submitting}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-end gap-2">
+                      <Button
+                        disabled={!selectedOption || !method || submitting}
+                        icon={<CheckCircle2 aria-hidden="true" size={16} />}
+                        loading={submitting}
+                        onClick={() => void handleConfirm()}
+                      >
+                        {submitting ? "Registrando..." : "Confirmar pagamento"}
+                      </Button>
+                      {estimate.payment_mode === "mock" && (
+                        <p className="text-[11px] text-[var(--text3)]">
+                          Pagamento simulado para testes. Nenhuma cobrança real
+                          será gerada.
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
             </div>

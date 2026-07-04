@@ -1423,6 +1423,10 @@ export type CasePaymentPayload = {
   method: PaymentMethod;
   pricing_config_version?: number;
   idempotency_key: string;
+  card_token?: string;
+  card_last4?: string;
+  card_brand?: string;
+  card_holder?: string;
 };
 
 export type CasePaymentResult = {
