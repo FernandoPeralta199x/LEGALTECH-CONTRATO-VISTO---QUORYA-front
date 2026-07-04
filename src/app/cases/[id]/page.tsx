@@ -946,6 +946,20 @@ export default function CaseDetailPage({ params }: PageProps) {
                     Caso concluído — relatório aprovado. Nenhuma ação pendente.
                   </p>
                 </div>
+              ) : paymentPending ? (
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm text-[var(--text2)]">
+                    Conclua o pagamento do pedido para liberar a triagem.
+                  </p>
+                  {canWrite && (
+                    <Button
+                      href={`/cases/${caseData.id}/pagamento`}
+                      icon={<CreditCard aria-hidden="true" size={15} />}
+                    >
+                      Concluir pagamento
+                    </Button>
+                  )}
+                </div>
               ) : (
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="text-sm text-[var(--text2)]">
@@ -1240,7 +1254,7 @@ export default function CaseDetailPage({ params }: PageProps) {
                     Imprimir tudo
                   </Button>
                 )}
-                {canWrite && !caseIsCompleted && (
+                {canWrite && !caseIsCompleted && !paymentPending && (
                   <Button
                     icon={
                       triageHasRun ? (
@@ -1369,7 +1383,7 @@ export default function CaseDetailPage({ params }: PageProps) {
             {!caseReport ? (
               <EmptyState
                 action={
-                  canWrite ? (
+                  canWrite && !paymentPending ? (
                     <Button
                       icon={<FileText aria-hidden="true" size={15} />}
                       loading={reportBusy}
