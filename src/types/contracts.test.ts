@@ -151,7 +151,11 @@ test("CaseAggregate keeps operational data isolated by case id", () => {
     timeline: [],
     triageModules: [],
     paymentStatus: "pending",
-    installmentPlan: null
+    installmentPlan: null,
+    installmentOptions: [],
+    pricingConfigVersion: 0,
+    totalPriceCents: 0,
+    paymentMode: "mock"
   };
 
   assert.equal(aggregate.case.id, aggregate.summary.caseId);

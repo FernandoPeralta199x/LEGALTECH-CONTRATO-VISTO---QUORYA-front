@@ -1,3 +1,5 @@
+import type { InstallmentOption } from "@/src/services/pricing";
+
 // ─── Enums & literals ─────────────────────────────────────────────────────────
 
 export type Role = "owner" | "admin" | "analyst" | "client" | "support" | "viewer";
@@ -668,4 +670,8 @@ export type CaseAggregate = {
   summary: CaseOperationSummary;
   paymentStatus: PaymentStatus;
   installmentPlan: InstallmentPlan | null;
+  installmentOptions: InstallmentOption[];
+  pricingConfigVersion: number;
+  totalPriceCents: number;
+  paymentMode: string;
 };

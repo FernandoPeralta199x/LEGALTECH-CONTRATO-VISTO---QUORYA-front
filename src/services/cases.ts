@@ -35,6 +35,7 @@ import {
 } from "../lib/localCases";
 import { ApiClientError, apiClient } from "./apiClient";
 import { fallbackReason, shouldUseMockFallback, type ServiceResult } from "./fallback";
+import type { InstallmentOption } from "./pricing";
 
 type BackendCase = {
   id: string;
@@ -305,6 +306,10 @@ type BackendCaseAggregate = {
   summary: BackendAggregateSummary;
   payment_status?: string | null;
   installment_plan?: BackendInstallmentPlan | null;
+  installment_options?: InstallmentOption[] | null;
+  pricing_config_version?: number | null;
+  total_price_cents?: number | null;
+  payment_mode?: string | null;
 };
 
 type BackendWizardSubmitResponse = BackendLegalRequest & {
@@ -1155,7 +1160,11 @@ export function mapBackendCaseAggregate(payload: BackendCaseAggregate): CaseAggr
     report: mapAggregateReport(payload.report, legalCase),
     summary: mapAggregateSummary(payload.summary),
     paymentStatus: mapPaymentStatus(payload.payment_status),
-    installmentPlan: mapInstallmentPlan(payload.installment_plan)
+    installmentPlan: mapInstallmentPlan(payload.installment_plan),
+    installmentOptions: payload.installment_options ?? [],
+    pricingConfigVersion: payload.pricing_config_version ?? 0,
+    totalPriceCents: payload.total_price_cents ?? 0,
+    paymentMode: payload.payment_mode ?? "mock"
   };
 }
 
@@ -1204,7 +1213,11 @@ function makeFallbackAggregate(legalCase: Case): CaseAggregate {
       updatedAt: legalCase.updatedAt
     },
     paymentStatus: "pending",
-    installmentPlan: null
+    installmentPlan: null,
+    installmentOptions: [],
+    pricingConfigVersion: 0,
+    totalPriceCents: 0,
+    paymentMode: "mock"
   };
 }
 

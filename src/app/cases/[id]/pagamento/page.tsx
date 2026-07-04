@@ -25,7 +25,6 @@ import { errorMessage } from "@/src/lib/errorMessage";
 import { ApiClientError } from "@/src/services/apiClient";
 import { createCasePayment, getCaseAggregate } from "@/src/services/cases";
 import {
-  estimatePricing,
   type InstallmentOption,
   type PricingEstimate
 } from "@/src/services/pricing";
@@ -93,10 +92,20 @@ export default function CasePaymentPage({ params }: PageProps) {
       setAggregateSource(result.source);
 
       if (result.source === "api" && result.data.paymentStatus === "pending") {
-        const moduleKeys = result.data.triageModules.map(
-          (module) => module.moduleKey
-        );
-        const est = await estimatePricing(result.data.case.product, moduleKeys);
+        // Opções vêm do próprio caso (backend autoritativo). NÃO re-estimar por
+        // módulos: os module_keys da triagem não são os códigos do pricing.
+        const est: PricingEstimate = {
+          product: result.data.case.product,
+          currency: "BRL",
+          base_price_cents: 0,
+          modules: [],
+          modules_total_cents: 0,
+          total_price_cents: result.data.totalPriceCents,
+          sla_hours: 0,
+          installment_options: result.data.installmentOptions,
+          pricing_config_version: result.data.pricingConfigVersion,
+          payment_mode: result.data.paymentMode
+        };
         setEstimate(est);
         const firstOption = est.installment_options[0] ?? null;
         setSelectedParcelas(firstOption ? firstOption.parcelas : null);
