@@ -14,8 +14,11 @@ import type {
   CaseUpdate,
   Client,
   Document,
+  InstallmentPlan,
   LegalRequest,
   Party,
+  PaymentMethod,
+  PaymentStatus,
   ProviderResult,
   ProductType,
   Report,
@@ -259,6 +262,37 @@ type BackendAggregateSummary = {
   updated_at: string;
 };
 
+type BackendInstallmentScheduleItem = {
+  numero: number;
+  vencimento: string;
+  valor_cents: number;
+};
+
+type BackendInstallmentPlanPayment = {
+  provider?: string;
+  mode?: string;
+  status?: string;
+  method?: string;
+  external_reference?: string | null;
+  requested_at?: string | null;
+};
+
+type BackendInstallmentPlan = {
+  version?: number;
+  pricing_config_version?: number;
+  selected_at?: string | null;
+  source_total_cents?: number;
+  method?: string;
+  parcelas?: number;
+  has_juros?: boolean;
+  juros_mensal_bps?: number;
+  valor_total_cents?: number;
+  acrescimo_cents?: number;
+  currency?: string;
+  schedule?: BackendInstallmentScheduleItem[];
+  payment?: BackendInstallmentPlanPayment | null;
+};
+
 type BackendCaseAggregate = {
   case: BackendAggregateCase;
   request: BackendLegalRequest | null;
@@ -269,6 +303,8 @@ type BackendCaseAggregate = {
   provider_results: BackendAggregateProviderResult[];
   report: BackendAggregateReport | null;
   summary: BackendAggregateSummary;
+  payment_status?: string | null;
+  installment_plan?: BackendInstallmentPlan | null;
 };
 
 type BackendWizardSubmitResponse = BackendLegalRequest & {
@@ -829,6 +865,63 @@ function mapAggregateReport(report: BackendAggregateReport | null, legalCase: Ca
   };
 }
 
+const PAYMENT_STATUSES: readonly PaymentStatus[] = [
+  "pending",
+  "simulated",
+  "paid",
+  "failed",
+  "canceled",
+  "expired",
+  "refunded"
+];
+
+function mapPaymentStatus(value: string | null | undefined): PaymentStatus {
+  return (PAYMENT_STATUSES as readonly string[]).includes(value ?? "")
+    ? (value as PaymentStatus)
+    : "pending";
+}
+
+/**
+ * Converte o snapshot de installment_plan do backend para o domínio do front.
+ * Campos sensíveis (payload_hash, idempotency_key, payment_form, raw) ficam
+ * de fora por decisão explícita — nunca chegam à UI (spec §11).
+ */
+function mapInstallmentPlan(
+  plan: BackendInstallmentPlan | null | undefined
+): InstallmentPlan | null {
+  if (!plan) return null;
+
+  const payment = plan.payment ?? null;
+  return {
+    version: plan.version ?? 1,
+    pricingConfigVersion: plan.pricing_config_version ?? 0,
+    selectedAt: plan.selected_at ?? null,
+    sourceTotalCents: plan.source_total_cents ?? 0,
+    method: (plan.method ?? "pix") as PaymentMethod,
+    parcelas: plan.parcelas ?? 1,
+    hasJuros: plan.has_juros ?? false,
+    jurosMensalBps: plan.juros_mensal_bps ?? 0,
+    valorTotalCents: plan.valor_total_cents ?? 0,
+    acrescimoCents: plan.acrescimo_cents ?? 0,
+    currency: plan.currency ?? "BRL",
+    schedule: (plan.schedule ?? []).map((item) => ({
+      numero: item.numero,
+      vencimento: item.vencimento,
+      valorCents: item.valor_cents
+    })),
+    payment: payment
+      ? {
+          provider: payment.provider ?? "mock",
+          mode: payment.mode ?? "mock",
+          status: payment.status ?? "simulated",
+          method: payment.method ?? "",
+          externalReference: payment.external_reference ?? null,
+          requestedAt: payment.requested_at ?? null
+        }
+      : null
+  };
+}
+
 function mapAggregateSummary(summary: BackendAggregateSummary): CaseOperationSummary {
   return {
     caseId: summary.case_id,
@@ -1060,7 +1153,9 @@ export function mapBackendCaseAggregate(payload: BackendCaseAggregate): CaseAggr
     triageModules: payload.triage_modules.map(mapAggregateTriageModule),
     providerResults: payload.provider_results.map(mapAggregateProviderResult),
     report: mapAggregateReport(payload.report, legalCase),
-    summary: mapAggregateSummary(payload.summary)
+    summary: mapAggregateSummary(payload.summary),
+    paymentStatus: mapPaymentStatus(payload.payment_status),
+    installmentPlan: mapInstallmentPlan(payload.installment_plan)
   };
 }
 
@@ -1107,7 +1202,9 @@ function makeFallbackAggregate(legalCase: Case): CaseAggregate {
           : null,
       sourceMode,
       updatedAt: legalCase.updatedAt
-    }
+    },
+    paymentStatus: "pending",
+    installmentPlan: null
   };
 }
 
@@ -1306,6 +1403,38 @@ export async function getCaseAggregate(
       source: "mock"
     };
   }
+}
+
+export type CasePaymentPayload = {
+  parcelas: number;
+  method: PaymentMethod;
+  pricing_config_version?: number;
+  idempotency_key: string;
+};
+
+export type CasePaymentResult = {
+  paymentStatus: PaymentStatus;
+  installmentPlan: InstallmentPlan | null;
+};
+
+/**
+ * Registra o pagamento (simulado) do caso. SEM fallback local por regra do
+ * spec §2: nada pode parecer cobrança real quando a API está indisponível —
+ * erros sobem para a tela tratar (400/404/409/rede).
+ */
+export async function createCasePayment(
+  caseId: string,
+  payload: CasePaymentPayload
+): Promise<CasePaymentResult> {
+  const response = await apiClient.post<{
+    payment_status?: string;
+    installment_plan?: BackendInstallmentPlan | null;
+  }>(`/api/v1/cases/${caseId}/payment`, payload);
+
+  return {
+    paymentStatus: mapPaymentStatus(response.data.payment_status),
+    installmentPlan: mapInstallmentPlan(response.data.installment_plan)
+  };
 }
 
 export async function createCase(

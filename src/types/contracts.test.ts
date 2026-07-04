@@ -149,9 +149,12 @@ test("CaseAggregate keeps operational data isolated by case id", () => {
       updatedAt: "2026-06-11T10:00:00.000Z"
     },
     timeline: [],
-    triageModules: []
+    triageModules: [],
+    paymentStatus: "pending",
+    installmentPlan: null
   };
 
   assert.equal(aggregate.case.id, aggregate.summary.caseId);
   assert.equal(aggregate.case.organizationId, aggregate.request?.organizationId);
+  assert.equal(aggregate.paymentStatus, "pending");
 });

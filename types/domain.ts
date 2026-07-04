@@ -614,6 +614,48 @@ export type CaseOperationSummary = {
   updatedAt: string;
 };
 
+export type PaymentStatus =
+  | "pending"
+  | "simulated"
+  | "paid"
+  | "failed"
+  | "canceled"
+  | "expired"
+  | "refunded";
+
+export type PaymentMethod = "pix" | "boleto" | "cartao";
+
+export type InstallmentPlanScheduleItem = {
+  numero: number;
+  vencimento: string;
+  valorCents: number;
+};
+
+export type InstallmentPlanPayment = {
+  provider: string;
+  mode: string;
+  status: string;
+  method: string;
+  externalReference: string | null;
+  requestedAt: string | null;
+};
+
+export type InstallmentPlan = {
+  version: number;
+  pricingConfigVersion: number;
+  selectedAt: string | null;
+  sourceTotalCents: number;
+  method: PaymentMethod;
+  parcelas: number;
+  hasJuros: boolean;
+  jurosMensalBps: number;
+  valorTotalCents: number;
+  acrescimoCents: number;
+  currency: string;
+  schedule: InstallmentPlanScheduleItem[];
+  payment: InstallmentPlanPayment | null;
+};
+
 export type CaseAggregate = {
   case: Case;
   request: LegalRequest | null;
@@ -624,4 +666,6 @@ export type CaseAggregate = {
   providerResults: ProviderResult[];
   report: Report | null;
   summary: CaseOperationSummary;
+  paymentStatus: PaymentStatus;
+  installmentPlan: InstallmentPlan | null;
 };

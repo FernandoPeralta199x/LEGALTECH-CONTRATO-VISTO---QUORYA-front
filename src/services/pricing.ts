@@ -57,6 +57,40 @@ export interface PricingLineItem {
   price_cents: number;
 }
 
+export interface InstallmentScheduleItem {
+  numero: number;
+  vencimento: string;
+  valor_cents: number;
+}
+
+export interface InstallmentOption {
+  parcelas: number;
+  has_juros: boolean;
+  juros_mensal_bps: number;
+  valor_parcela_cents: number;
+  valor_total_cents: number;
+  acrescimo_cents: number;
+  currency: string;
+  schedule: InstallmentScheduleItem[];
+  allowed_methods: string[];
+}
+
+export interface MethodRule {
+  enabled: boolean;
+  max_parcelas: number;
+}
+
+export interface InstallmentConfig {
+  enabled: boolean;
+  max_parcelas: number;
+  sem_juros_ate: number;
+  juros_mensal_bps: number;
+  valor_minimo_parcela_cents: number;
+  primeiro_vencimento_dias: number;
+  dia_vencimento: number | null;
+  allowed_methods: Record<string, MethodRule>;
+}
+
 export interface PricingEstimate {
   product: string;
   currency: string;
@@ -65,6 +99,9 @@ export interface PricingEstimate {
   modules_total_cents: number;
   total_price_cents: number;
   sla_hours: number;
+  installment_options: InstallmentOption[];
+  pricing_config_version: number;
+  payment_mode: string;
 }
 
 export interface ProductOverride {
@@ -80,6 +117,7 @@ export interface PricingConfig {
   cases_limit: number | null;
   product_overrides: Record<string, ProductOverride>;
   module_overrides: Record<string, ModuleOverride>;
+  installment_config?: InstallmentConfig;
   version: number;
   notes: string | null;
   updated_by: string | null;
@@ -90,6 +128,7 @@ export interface UpdatePricingConfigPayload {
   cases_limit?: number | null;
   product_overrides?: Record<string, ProductOverride> | null;
   module_overrides?: Record<string, ModuleOverride> | null;
+  installment_config?: InstallmentConfig | null;
   notes?: string | null;
 }
 
