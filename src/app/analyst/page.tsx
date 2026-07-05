@@ -2,6 +2,7 @@
 
 import {
   ArrowUpDown,
+  ChevronRight,
   ClipboardCheck,
   Clock,
   FileText,
@@ -336,54 +337,68 @@ export default function AnalystPage() {
             {visibleCases.map((legalCase, index) => (
               <div
                 className={cn(
-                  "flex flex-col gap-3 px-4 py-3 transition hover:bg-[var(--surf2)] sm:flex-row sm:items-center sm:gap-4",
+                  "flex flex-col gap-3 px-4 py-3.5 transition hover:bg-[var(--surf2)] sm:flex-row sm:items-center sm:gap-4",
                   index > 0 && "border-t border-[var(--border)]"
                 )}
                 key={legalCase.id}
               >
                 <div className="min-w-0 flex-1">
-                  <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
                     <span className="text-[11px] font-semibold tabular-nums text-brand-teal-dark">
                       {legalCase.code}
                     </span>
                     <StatusBadge status={legalCase.status} />
                     <PriorityBadge priority={legalCase.priority} />
                   </div>
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-[var(--text2)]">
-                    <span className="truncate text-[13px] font-semibold text-[var(--text)]">
-                      {caseTitle(legalCase)}
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <Users aria-hidden="true" size={12} />
-                      <b className="font-semibold text-[var(--text)]">{partiesCount(legalCase)}</b>
+                  <p className="truncate text-[13.5px] font-semibold leading-snug text-[var(--text)]">
+                    {caseTitle(legalCase)}
+                  </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[11px] text-[var(--text2)]">
+                    <span className="inline-flex items-center gap-1.5">
+                      <Users aria-hidden="true" className="text-[var(--text3)]" size={12} />
+                      <b className="font-semibold tabular-nums text-[var(--text)]">
+                        {partiesCount(legalCase)}
+                      </b>
                       partes
                     </span>
-                    <span className="flex items-center gap-1.5">
-                      <FileText aria-hidden="true" size={12} />
-                      <b className="font-semibold text-[var(--text)]">{legalCase.documentsCount}</b>
+                    <span aria-hidden="true" className="h-1 w-1 rounded-full bg-[var(--text3)]" />
+                    <span className="inline-flex items-center gap-1.5">
+                      <FileText aria-hidden="true" className="text-[var(--text3)]" size={12} />
+                      <b className="font-semibold tabular-nums text-[var(--text)]">
+                        {legalCase.documentsCount}
+                      </b>
                       docs
                     </span>
-                    <span className="flex items-center gap-1.5" title={triageStatusLabel(legalCase)}>
-                      <Clock aria-hidden="true" size={11} />
+                    <span aria-hidden="true" className="h-1 w-1 rounded-full bg-[var(--text3)]" />
+                    <span
+                      className="inline-flex items-center gap-1.5"
+                      title={triageStatusLabel(legalCase)}
+                    >
+                      <Clock aria-hidden="true" className="text-[var(--text3)]" size={11} />
                       {formatDate(legalCase.updatedAt)}
                     </span>
+                    <span
+                      aria-hidden="true"
+                      className="hidden h-1 w-1 rounded-full bg-[var(--text3)] sm:inline-block"
+                    />
                     <ProgressBar value={legalCase.progressPercent} />
                   </div>
                 </div>
 
                 <div className="flex shrink-0 items-center gap-2">
                   <Link
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surf2)] px-3 py-1.5 text-xs font-medium text-[var(--text)] transition hover:border-brand-teal/40"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surf)] px-3 py-2 text-xs font-medium text-[var(--text2)] transition hover:border-brand-teal/40 hover:text-[var(--text)]"
                     href={`/cases/${legalCase.id}#documents`}
                   >
                     <FileText aria-hidden="true" size={13} />
                     Documentos
                   </Link>
                   <Link
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-brand-teal/30 bg-brand-teal/10 px-3 py-1.5 text-xs font-semibold text-brand-teal transition hover:bg-brand-teal/15"
+                    className="inline-flex items-center gap-1 rounded-lg border border-brand-teal/30 bg-brand-teal/10 px-3 py-2 text-xs font-semibold text-brand-teal transition hover:bg-brand-teal/15"
                     href={`/cases/${legalCase.id}`}
                   >
-                    Abrir caso
+                    Abrir
+                    <ChevronRight aria-hidden="true" size={14} />
                   </Link>
                 </div>
               </div>
