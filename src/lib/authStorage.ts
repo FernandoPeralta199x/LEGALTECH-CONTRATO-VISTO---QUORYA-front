@@ -2,7 +2,10 @@ import type { DevSession } from "../types/auth";
 import { DEV_ROLES } from "../types/auth";
 import { LOCAL_CASES_STORAGE_KEY } from "./localCases";
 import { LOCAL_CLIENTS_STORAGE_KEY } from "./localClients";
-import { assertBrowserPersistDisallowedInProduction } from "./runtimeEnv";
+import {
+  assertBrowserPersistDisallowedInProduction,
+  isProduction
+} from "./runtimeEnv";
 
 export const AUTH_STORAGE_KEY = "legaltech.dev.session.v1";
 export const AUTH_SESSION_CHANGED_EVENT = "legaltech-dev-session-changed";
@@ -97,6 +100,14 @@ export function readStoredSessionValue(rawValue: string | null): StoredSessionRe
 }
 
 export function readStoredSession(): StoredSessionRead {
+  // Fail-closed em produção: a sessão/token de dev NUNCA é lida do storage do browser
+  // (simetria com saveStoredSession no write e com getSnapshot no hook useDevSession).
+  // Neutraliza um valor "stale" deixado por um deploy anterior — o caminho de produção
+  // é Cognito + cookie HttpOnly. Retorna null (não lança) para não quebrar o apiClient.
+  if (isProduction()) {
+    return { invalidReason: null, session: null };
+  }
+
   const storage = getBrowserStorage();
   if (!storage) {
     return { invalidReason: null, session: null };

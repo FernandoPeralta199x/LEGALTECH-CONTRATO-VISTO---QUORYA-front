@@ -6,6 +6,7 @@ import {
   AUTH_STORAGE_KEY,
   clearStoredSession,
   getStoredSession,
+  getStoredToken,
   readStoredSession,
   readStoredSessionValue,
   saveStoredSession
@@ -172,4 +173,32 @@ test("authStorage readStoredSessionValue is a pure parser", () => {
   });
   assert.equal(storage.removeCalls, 0);
   assert.equal(sessionChangedEvents, 0);
+});
+
+test("authStorage read path is fail-closed in production (no session/token leaks)", () => {
+  resetStorage();
+  const session = makeSession();
+  // Simula um valor "stale" deixado no localStorage por um deploy anterior.
+  storage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
+
+  // process.env.NODE_ENV é tipado como read-only; acesso indexado type-safe para o teste.
+  const env = process.env as Record<string, string | undefined>;
+  const previousEnv = env.NODE_ENV;
+  try {
+    env.NODE_ENV = "production";
+    // Em produção o token de dev nunca é lido/anexado (simetria com saveStoredSession
+    // e com o hook useDevSession, que já bloqueiam a escrita/o snapshot).
+    assert.equal(getStoredToken(), null);
+    assert.equal(getStoredSession(), null);
+    assert.deepEqual(readStoredSession(), { invalidReason: null, session: null });
+    // A leitura não pode apagar nem tocar o storage.
+    assert.equal(storage.getItem(AUTH_STORAGE_KEY), JSON.stringify(session));
+    assert.equal(storage.removeCalls, 0);
+  } finally {
+    if (previousEnv === undefined) {
+      delete env.NODE_ENV;
+    } else {
+      env.NODE_ENV = previousEnv;
+    }
+  }
 });
