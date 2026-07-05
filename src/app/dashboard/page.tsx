@@ -364,7 +364,9 @@ export default function DashboardPage() {
                     {
                       label: "Documentos",
                       value: documents.length,
-                      detail: "Insumos vinculados aos casos",
+                      // documents.length é a contagem carregada (a lista é limitada), não um
+                      // total consolidado como casos/clientes — rotulado para não confundir.
+                      detail: "Insumos carregados nesta lista",
                       icon: FileText,
                       color: "text-[var(--teal)]",
                       bg: "bg-[var(--teal-dim)] border-[rgba(32,201,151,0.22)]"

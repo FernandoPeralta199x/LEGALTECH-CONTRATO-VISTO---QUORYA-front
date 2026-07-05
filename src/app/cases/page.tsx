@@ -192,6 +192,17 @@ export default function CasesPage() {
     }
   }
 
+  // Opções do <select> de status na edição: as 6 transições válidas (CASE_STATUS_PATTERN).
+  // Se o caso está num status de sistema fora do conjunto (ex.: triage_completed), inclui-o
+  // no topo para o select exibir o valor REAL (antes mostrava a 1a opção, errada).
+  const editStatusOptions =
+    !editing || statusFilterOptions.some((o) => o.id === editing.status)
+      ? statusFilterOptions
+      : [
+          { id: editing.status as CaseStatus, label: `Status atual (${editing.status})` },
+          ...statusFilterOptions
+        ];
+
   async function handleDelete(legalCase: Case, event: React.MouseEvent) {
     event.preventDefault();
     event.stopPropagation();
@@ -268,17 +279,16 @@ export default function CasesPage() {
     return () => window.clearTimeout(t);
   }, [refreshCases]);
 
-  // busca server-side com debounce (acha em toda a base, não só na página)
+  // busca server-side com debounce (acha em toda a base, não só na página). Reseta a
+  // página JUNTO com o debounce: assim uma nova busca dispara UM único fetch (page=1),
+  // sem a requisição intermediária com a página antiga (o filtro reseta no próprio onChange).
   useEffect(() => {
-    const t = window.setTimeout(() => setDebouncedQuery(query.trim()), 350);
+    const t = window.setTimeout(() => {
+      setDebouncedQuery(query.trim());
+      setPage(1);
+    }, 350);
     return () => window.clearTimeout(t);
   }, [query]);
-
-  // ao mudar busca/filtro, volta para a 1a página (deferido)
-  useEffect(() => {
-    const t = window.setTimeout(() => setPage(1), 0);
-    return () => window.clearTimeout(t);
-  }, [debouncedQuery, filter]);
 
   function updateForm<K extends keyof CaseForm>(field: K, value: CaseForm[K]) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -519,7 +529,10 @@ export default function CasesPage() {
               <select
                 aria-label="Filtrar casos por status"
                 className="cv-input w-full pl-9 pr-3 text-xs font-medium [&_option]:bg-[var(--surf)]"
-                onChange={(event) => setFilter(event.target.value)}
+                onChange={(event) => {
+                  setFilter(event.target.value);
+                  setPage(1); // reseta a página no mesmo update => 1 único fetch
+                }}
                 value={filter}
               >
                 <option value="">Todos os status</option>
@@ -765,7 +778,7 @@ export default function CasesPage() {
                     onChange={(e) => setEditStatus(e.target.value as CaseStatus)}
                     value={editStatus}
                   >
-                    {statusFilterOptions.map((option) => (
+                    {editStatusOptions.map((option) => (
                       <option key={option.id} value={option.id}>
                         {option.label}
                       </option>
