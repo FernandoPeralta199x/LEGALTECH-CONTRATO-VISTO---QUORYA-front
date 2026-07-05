@@ -169,8 +169,8 @@ export default function CasePaymentPage({ params }: PageProps) {
   // Cartão (mock dev-only): tokeniza no cliente e envia SÓ token/last4/brand/holder.
   // O objeto `card` cru NUNCA é logado, serializado nem persistido; qualquer erro
   // (incl. de tokenização) vira mensagem genérica — jamais o erro cru.
-  async function handleCardSubmit(card: RawCard) {
-    if (submitting || !selectedOption) return;
+  async function handleCardSubmit(card: RawCard): Promise<boolean> {
+    if (submitting || !selectedOption) return false;
     setSubmitting(true);
     setSubmitError("");
     setConflict(false);
@@ -187,6 +187,7 @@ export default function CasePaymentPage({ params }: PageProps) {
         card_holder: card.holder
       });
       router.push(`/cases/${id}`);
+      return true;
     } catch (err) {
       if (err instanceof ApiClientError && err.status === 409) {
         setConflict(true);
@@ -196,6 +197,7 @@ export default function CasePaymentPage({ params }: PageProps) {
         );
       }
       setSubmitting(false);
+      return false;
     }
   }
 
@@ -488,7 +490,7 @@ export default function CasePaymentPage({ params }: PageProps) {
                   method === "cartao" &&
                   estimate.payment_mode === "mock" ? (
                     <CreditCardForm
-                      onSubmit={(card) => void handleCardSubmit(card)}
+                      onSubmit={handleCardSubmit}
                       parcelasLabel={`${selectedOption.parcelas}x · total ${centsToReaisLabel(
                         selectedOption.valor_total_cents
                       )}`}

@@ -15,7 +15,9 @@ import {
 } from "@/src/services/payment/tokenize";
 
 type CreditCardFormProps = {
-  onSubmit: (card: RawCard) => void;
+  /** Recebe o cartão cru, tokeniza/cobra e resolve `true` no sucesso (limpa o form),
+   *  `false` no erro (mantém os campos para nova tentativa). */
+  onSubmit: (card: RawCard) => Promise<boolean>;
   submitting: boolean;
   parcelasLabel: string;
 };
@@ -85,7 +87,7 @@ export function CreditCardForm({
     setTouched((prev) => ({ ...prev, [field]: true }));
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitting || !isValid) {
       setTouched({ number: true, exp: true, cvv: true, holder: true, cpf: true });
@@ -98,14 +100,17 @@ export function CreditCardForm({
       holder: holder.trim(),
       cpf
     };
-    onSubmit(card);
-    // Limpa os dados crus do estado imediatamente após entregá-los ao chamador.
-    setNumber("");
-    setExp("");
-    setCvv("");
-    setHolder("");
-    setCpf("");
-    setTouched({});
+    const ok = await onSubmit(card);
+    // Limpa os dados crus SÓ no sucesso; em erro (ex.: 400/rede) preserva os campos
+    // para o usuário tentar de novo sem redigitar o cartão inteiro.
+    if (ok) {
+      setNumber("");
+      setExp("");
+      setCvv("");
+      setHolder("");
+      setCpf("");
+      setTouched({});
+    }
   }
 
   return (
