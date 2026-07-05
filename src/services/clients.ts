@@ -288,30 +288,6 @@ export async function createClient(
   }
 }
 
-export async function getClient(clientId: string): Promise<ServiceResult<Client>> {
-  try {
-    const response = await apiClient.get<BackendClient>(`/api/v1/clients/${clientId}`);
-    return {
-      data: mapBackendClient(response.data),
-      source: "api"
-    };
-  } catch (error) {
-    if (!shouldUseMockFallback(error)) {
-      throw error;
-    }
-
-    const localClient = findStoredLocalClient(clientId);
-    if (!localClient) {
-      throw error;
-    }
-
-    return {
-      data: localClient,
-      fallbackReason: fallbackReason(error),
-      source: "mock"
-    };
-  }
-}
 
 export async function updateClient(
   clientId: string,

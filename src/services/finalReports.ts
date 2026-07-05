@@ -4,11 +4,6 @@
  */
 
 import { apiClient } from "@/src/services/apiClient";
-import { formatBytes } from "@/lib/formatters";
-
-export { formatBytes };
-
-export const FINAL_REPORT_KIND = "final_report";
 
 export const FINAL_REPORT_ACCEPTED_MIME = [
   "application/pdf",

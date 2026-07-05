@@ -89,8 +89,6 @@ export function resolveApiBaseUrl(): string {
   return `http://${LOCAL_API_FALLBACK_HOST}:${DEFAULT_API_PORT}`;
 }
 
-export const apiBaseUrl = resolveApiBaseUrl();
-
 type ApiClientOptions = RequestInit & {
   token?: string;
   timeoutMs?: number;

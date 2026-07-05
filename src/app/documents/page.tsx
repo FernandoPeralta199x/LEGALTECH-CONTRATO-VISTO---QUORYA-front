@@ -25,7 +25,7 @@ import { LoadingState } from "@/components/LoadingState";
 import { Notification } from "@/components/Notification";
 import { PageTitle } from "@/components/PageTitle";
 import { StatusBadge } from "@/components/StatusBadge";
-import { formatDate } from "@/lib/formatters";
+import { formatBytes, formatDate } from "@/lib/formatters";
 import { errorMessage } from "@/src/lib/errorMessage";
 import { listCases } from "@/src/services/cases";
 import {
@@ -49,18 +49,6 @@ const emptyDocumentForm: DocumentForm = {
 };
 
 const acceptedUploadTypes = ".pdf,.png,.jpg,.jpeg,.docx,.txt,.md";
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) {
-    return `${bytes} B`;
-  }
-
-  if (bytes < 1024 * 1024) {
-    return `${Math.round(bytes / 1024)} KB`;
-  }
-
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-}
 
 function documentTypeLabel(contentType: string): string {
   const labels: Record<string, string> = {

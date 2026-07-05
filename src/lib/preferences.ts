@@ -26,14 +26,6 @@ export const DEFAULT_NOTIFICATION_CHANNELS: NotificationChannelPreference = {
   whatsapp: false
 };
 
-export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
-  agent_failed: DEFAULT_NOTIFICATION_CHANNELS,
-  analysis_completed: DEFAULT_NOTIFICATION_CHANNELS,
-  new_case_created: DEFAULT_NOTIFICATION_CHANNELS,
-  report_approved: DEFAULT_NOTIFICATION_CHANNELS,
-  review_pending: DEFAULT_NOTIFICATION_CHANNELS
-};
-
 function getBrowserStorage(): Storage | null {
   if (typeof globalThis === "undefined" || !("localStorage" in globalThis)) {
     return null;

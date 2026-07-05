@@ -47,9 +47,12 @@ const otherMap: Record<string, Cfg> = {
   pending_upload:           { label: "Aguardando",              dot: "bg-slate-500",              tone: "cv-badge-muted" },
   uploaded:                 { label: "Anexo local",             dot: "bg-blue-500",               tone: "cv-badge-blue" },
   processed:                { label: "Preparado no MVP",        dot: "bg-teal-500",               tone: "cv-badge-teal" },
+  done:                     { label: "Preparado no MVP",        dot: "bg-teal-500",               tone: "cv-badge-teal" },
   validated:                { label: "Validação local",         dot: "bg-emerald-500",            tone: "cv-badge-teal" },
   /* ── Report ─────────────────────────────────────────────────────── */
   in_review:                { label: "Em revisão",              dot: "bg-yellow-500 animate-pulse", tone: "cv-badge-orange" },
+  ready:                    { label: "Pronto",                  dot: "bg-teal-500",               tone: "cv-badge-teal" },
+  generating:               { label: "Gerando",                 dot: "bg-amber-500 animate-pulse", tone: "cv-badge-orange" },
   /* ── Client / generic ───────────────────────────────────────────── */
   active:                   { label: "Ativo no MVP",            dot: "bg-emerald-500",            tone: "cv-badge-teal" },
   inactive:                 { label: "Inativo",                 dot: "bg-slate-600",              tone: "cv-badge-muted" },

@@ -1,8 +1,4 @@
-import {
-  clearStoredSession,
-  getStoredSession,
-  saveStoredSession
-} from "../lib/authStorage";
+import { saveStoredSession } from "../lib/authStorage";
 import type { DecodedDevJwt, DevLoginInput, DevRole, DevSession } from "../types/auth";
 import { DEV_ROLES } from "../types/auth";
 import { apiClient } from "./apiClient";
@@ -134,12 +130,4 @@ export async function saveDevSession(input: DevLoginInput): Promise<DevSession> 
   const session = await validateDevTokenWithBackend(input.token ?? "");
   saveStoredSession(session);
   return session;
-}
-
-export function getCurrentDevSession(): DevSession | null {
-  return getStoredSession();
-}
-
-export function logoutDevSession(): void {
-  clearStoredSession();
 }

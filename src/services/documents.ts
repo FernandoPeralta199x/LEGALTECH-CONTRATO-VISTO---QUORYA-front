@@ -1,5 +1,5 @@
 import { formatBytes } from "@/lib/formatters";
-import type { Document, DocumentCreate, DocumentUpdate } from "../../types";
+import type { Document, DocumentCreate } from "../../types";
 import { apiClient } from "./apiClient";
 import { shouldUseMockFallback, fallbackReason, type ServiceResult } from "./fallback";
 
@@ -214,31 +214,6 @@ export async function uploadDocument(
   };
 }
 
-export async function getDocument(
-  documentId: string
-): Promise<ServiceResult<Document>> {
-  const response = await apiClient.get<BackendDocument>(
-    `/api/v1/documents/${documentId}`
-  );
-  return {
-    data: mapBackendDocument(response.data),
-    source: "api"
-  };
-}
-
-export async function updateDocument(
-  documentId: string,
-  payload: DocumentUpdate
-): Promise<ServiceResult<Document>> {
-  const response = await apiClient.patch<BackendDocument>(
-    `/api/v1/documents/${documentId}`,
-    payload
-  );
-  return {
-    data: mapBackendDocument(response.data),
-    source: "api"
-  };
-}
 
 export async function getDocumentDownloadUrl(
   documentId: string

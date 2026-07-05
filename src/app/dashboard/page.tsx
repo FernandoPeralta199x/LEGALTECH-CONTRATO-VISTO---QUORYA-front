@@ -158,6 +158,8 @@ export default function DashboardPage() {
   const [fallbackActive, setFallbackActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  // stats falhou (totais consolidados indisponíveis) => os cards mostram só a 1ª página
+  const [statsDegraded, setStatsDegraded] = useState(false);
 
   const refreshDashboard = useCallback(async () => {
     setLoading(true);
@@ -171,6 +173,8 @@ export default function DashboardPage() {
         getDashboardStats().catch(() => ({ data: null, source: "mock" as const }))
       ]);
       setStats(statsResult.data);
+      // stats falhou mas as listas responderam: totais viram contagem parcial (1ª página)
+      setStatsDegraded(statsResult.data === null);
       setClients(clientsResult.data);
       setDocuments(documentsResult.data);
       setCases(
@@ -189,6 +193,7 @@ export default function DashboardPage() {
     } catch (err) {
       setError(errorMessage(err, "Não foi possível carregar o dashboard."));
       setFallbackActive(false);
+      setStatsDegraded(false);
     } finally {
       setLoading(false);
     }
@@ -273,6 +278,12 @@ export default function DashboardPage() {
             demonstrativos do fallback local.
           </Notification>
         )}
+        {!loading && !fallbackActive && statsDegraded && (
+          <Notification title="Totais parciais" tone="warning">
+            Não foi possível carregar os totais consolidados. Os números dos cards
+            refletem apenas os itens já carregados, não o total real.
+          </Notification>
+        )}
         {!loading && error && (
           <Notification
             onDismiss={() => setError("")}
@@ -282,7 +293,7 @@ export default function DashboardPage() {
             {error}
           </Notification>
         )}
-        {!loading && !error && !fallbackActive && hasData && (
+        {!loading && !error && !fallbackActive && !statsDegraded && hasData && (
           <div className="mb-5 flex items-center gap-2 text-xs text-[var(--text2)]">
             <CheckCircle2
               aria-hidden="true"
