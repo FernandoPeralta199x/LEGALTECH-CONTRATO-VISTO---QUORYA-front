@@ -640,6 +640,10 @@ export type InstallmentPlanPayment = {
   method: string;
   externalReference: string | null;
   requestedAt: string | null;
+  brand: string | null;
+  last4: string | null;
+  authorizationCode: string | null;
+  simulated: boolean;
 };
 
 export type InstallmentPlan = {

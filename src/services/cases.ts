@@ -276,6 +276,14 @@ type BackendInstallmentPlanPayment = {
   method?: string;
   external_reference?: string | null;
   requested_at?: string | null;
+  // payment_form (allowlist do backend). Para cartão: brand/last4/authorization_code/simulated.
+  payment_form?: {
+    type?: string;
+    brand?: string;
+    last4?: string;
+    authorization_code?: string;
+    simulated?: boolean;
+  } | null;
 };
 
 type BackendInstallmentPlan = {
@@ -921,7 +929,11 @@ function mapInstallmentPlan(
           status: payment.status ?? "simulated",
           method: payment.method ?? "",
           externalReference: payment.external_reference ?? null,
-          requestedAt: payment.requested_at ?? null
+          requestedAt: payment.requested_at ?? null,
+          brand: payment.payment_form?.brand ?? null,
+          last4: payment.payment_form?.last4 ?? null,
+          authorizationCode: payment.payment_form?.authorization_code ?? null,
+          simulated: payment.payment_form?.simulated ?? payment.mode === "mock"
         }
       : null
   };

@@ -34,6 +34,7 @@ import { Card } from "@/components/Card";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { centsToReaisLabel } from "@/components/CurrencyInput";
 import { TriageModuleCard } from "@/components/cases/TriageModuleCard";
+import { PaymentReceiptSheet } from "@/components/cases/PaymentReceiptSheet";
 import { TriagePrintSheet } from "@/components/cases/TriagePrintSheet";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
@@ -296,6 +297,8 @@ export default function CaseDetailPage({ params }: PageProps) {
   const [approveOpen, setApproveOpen] = useState(false);
   const [approving, setApproving] = useState(false);
   const [printTarget, setPrintTarget] = useState<string | null>(null);
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [printReceipt, setPrintReceipt] = useState(false);
   const [workflowNotice, setWorkflowNotice] = useState<{
     tone: "success" | "error";
     title: string;
@@ -592,6 +595,17 @@ export default function CaseDetailPage({ params }: PageProps) {
     window.print();
     return () => window.removeEventListener("afterprint", done);
   }, [printTarget]);
+
+  // Impressão/PDF do comprovante de pagamento (folha PaymentReceiptSheet).
+  useEffect(() => {
+    if (!printReceipt) {
+      return;
+    }
+    const done = () => setPrintReceipt(false);
+    window.addEventListener("afterprint", done);
+    window.print();
+    return () => window.removeEventListener("afterprint", done);
+  }, [printReceipt]);
 
   if (loading) {
     return (
@@ -917,13 +931,95 @@ export default function CaseDetailPage({ params }: PageProps) {
                     )}
                     <div className="mt-4 flex justify-end">
                       <Button
-                        href={`/cases/${caseData.id}/pagamento`}
-                        icon={<ArrowLeft aria-hidden="true" size={15} />}
+                        icon={<CheckCircle2 aria-hidden="true" size={15} />}
+                        onClick={() => setShowReceipt((v) => !v)}
                         variant="secondary"
                       >
-                        Ver tela de pagamento
+                        {showReceipt ? "Ocultar comprovante" : "Ver comprovante"}
                       </Button>
                     </div>
+                    {showReceipt && (
+                      <div className="mt-3 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] p-4">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2
+                            className="shrink-0 text-[var(--teal)]"
+                            size={18}
+                          />
+                          <p className="text-sm font-semibold text-[var(--text)]">
+                            {(installmentPlan.payment?.simulated ?? true)
+                              ? "Pagamento simulado confirmado"
+                              : "Pagamento confirmado"}
+                          </p>
+                        </div>
+                        <p className="mt-1 text-[11px] text-[var(--text3)]">
+                          Ambiente local — nenhuma cobrança real foi gerada.
+                        </p>
+                        <dl className="mt-3 space-y-1.5 text-xs">
+                          <div className="flex justify-between gap-4">
+                            <dt className="text-[var(--text3)]">Método</dt>
+                            <dd className="text-right font-medium text-[var(--text)]">
+                              {paymentMethodLabel[installmentPlan.method] ??
+                                installmentPlan.method}
+                              {installmentPlan.method === "cartao" &&
+                              installmentPlan.payment?.last4
+                                ? ` · ${
+                                    installmentPlan.payment.brand
+                                      ? installmentPlan.payment.brand + " "
+                                      : ""
+                                  }•••• ${installmentPlan.payment.last4}`
+                                : ""}
+                            </dd>
+                          </div>
+                          <div className="flex justify-between gap-4">
+                            <dt className="text-[var(--text3)]">Parcelas</dt>
+                            <dd className="text-right font-medium text-[var(--text)]">
+                              {installmentPlan.parcelas}x
+                            </dd>
+                          </div>
+                          <div className="flex justify-between gap-4">
+                            <dt className="text-[var(--text3)]">Valor total</dt>
+                            <dd className="text-right font-medium text-[var(--text)]">
+                              {centsToReaisLabel(installmentPlan.valorTotalCents)}
+                            </dd>
+                          </div>
+                          {installmentPlan.payment?.authorizationCode && (
+                            <div className="flex justify-between gap-4">
+                              <dt className="text-[var(--text3)]">Autorização</dt>
+                              <dd className="text-right font-medium text-[var(--text)]">
+                                {installmentPlan.payment.authorizationCode}
+                              </dd>
+                            </div>
+                          )}
+                          {installmentPlan.payment?.externalReference && (
+                            <div className="flex justify-between gap-4">
+                              <dt className="text-[var(--text3)]">Referência</dt>
+                              <dd className="break-all text-right font-medium text-[var(--text)]">
+                                {installmentPlan.payment.externalReference}
+                              </dd>
+                            </div>
+                          )}
+                          {installmentPlan.payment?.requestedAt && (
+                            <div className="flex justify-between gap-4">
+                              <dt className="text-[var(--text3)]">Data</dt>
+                              <dd className="text-right font-medium text-[var(--text)]">
+                                {new Date(
+                                  installmentPlan.payment.requestedAt
+                                ).toLocaleString("pt-BR")}
+                              </dd>
+                            </div>
+                          )}
+                        </dl>
+                        <div className="mt-4 flex justify-end">
+                          <Button
+                            icon={<Printer aria-hidden="true" size={15} />}
+                            onClick={() => setPrintReceipt(true)}
+                            variant="secondary"
+                          >
+                            Imprimir / salvar PDF
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : paymentPending ? (
                   <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1572,6 +1668,12 @@ export default function CaseDetailPage({ params }: PageProps) {
           modules={triageModules}
           resultByModule={resultByModule}
           target={printTarget}
+        />
+        <PaymentReceiptSheet
+          active={printReceipt}
+          caseCode={caseData.code}
+          caseTitle={caseDisplayTitle(caseData)}
+          plan={installmentPlan}
         />
         <ConfirmDialog
           cancelLabel="Cancelar"
