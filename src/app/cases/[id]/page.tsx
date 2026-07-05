@@ -270,6 +270,15 @@ function aggregatePartyFromCaseParty(
 export default function CaseDetailPage({ params }: PageProps) {
   const { id } = use(params);
   const [activeTab, setActiveTab] = useState("overview");
+  // Deep-link de aba via hash (ex.: /cases/{id}#documents abre direto a aba Documentos,
+  // usado pelas ações rápidas da fila do Analista).
+  useEffect(() => {
+    const hash = window.location.hash.replace("#", "");
+    if (["overview", "parties", "documents", "timeline", "agents", "report"].includes(hash)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- o fragmento (#tab) só existe no cliente e não chega ao servidor; é uma sincronização única no mount, sem loop.
+      setActiveTab(hash);
+    }
+  }, []);
   const [caseAggregate, setCaseAggregate] = useState<CaseAggregate | null>(null);
   const [caseData, setCaseData] = useState<Case | null>(null);
   const [caseDocuments, setCaseDocuments] = useState<Document[]>([]);
