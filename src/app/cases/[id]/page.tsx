@@ -915,6 +915,15 @@ export default function CaseDetailPage({ params }: PageProps) {
                         </div>
                       </div>
                     )}
+                    <div className="mt-4 flex justify-end">
+                      <Button
+                        href={`/cases/${caseData.id}/pagamento`}
+                        icon={<ArrowLeft aria-hidden="true" size={15} />}
+                        variant="secondary"
+                      >
+                        Ver tela de pagamento
+                      </Button>
+                    </div>
                   </div>
                 ) : paymentPending ? (
                   <div className="flex flex-wrap items-center justify-between gap-3">
