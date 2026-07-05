@@ -30,6 +30,7 @@ import { PriorityBadge } from "@/components/PriorityBadge";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatDate } from "@/lib/formatters";
 import { errorMessage } from "@/src/lib/errorMessage";
+import { useDevSession } from "@/src/lib/useDevSession";
 import { listCases } from "@/src/services/cases";
 import { listClients } from "@/src/services/clients";
 import { getDashboardStats, type DashboardStats } from "@/src/services/dashboard";
@@ -134,7 +135,8 @@ const processAreas = [
     href: "/admin",
     icon: Shield,
     badge: "Governança" as ActionBadge,
-    primary: false
+    primary: false,
+    adminOnly: true
   }
 ] as const;
 
@@ -144,6 +146,11 @@ function caseTitle(legalCase: Case): string {
 }
 
 export default function DashboardPage() {
+  const session = useDevSession();
+  // Atalhos adminOnly só para admin (espelha o gate do Sidebar/AdminGuard).
+  const visibleAreas = processAreas.filter(
+    (area) => !("adminOnly" in area) || session?.role === "admin"
+  );
   const [cases, setCases] = useState<Case[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -408,7 +415,7 @@ export default function DashboardPage() {
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {processAreas.map((area) => {
+                {visibleAreas.map((area) => {
                     const Icon = area.icon;
                     return (
                       <Link
