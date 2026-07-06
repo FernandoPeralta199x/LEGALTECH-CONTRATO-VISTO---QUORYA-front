@@ -271,10 +271,11 @@ export default function AnalystPage() {
               <button
                 aria-pressed={active}
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition",
+                  "group inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-semibold transition-all duration-150 active:scale-[0.97]",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/50",
                   active
-                    ? "border-brand-teal/45 bg-brand-teal/10 text-brand-teal"
-                    : "border-[var(--border)] bg-[var(--surf2)] text-[var(--text2)] hover:border-brand-teal/30"
+                    ? "border-brand-teal/50 bg-brand-teal/10 text-brand-teal shadow-[0_2px_10px_-4px_rgba(32,201,151,0.45)]"
+                    : "border-[var(--border)] bg-[var(--surf2)] text-[var(--text2)] hover:border-brand-teal/30 hover:bg-[var(--surf)] hover:text-[var(--text)]"
                 )}
                 key={tab.id}
                 onClick={() => setFilterTab(tab.id)}
@@ -283,10 +284,10 @@ export default function AnalystPage() {
                 {tab.label}
                 <span
                   className={cn(
-                    "rounded-md px-1.5 py-0.5 text-[11px] font-semibold tabular-nums",
+                    "inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-bold leading-none tabular-nums transition-colors",
                     active
-                      ? "bg-brand-teal/15 text-brand-teal"
-                      : "border border-[var(--border)] bg-[var(--surf)] text-[var(--text)]"
+                      ? "bg-brand-teal text-[#05201a]"
+                      : "bg-black/25 text-[var(--text2)] group-hover:text-[var(--text)]"
                   )}
                 >
                   {tab.count}
