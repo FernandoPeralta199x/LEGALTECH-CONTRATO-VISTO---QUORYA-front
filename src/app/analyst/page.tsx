@@ -2,6 +2,7 @@
 
 import {
   ArrowUpDown,
+  Briefcase,
   ChevronRight,
   ClipboardCheck,
   Clock,
@@ -88,6 +89,20 @@ function caseTitle(legalCase: Case): string {
 
 function partiesCount(legalCase: Case): string {
   return metadataText(legalCase.metadata?.partiesCount, String(legalCase.parties.length));
+}
+
+/** Cor do tile-ícone à esquerda da linha, por etapa (âncora visual + escaneabilidade). */
+function statusAccent(status: string): { box: string; icon: string } {
+  if (status === "triage_completed") {
+    return { box: "border-emerald-500/25 bg-emerald-500/10", icon: "text-emerald-400" };
+  }
+  if (status === "report_ready" || status === "needs_human_review") {
+    return { box: "border-blue-500/25 bg-blue-500/10", icon: "text-blue-400" };
+  }
+  if (status === "failed") {
+    return { box: "border-red-500/25 bg-red-500/10", icon: "text-red-400" };
+  }
+  return { box: "border-[var(--border)] bg-black/20", icon: "text-[var(--text3)]" };
 }
 
 /** Barra de progresso compacta e acessível. */
@@ -335,75 +350,88 @@ export default function AnalystPage() {
           </div>
         ) : (
           <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surf)]">
-            {visibleCases.map((legalCase, index) => (
-              <div
-                className={cn(
-                  "flex flex-col gap-3 px-4 py-3.5 transition hover:bg-[var(--surf2)] sm:flex-row sm:items-center sm:gap-4",
-                  index > 0 && "border-t border-[var(--border)]"
-                )}
-                key={legalCase.id}
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="mb-2 flex flex-wrap items-center gap-2">
-                    <span className="text-[11px] font-semibold tabular-nums text-brand-teal-dark">
-                      {legalCase.code}
-                    </span>
-                    <StatusBadge status={legalCase.status} />
-                    <PriorityBadge priority={legalCase.priority} />
+            {visibleCases.map((legalCase, index) => {
+              const accent = statusAccent(legalCase.status);
+              return (
+                <div
+                  className={cn(
+                    "group flex items-start gap-3.5 px-4 py-3.5 transition hover:bg-[var(--surf2)]",
+                    index > 0 && "border-t border-[var(--border)]"
+                  )}
+                  key={legalCase.id}
+                >
+                  <div
+                    className={cn(
+                      "mt-0.5 hidden h-9 w-9 shrink-0 place-items-center rounded-lg border transition-colors sm:grid",
+                      accent.box
+                    )}
+                  >
+                    <Briefcase aria-hidden="true" className={accent.icon} size={16} />
                   </div>
-                  <p className="truncate text-[13.5px] font-semibold leading-snug text-[var(--text)]">
-                    {caseTitle(legalCase)}
-                  </p>
-                  <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[11px] text-[var(--text2)]">
-                    <span className="inline-flex items-center gap-1.5">
-                      <Users aria-hidden="true" className="text-[var(--text3)]" size={12} />
-                      <b className="font-semibold tabular-nums text-[var(--text)]">
-                        {partiesCount(legalCase)}
-                      </b>
-                      partes
-                    </span>
-                    <span aria-hidden="true" className="h-1 w-1 rounded-full bg-[var(--text3)]" />
-                    <span className="inline-flex items-center gap-1.5">
-                      <FileText aria-hidden="true" className="text-[var(--text3)]" size={12} />
-                      <b className="font-semibold tabular-nums text-[var(--text)]">
-                        {legalCase.documentsCount}
-                      </b>
-                      docs
-                    </span>
-                    <span aria-hidden="true" className="h-1 w-1 rounded-full bg-[var(--text3)]" />
-                    <span
-                      className="inline-flex items-center gap-1.5"
-                      title={triageStatusLabel(legalCase)}
-                    >
-                      <Clock aria-hidden="true" className="text-[var(--text3)]" size={11} />
-                      {formatDate(legalCase.updatedAt)}
-                    </span>
-                    <span
-                      aria-hidden="true"
-                      className="hidden h-1 w-1 rounded-full bg-[var(--text3)] sm:inline-block"
-                    />
-                    <ProgressBar value={legalCase.progressPercent} />
-                  </div>
-                </div>
+                  <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-2 flex flex-wrap items-center gap-2">
+                        <span className="text-[11px] font-semibold tabular-nums text-brand-teal-dark">
+                          {legalCase.code}
+                        </span>
+                        <StatusBadge status={legalCase.status} />
+                        <PriorityBadge priority={legalCase.priority} />
+                      </div>
+                      <p className="truncate text-[13.5px] font-semibold leading-snug text-[var(--text)]">
+                        {caseTitle(legalCase)}
+                      </p>
+                      <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[11px] text-[var(--text2)]">
+                        <span className="inline-flex items-center gap-1.5">
+                          <Users aria-hidden="true" className="text-[var(--text3)]" size={12} />
+                          <b className="font-semibold tabular-nums text-[var(--text)]">
+                            {partiesCount(legalCase)}
+                          </b>
+                          partes
+                        </span>
+                        <span aria-hidden="true" className="h-1 w-1 rounded-full bg-[var(--text3)]" />
+                        <span className="inline-flex items-center gap-1.5">
+                          <FileText aria-hidden="true" className="text-[var(--text3)]" size={12} />
+                          <b className="font-semibold tabular-nums text-[var(--text)]">
+                            {legalCase.documentsCount}
+                          </b>
+                          docs
+                        </span>
+                        <span aria-hidden="true" className="h-1 w-1 rounded-full bg-[var(--text3)]" />
+                        <span
+                          className="inline-flex items-center gap-1.5"
+                          title={triageStatusLabel(legalCase)}
+                        >
+                          <Clock aria-hidden="true" className="text-[var(--text3)]" size={11} />
+                          {formatDate(legalCase.updatedAt)}
+                        </span>
+                        <span
+                          aria-hidden="true"
+                          className="hidden h-1 w-1 rounded-full bg-[var(--text3)] sm:inline-block"
+                        />
+                        <ProgressBar value={legalCase.progressPercent} />
+                      </div>
+                    </div>
 
-                <div className="flex shrink-0 items-center gap-2">
-                  <Link
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surf)] px-3 py-2 text-xs font-medium text-[var(--text2)] transition hover:border-brand-teal/40 hover:text-[var(--text)]"
-                    href={`/cases/${legalCase.id}#documents`}
-                  >
-                    <FileText aria-hidden="true" size={13} />
-                    Documentos
-                  </Link>
-                  <Link
-                    className="inline-flex items-center gap-1 rounded-lg border border-brand-teal/30 bg-brand-teal/10 px-3 py-2 text-xs font-semibold text-brand-teal transition hover:bg-brand-teal/15"
-                    href={`/cases/${legalCase.id}`}
-                  >
-                    Abrir
-                    <ChevronRight aria-hidden="true" size={14} />
-                  </Link>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <Link
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surf)] px-3 py-2 text-xs font-medium text-[var(--text2)] transition hover:border-brand-teal/40 hover:text-[var(--text)]"
+                        href={`/cases/${legalCase.id}#documents`}
+                      >
+                        <FileText aria-hidden="true" size={13} />
+                        Documentos
+                      </Link>
+                      <Link
+                        className="inline-flex items-center gap-1 rounded-lg border border-brand-teal/30 bg-brand-teal/10 px-3 py-2 text-xs font-semibold text-brand-teal transition hover:bg-brand-teal/15"
+                        href={`/cases/${legalCase.id}`}
+                      >
+                        Abrir
+                        <ChevronRight aria-hidden="true" size={14} />
+                      </Link>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </AppLayout>
