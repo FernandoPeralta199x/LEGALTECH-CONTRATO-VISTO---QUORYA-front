@@ -46,11 +46,10 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { Timeline } from "@/components/Timeline";
 import { formatBytes, caseDisplayTitle, formatDate } from "@/lib/formatters";
 import { errorMessage } from "@/src/lib/errorMessage";
-import { isValidEmail } from "@/src/lib/validation";
 import {
-  createCaseParty,
-  updateCaseParty
-} from "@/src/services/caseParties";
+  aggregatePartyFromCaseParty,
+  useCasePartiesEditor
+} from "@/src/lib/useCasePartiesEditor";
 import { getCaseAggregate } from "@/src/services/cases";
 import {
   generateCaseReport,
@@ -76,8 +75,6 @@ import type {
   Case,
   CaseAggregate,
   CaseParty,
-  CasePartyCreate,
-  CasePartyUpdate,
   Document,
   ProviderResult,
   Report
@@ -112,17 +109,7 @@ const partyTypeLabel: Record<string, string> = {
   testemunha: "Testemunha"
 };
 
-const emptyPartyForm: CasePartyCreate = {
-  document: "",
-  email: "",
-  name: "",
-  notes: "",
-  party_type: "cliente",
-  phone: ""
-};
-
 type PageProps = { params: Promise<{ id: string }> };
-type PartyFormErrors = Partial<Record<keyof CasePartyCreate, string>>;
 
 function sourceModeLabel(value: unknown): string {
   if (typeof value !== "string" || !value) {
@@ -210,63 +197,6 @@ function ProviderResultRow({ result }: { result: ProviderResult }) {
   );
 }
 
-function validatePartyForm(form: CasePartyCreate): PartyFormErrors {
-  const errors: PartyFormErrors = {};
-  const document = form.document?.trim() ?? "";
-  const email = form.email?.trim() ?? "";
-
-  if (!form.name.trim()) {
-    errors.name = "Informe o nome da parte.";
-  }
-
-  if (!form.party_type.trim()) {
-    errors.party_type = "Selecione o papel da parte.";
-  }
-
-  if (document && !/^[A-Za-z0-9./-]+$/.test(document)) {
-    errors.document = "Use apenas números, letras, pontos, barras ou hífens.";
-  }
-
-  if (email && !isValidEmail(email)) {
-    errors.email = "Informe um e-mail válido ou deixe o campo vazio.";
-  }
-
-  return errors;
-}
-
-function buildPartyPayload(form: CasePartyCreate): CasePartyCreate {
-  return {
-    document: form.document?.trim() || null,
-    email: form.email?.trim() || null,
-    name: form.name.trim(),
-    notes: form.notes?.trim() || null,
-    party_type: form.party_type,
-    phone: form.phone?.trim() || null
-  };
-}
-
-function partyFormFromParty(party: CaseParty): CasePartyCreate {
-  return {
-    document: party.document ?? "",
-    email: party.email ?? "",
-    name: party.name,
-    notes: party.notes ?? "",
-    party_type: party.type,
-    phone: party.phone ?? ""
-  };
-}
-
-function aggregatePartyFromCaseParty(
-  party: CaseParty,
-  fallbackOrganizationId: string
-): CaseAggregate["parties"][number] {
-  return {
-    ...party,
-    organizationId: party.organizationId ?? fallbackOrganizationId,
-    role: typeof party.metadata?.role === "string" ? party.metadata.role : party.type
-  };
-}
-
 export default function CaseDetailPage({ params }: PageProps) {
   const { id } = use(params);
   const [activeTab, setActiveTab] = useState("overview");
@@ -283,17 +213,33 @@ export default function CaseDetailPage({ params }: PageProps) {
   const [caseData, setCaseData] = useState<Case | null>(null);
   const [caseDocuments, setCaseDocuments] = useState<Document[]>([]);
   const [caseParties, setCaseParties] = useState<CaseParty[]>([]);
-  const [editingParty, setEditingParty] = useState<CaseParty | null>(null);
   const [error, setError] = useState("");
   const [fallbackReason, setFallbackReason] = useState("");
   const [aggregateSource, setAggregateSource] = useState<"api" | "mock">("api");
   const [loading, setLoading] = useState(true);
-  const [partyError, setPartyError] = useState("");
-  const [partyForm, setPartyForm] = useState<CasePartyCreate>(emptyPartyForm);
-  const [partyFormErrors, setPartyFormErrors] = useState<PartyFormErrors>({});
-  const [partySubmitting, setPartySubmitting] = useState(false);
-  const [partySuccessMessage, setPartySuccessMessage] = useState("");
-  const [showPartyForm, setShowPartyForm] = useState(false);
+
+  // Formulário de partes (criar/editar/validar/submeter) extraído para hook
+  // próprio — a página segue dona da lista (syncCaseParties, hoisted abaixo).
+  const {
+    editingParty,
+    partyError,
+    partyForm,
+    partyFormErrors,
+    partySubmitting,
+    partySuccessMessage,
+    showPartyForm,
+    dismissPartyError,
+    dismissPartySuccess,
+    resetPartyForm,
+    startCreateParty,
+    startEditParty,
+    updatePartyForm,
+    handlePartySubmit
+  } = useCasePartiesEditor({
+    caseId: id,
+    applyParties: (updater) => syncCaseParties(updater),
+    onFallbackReason: setFallbackReason
+  });
   const [finalReports, setFinalReports] = useState<FinalReportDocument[]>([]);
   const [finalReportUploading, setFinalReportUploading] = useState(false);
   const [finalReportError, setFinalReportError] = useState("");
@@ -512,90 +458,6 @@ export default function CaseDetailPage({ params }: PageProps) {
     });
   }
 
-  function resetPartyForm() {
-    setEditingParty(null);
-    setPartyForm(emptyPartyForm);
-    setPartyFormErrors({});
-    setPartyError("");
-    setShowPartyForm(false);
-  }
-
-  function startCreateParty() {
-    setEditingParty(null);
-    setPartyForm(emptyPartyForm);
-    setPartyFormErrors({});
-    setPartyError("");
-    setPartySuccessMessage("");
-    setShowPartyForm(true);
-  }
-
-  function startEditParty(party: CaseParty) {
-    setEditingParty(party);
-    setPartyForm(partyFormFromParty(party));
-    setPartyFormErrors({});
-    setPartyError("");
-    setPartySuccessMessage("");
-    setShowPartyForm(true);
-  }
-
-  function updatePartyForm<K extends keyof CasePartyCreate>(
-    field: K,
-    value: CasePartyCreate[K]
-  ) {
-    setPartyForm((current) => ({ ...current, [field]: value }));
-    setPartyFormErrors((current) => ({ ...current, [field]: "" }));
-    setPartyError("");
-    setPartySuccessMessage("");
-  }
-
-  async function handlePartySubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (partySubmitting) {
-      return;
-    }
-
-    const validationErrors = validatePartyForm(partyForm);
-    setPartyFormErrors(validationErrors);
-    if (Object.keys(validationErrors).length > 0) {
-      setPartyError("Revise os campos destacados antes de registrar a parte local.");
-      return;
-    }
-
-    setPartySubmitting(true);
-    setPartyError("");
-    setPartySuccessMessage("");
-
-    try {
-      const payload = buildPartyPayload(partyForm);
-      const result = editingParty
-        ? await updateCaseParty(id, editingParty.id, payload as CasePartyUpdate)
-        : await createCaseParty(id, payload);
-
-      syncCaseParties((current) =>
-        editingParty
-          ? current.map((party) =>
-              party.id === result.data.id ? result.data : party
-            )
-          : [result.data, ...current]
-      );
-      setFallbackReason(result.source === "mock" ? result.fallbackReason ?? "" : "");
-      setPartySuccessMessage(
-        result.source === "mock"
-          ? editingParty
-            ? "Registro local de parte atualizado no fallback de desenvolvimento."
-            : "Registro local de parte criado no fallback de desenvolvimento."
-          : editingParty
-            ? "Registro de parte atualizado pela API local."
-            : "Registro de parte criado pela API local."
-      );
-      resetPartyForm();
-    } catch (err) {
-      setPartyError(errorMessage(err));
-    } finally {
-      setPartySubmitting(false);
-    }
-  }
-
   useEffect(() => {
     const timer = window.setTimeout(() => {
       void refreshCase();
@@ -706,7 +568,7 @@ export default function CaseDetailPage({ params }: PageProps) {
         )}
         {partySuccessMessage && (
           <Notification
-            onDismiss={() => setPartySuccessMessage("")}
+            onDismiss={dismissPartySuccess}
             title="Ação local registrada"
             tone="success"
           >
@@ -714,7 +576,7 @@ export default function CaseDetailPage({ params }: PageProps) {
           </Notification>
         )}
         {partyError && (
-          <Notification onDismiss={() => setPartyError("")} title="Atenção" tone="error">
+          <Notification onDismiss={dismissPartyError} title="Atenção" tone="error">
             {partyError}
           </Notification>
         )}
