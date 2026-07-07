@@ -209,30 +209,6 @@ export type LegalRequest = {
   updatedAt: string;
 };
 
-export type Organization = {
-  id: string;
-  name: string;
-  cnpj: string;
-  plan: "starter" | "professional" | "enterprise";
-  casesLimit: number;
-  casesUsed: number;
-  createdAt: string;
-  status: "active" | "suspended";
-};
-
-export type User = {
-  id: string;
-  name: string;
-  email: string;
-  role: Role;
-  organizationId: string;
-  organizationName: string;
-  avatarInitials: string;
-  createdAt: string;
-  lastLoginAt: string;
-  status: "active" | "invited" | "inactive";
-};
-
 export type Client = {
   id: string;
   organizationId?: string;
@@ -383,26 +359,6 @@ export type CaseCreate = {
   metadata?: Record<string, unknown>;
 };
 
-export type CreateCasePayload = CaseCreate & {
-  request_id?: string;
-  product_type?: ProductType;
-  product_label?: string;
-  title?: string;
-  description?: string;
-  source_mode?: SourceMode;
-  idempotency_key?: string;
-};
-
-export type CreateRequestPayload = {
-  product_type: ProductType;
-  product_label: string;
-  title: string;
-  description?: string;
-  source_mode?: SourceMode;
-  idempotency_key?: string;
-  metadata?: Record<string, unknown>;
-};
-
 export type CaseUpdate = Partial<CaseCreate> & {
   status?: CaseStatus;
 };
@@ -418,22 +374,6 @@ export type CaseListFilters = {
   clientId?: string;
   sortBy?: "created_at" | "updated_at" | "status" | "risk_level";
   sortOrder?: "asc" | "desc";
-};
-
-export type CaseListItem = {
-  id: string;
-  code: string;
-  title: string;
-  clientName: string;
-  productType: ProductType;
-  productLabel: string;
-  status: CaseStatus;
-  progress: number;
-  riskLevel: RiskLevel;
-  sourceMode: SourceMode;
-  documentsCount: number;
-  partiesCount: number;
-  updatedAt: string;
 };
 
 export type CasePartyCreate = {
@@ -456,27 +396,6 @@ export type DocumentCreate = {
   file_hash?: string | null;
   status?: DocumentStatus;
   metadata?: Record<string, unknown>;
-};
-
-export type DocumentUpdate = Partial<DocumentCreate>;
-
-export type AgentExecution = {
-  id: string;
-  caseId: string;
-  agentName: string;
-  agentType:
-    | "triagem"
-    | "coleta"
-    | "doc_processor"
-    | "contrato_analyzer"
-    | "compliance"
-    | "report_writer";
-  status: AgentExecutionStatus;
-  startedAt: string;
-  finishedAt: string | null;
-  durationMs: number | null;
-  outputSummary: string | null;
-  errorMessage: string | null;
 };
 
 export type TriageModule = {
@@ -554,35 +473,6 @@ export type ReportRisk = {
   level: RiskLevel;
   title: string;
   description: string;
-};
-
-export type Review = {
-  id: string;
-  caseId: string;
-  reportId: string;
-  status: ReviewStatus;
-  assignedTo: string;
-  checklist: ReviewChecklistItem[];
-  observations: string;
-  createdAt: string;
-  reviewedAt: string | null;
-};
-
-export type ReviewChecklistItem = {
-  id: string;
-  label: string;
-  checked: boolean;
-};
-
-export type AuditLog = {
-  id: string;
-  caseId: string | null;
-  userId: string;
-  userName: string;
-  action: AuditAction;
-  description: string;
-  metadata: Record<string, string>;
-  createdAt: string;
 };
 
 export type TimelineEvent = {

@@ -1,4 +1,4 @@
-import type { Modulo, Papel, Produto, TipoPessoa } from "@/lib/produtoConfig";
+import type { Papel, TipoPessoa } from "@/lib/produtoConfig";
 
 export type Party = {
   id: string;
@@ -22,13 +22,6 @@ export type WizardFile = {
   /** Indicador de extração — mock até integrarmos com presigned upload + OCR. */
   status: "uploading" | "extracting" | "done" | "error";
   progress: number;
-};
-
-export type WizardState = {
-  parties: Party[];
-  arquivo: WizardFile | null;
-  produto: Produto | null;
-  modulos: Record<Modulo, boolean>;
 };
 
 let counter = 0;

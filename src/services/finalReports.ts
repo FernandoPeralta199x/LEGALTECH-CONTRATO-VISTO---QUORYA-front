@@ -72,11 +72,16 @@ export async function uploadFinalReport(
       file_size_bytes: file.size,
     }
   );
-  await fetch(reg.data.upload_url, {
+  const putRes = await fetch(reg.data.upload_url, {
     method: "PUT",
     body: file,
     headers: { "Content-Type": file.type || "application/octet-stream" },
   });
+  // fetch só rejeita em erro de rede; um 4xx/5xx do storage resolve com ok=false.
+  // Sem esta checagem a falha de upload seria engolida e o fluxo mostraria "sucesso".
+  if (!putRes.ok) {
+    throw new Error(`Falha ao enviar o relatório ao storage (HTTP ${putRes.status}).`);
+  }
   const res = await apiClient.get<BackendDocument>(
     `/api/v1/documents/${reg.data.document_id}`
   );

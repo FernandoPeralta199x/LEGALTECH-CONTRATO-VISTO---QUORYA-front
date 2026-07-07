@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import type { FormEvent } from "react";
 import Link from "next/link";
-import { use, useCallback, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useRef, useState } from "react";
 
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
@@ -314,11 +314,18 @@ export default function CaseDetailPage({ params }: PageProps) {
     description: string;
   } | null>(null);
 
+  // Token de carga: invalida o setState de um refresh anterior quando o id troca
+  // (ou um novo refresh começa), evitando exibir dados do caso errado numa corrida.
+  const latestLoad = useRef(0);
+
   const refreshFinalReports = useCallback(async () => {
+    const token = latestLoad.current;
     try {
       const reports = await listFinalReports(id);
+      if (token !== latestLoad.current) return;
       setFinalReports(reports);
     } catch (err) {
+      if (token !== latestLoad.current) return;
       setFinalReportError(errorMessage(err, "Não foi possível carregar relatórios finais."));
       setFinalReports([]);
     }
@@ -378,11 +385,13 @@ export default function CaseDetailPage({ params }: PageProps) {
   }
 
   const refreshCase = useCallback(async () => {
+    const token = ++latestLoad.current;
     setLoading(true);
     setError("");
 
     try {
       const aggregateResult = await getCaseAggregate(id);
+      if (token !== latestLoad.current) return; // id trocou / novo refresh — descarta
       setCaseAggregate(aggregateResult.data);
       setCaseData(aggregateResult.data.case);
       setCaseDocuments(aggregateResult.data.documents);
@@ -393,6 +402,7 @@ export default function CaseDetailPage({ params }: PageProps) {
       );
       void refreshFinalReports();
     } catch (err) {
+      if (token !== latestLoad.current) return;
       setError(errorMessage(err));
       setFallbackReason("");
       setCaseAggregate(null);
@@ -400,7 +410,7 @@ export default function CaseDetailPage({ params }: PageProps) {
       setCaseDocuments([]);
       setCaseParties([]);
     } finally {
-      setLoading(false);
+      if (token === latestLoad.current) setLoading(false);
     }
   }, [id, refreshFinalReports]);
 

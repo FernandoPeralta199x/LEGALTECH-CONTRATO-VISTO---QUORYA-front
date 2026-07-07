@@ -170,3 +170,69 @@ test("uploadDocument segue o fluxo presign (registra JSON, faz PUT, busca) sem o
   // leitura final do documento
   assert.match(getUrl, /\/api\/v1\/documents\/doc-uploaded$/);
 });
+
+test("uploadDocument lança quando o PUT ao storage retorna erro HTTP (não engole a falha)", async () => {
+  Object.defineProperty(globalThis, "localStorage", {
+    configurable: true,
+    value: {
+      getItem: (key: string) =>
+        key === "legaltech.dev.session.v1"
+          ? JSON.stringify({
+              email: "dev.local@example.test",
+              issuedAt: "2026-05-30T12:00:00.000Z",
+              organizationId: "11111111-1111-4111-8111-111111111111",
+              role: "admin",
+              source: "pasted",
+              token: "valid.dev.jwt",
+              userId: "22222222-2222-4222-8222-222222222222"
+            })
+          : null,
+      removeItem: () => undefined,
+      setItem: () => undefined
+    }
+  });
+
+  const uploadUrl = "https://storage.local/put/doc-fail?sig=x";
+  // O GET final é mockado com sucesso de propósito: sem a checagem de response.ok,
+  // o fluxo chegaria aqui e resolveria como sucesso (bug). Com a checagem, o PUT 403 lança antes.
+  globalThis.fetch = (async (url, init) => {
+    const u = String(url);
+    const method = (init?.method ?? "GET").toUpperCase();
+    if (u.endsWith("/api/v1/documents") && method === "POST") {
+      return Response.json(
+        { success: true, data: { document_id: "doc-fail", upload_url: uploadUrl } },
+        { status: 201 }
+      );
+    }
+    if (u === uploadUrl && method === "PUT") {
+      return new Response("AccessDenied", { status: 403 });
+    }
+    if (u.endsWith("/api/v1/documents/doc-fail") && method === "GET") {
+      return Response.json({
+        success: true,
+        data: {
+          id: "doc-fail",
+          case_id: "case-api-1",
+          filename: "rel.pdf",
+          content_type: "application/pdf",
+          size_bytes: 8,
+          file_hash: null,
+          status: "uploaded",
+          uploaded_by: null,
+          uploaded_at: "2026-05-30T12:00:00.000Z",
+          metadata: {},
+          created_at: "2026-05-30T12:00:00.000Z",
+          updated_at: "2026-05-30T12:00:00.000Z"
+        }
+      });
+    }
+    throw new Error(`URL inesperada no mock: ${method} ${u}`);
+  }) as typeof fetch;
+
+  const file = new File(["conteudo"], "rel.pdf", { type: "application/pdf" });
+
+  await assert.rejects(
+    () => uploadDocument({ caseId: "case-api-1", file }),
+    /storage|enviar|arquivo/i
+  );
+});
