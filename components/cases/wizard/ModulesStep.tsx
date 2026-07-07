@@ -45,8 +45,19 @@ export function ModulesStep({ produto, state, onChange }: ModulesStepProps) {
     [modulos, state]
   );
 
-  const productCents = products.get(PRODUTOS[produto].code)?.base_price_cents
-    ?? computeProductBasePrice(produto);
+  const backendProductCents = products.get(PRODUTOS[produto].code)?.base_price_cents;
+  const productCents = backendProductCents ?? computeProductBasePrice(produto);
+
+  // Marca o total como estimativa quando algum valor veio do fallback local
+  // (catálogo do backend indisponível ou incompleto) — sem mascarar a origem.
+  const usesLocalFallback = useMemo(() => {
+    if (backendProductCents === undefined) return true;
+    const includeRequired = produto === "reuniao_equipe";
+    return ativos.some((modulo) => {
+      if (!includeRequired && isRequired(modulo)) return false;
+      return modules.get(MODULOS[modulo].code)?.price_cents === undefined;
+    });
+  }, [backendProductCents, ativos, modules, produto, isRequired]);
 
   const valor = useMemo(() => {
     // O preço base do produto já engloba os módulos obrigatórios (bloqueados).
@@ -95,7 +106,11 @@ export function ModulesStep({ produto, state, onChange }: ModulesStepProps) {
         ))}
       </div>
 
-      <EstimateCard prazoHoras={prazo} valorCents={valor} />
+      <EstimateCard
+        error={usesLocalFallback ? "Catálogo do servidor indisponível para parte dos itens." : null}
+        prazoHoras={prazo}
+        valorCents={valor}
+      />
     </div>
   );
 }

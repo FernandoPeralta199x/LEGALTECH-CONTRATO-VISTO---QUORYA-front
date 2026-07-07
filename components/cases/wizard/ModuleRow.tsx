@@ -21,6 +21,9 @@ export function ModuleRow({
 }: ModuleRowProps) {
   const meta = MODULOS[modulo];
   const backendPrice = useModulePrice(meta.code);
+  // Fonte de verdade é o catálogo do backend (Pricing admin); o precoCents do
+  // produtoConfig é só fallback estimado quando o catálogo não respondeu.
+  const isEstimate = backendPrice === null || backendPrice === undefined;
   const displayPrice = backendPrice ?? meta.precoCents;
 
   return (
@@ -35,7 +38,9 @@ export function ModuleRow({
         </div>
         <p className="mt-1 text-xs leading-5 text-[var(--text2)]">{meta.descricao}</p>
         <p className="mt-1.5 text-[11px] text-[var(--text3)]">
-          Referência simulada: R$ {formatCents(displayPrice)}
+          {isEstimate
+            ? `Referência estimada (padrão local): R$ ${formatCents(displayPrice)}`
+            : `Referência simulada: R$ ${formatCents(displayPrice)}`}
         </p>
       </div>
 

@@ -37,7 +37,10 @@ export function ProductCard({
     return computeProductBasePrice(produto);
   }, [backendPrice, produto]);
 
-  const displayPriceLabel = `R$ ${formatCents(displayPrice)}`;
+  // "~" sinaliza valor estimado localmente (catálogo do backend indisponível);
+  // sem o prefixo, o preço vem do catálogo administrável (fonte de verdade).
+  const isEstimate = backendPrice === null || backendPrice === undefined;
+  const displayPriceLabel = `${isEstimate ? "~" : ""}R$ ${formatCents(displayPrice)}`;
 
   return (
     <button

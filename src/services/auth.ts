@@ -1,4 +1,5 @@
 import { saveStoredSession } from "../lib/authStorage";
+import { decodeJwtPayload } from "../lib/devJwt";
 import type { DecodedDevJwt, DevLoginInput, DevRole, DevSession } from "../types/auth";
 import { DEV_ROLES } from "../types/auth";
 import { apiClient } from "./apiClient";
@@ -10,30 +11,14 @@ type BackendCurrentUser = {
   role: string;
 };
 
-function base64UrlDecode(input: string): string {
-  const normalized = input.replace(/-/g, "+").replace(/_/g, "/");
-  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
-  const binary = atob(padded);
-  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
-
-  return new TextDecoder().decode(bytes);
-}
-
 export function isDevRole(value: string): value is DevRole {
   return DEV_ROLES.includes(value as DevRole);
 }
 
 export function decodeDevJwt(token: string): DecodedDevJwt | null {
-  const parts = token.trim().split(".");
-  if (parts.length !== 3 || !parts[1]) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(base64UrlDecode(parts[1])) as DecodedDevJwt;
-  } catch {
-    return null;
-  }
+  // Decode compartilhado (src/lib/devJwt): mesmo base64url->JSON e mesmo guard
+  // de 3 partes de antes. As claims continuam validadas em requireDevJwtClaims.
+  return decodeJwtPayload(token) as DecodedDevJwt | null;
 }
 
 function requireDevJwtClaims(token: string): DecodedDevJwt {

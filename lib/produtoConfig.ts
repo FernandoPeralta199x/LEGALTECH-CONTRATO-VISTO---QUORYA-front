@@ -3,8 +3,14 @@
  *
  * Mapeamento canônico do wizard de criação de caso.  No modelo unificado,
  * produtos não têm preço fixo próprio: o preço base de cada produto é a
- * soma dos módulos obrigatórios (`obrigatorio: true`) na matriz.  A tabela
- * administrável de "Preços de Módulos" é a única fonte de valores.
+ * soma dos módulos obrigatórios (`obrigatorio: true`) na matriz.
+ *
+ * PREÇOS: a fonte de verdade é o catálogo do BACKEND (tela administrável
+ * "Preços de Módulos" — services/pricing.ts). Os `precoCents` abaixo e
+ * `computeProductBasePrice` são apenas FALLBACK ESTIMADO para quando o
+ * catálogo não respondeu; a UI marca esses valores como estimativa
+ * (ModuleRow "estimada", ProductCard "~", EstimateCard "estimativa local")
+ * e o valor oficial é sempre recalculado pelo backend no registro/pagamento.
  *
  * As chaves de Produto (`dados_partes` | `consulta_objeto` |
  * `analise_contratual` | `reuniao_equipe`) coincidem com o `ProductType` já

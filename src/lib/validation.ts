@@ -1,4 +1,8 @@
-import { isValidCnpj, isValidCpf } from "../../lib/cpfCnpj";
+import { isValidCnpj, isValidCpf, isValidEmail } from "../../lib/cpfCnpj";
+import { decodeJwtPayload } from "./devJwt";
+
+// Regra única de e-mail (local@domínio.tld) — fonte: lib/cpfCnpj.
+export { isValidEmail };
 
 export type ValidationErrors = Record<string, string>;
 
@@ -73,13 +77,6 @@ function digitsOnly(value: string): string {
   return value.replace(/\D/g, "");
 }
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-/** Valida e-mail com a mesma regra usada em clientes e no wizard (local@domínio.tld). */
-export function isValidEmail(value: string): boolean {
-  return EMAIL_PATTERN.test(value.trim());
-}
-
 function fileExtension(filename: string): string {
   const lastDotIndex = filename.lastIndexOf(".");
   if (lastDotIndex < 0) {
@@ -87,27 +84,6 @@ function fileExtension(filename: string): string {
   }
 
   return filename.slice(lastDotIndex).toLowerCase();
-}
-
-function decodeJwtPayload(token: string): Record<string, unknown> | null {
-  const payload = token.split(".")[1];
-  if (!payload) {
-    return null;
-  }
-
-  try {
-    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
-    const binary = atob(padded);
-    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
-
-    const decoded = JSON.parse(new TextDecoder().decode(bytes)) as unknown;
-    return typeof decoded === "object" && decoded !== null
-      ? (decoded as Record<string, unknown>)
-      : null;
-  } catch {
-    return null;
-  }
 }
 
 export function validateClientForm(input: ClientFormValidationInput): ValidationResult {
