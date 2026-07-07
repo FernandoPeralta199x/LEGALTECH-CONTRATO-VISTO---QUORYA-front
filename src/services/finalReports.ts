@@ -1,9 +1,14 @@
 /**
- * Final report uploads — uses the existing documents upload endpoint with
- * ``metadata.kind = "final_report"`` so we don't need a new backend route.
+ * Final report uploads — reusa o endpoint de documents marcando o upload com
+ * ``document_classification = "final_report"`` (coluna já existente no schema),
+ * sem rota nova. A listagem filtra por ``?classification=final_report`` no backend,
+ * separando os relatórios finais dos demais uploads do caso (wizard/OCR).
  */
 
 import { apiClient } from "@/src/services/apiClient";
+
+/** Classificação que separa relatórios finais dos demais documentos do caso. */
+const FINAL_REPORT_KIND = "final_report";
 
 export const FINAL_REPORT_ACCEPTED_MIME = [
   "application/pdf",
@@ -70,6 +75,7 @@ export async function uploadFinalReport(
       file_name: file.name,
       file_type: ext,
       file_size_bytes: file.size,
+      document_classification: FINAL_REPORT_KIND,
     }
   );
   const putRes = await fetch(reg.data.upload_url, {
@@ -95,7 +101,7 @@ export async function listFinalReports(
   caseId: string
 ): Promise<FinalReportDocument[]> {
   const res = await apiClient.get<BackendDocument[]>(
-    `/api/v1/documents?case_id=${caseId}`
+    `/api/v1/documents?case_id=${caseId}&classification=${FINAL_REPORT_KIND}`
   );
   return res.data.map(mapDocument);
 }
