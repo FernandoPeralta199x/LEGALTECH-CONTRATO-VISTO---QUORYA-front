@@ -236,7 +236,7 @@ export function InstallmentConfigCard({
     <Card
       title={
         <span className="flex items-center gap-2">
-          <CreditCard size={18} style={{ color: "var(--accent)" }} />
+          <CreditCard size={18} style={{ color: "var(--teal)" }} />
           Parcelamento
         </span>
       }
@@ -267,102 +267,119 @@ export function InstallmentConfigCard({
 
         {value.enabled && (
           <>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <FormField
-                hint={`De 1 a ${MAX_PARCELAS_LIMIT} parcelas.`}
-                htmlFor="inst-max-parcelas"
-                label="Máximo de parcelas"
-              >
-                <IntField
-                  id="inst-max-parcelas"
-                  max={MAX_PARCELAS_LIMIT}
-                  min={1}
-                  onCommit={(n) => setMaxParcelas(n ?? 1)}
-                  value={value.max_parcelas}
-                />
-              </FormField>
-              <FormField
-                hint="Parcelas até este número não têm juros."
-                htmlFor="inst-sem-juros-ate"
-                label="Sem juros até"
-              >
-                <IntField
-                  id="inst-sem-juros-ate"
-                  max={value.max_parcelas}
-                  min={1}
-                  onCommit={(n) => patch({ sem_juros_ate: n ?? 1 })}
-                  value={value.sem_juros_ate}
-                />
-              </FormField>
-              <FormField
-                hint={`Tabela Price acima do limite sem juros (${value.juros_mensal_bps} bps).`}
-                htmlFor="inst-juros"
-                label="Juros mensal (%)"
-              >
-                <PercentField
-                  bps={value.juros_mensal_bps}
-                  id="inst-juros"
-                  onCommit={(bps) => patch({ juros_mensal_bps: bps })}
-                />
-              </FormField>
-              <FormField
-                hint="Opções com parcela abaixo deste valor não são ofertadas."
-                htmlFor="inst-parcela-minima"
-                label="Parcela mínima"
-              >
-                <CurrencyInput
-                  className="w-full"
-                  id="inst-parcela-minima"
-                  onChange={(cents) =>
-                    patch({ valor_minimo_parcela_cents: cents ?? 0 })
-                  }
-                  value={value.valor_minimo_parcela_cents}
-                />
-              </FormField>
-              <FormField
-                hint="Dias após a confirmação (0 a 365)."
-                htmlFor="inst-primeiro-vencimento"
-                label="1º vencimento (dias)"
-              >
-                <IntField
-                  id="inst-primeiro-vencimento"
-                  max={365}
-                  min={0}
-                  onCommit={(n) => patch({ primeiro_vencimento_dias: n ?? 30 })}
-                  value={value.primeiro_vencimento_dias}
-                />
-              </FormField>
-              <FormField
-                hint="Opcional (1 a 28). Vazio usa a data corrida."
-                htmlFor="inst-dia-vencimento"
-                label="Dia fixo de vencimento"
-              >
-                <IntField
-                  allowEmpty
-                  id="inst-dia-vencimento"
-                  max={28}
-                  min={1}
-                  onCommit={(n) => patch({ dia_vencimento: n })}
-                  placeholder="Sem dia fixo"
-                  value={value.dia_vencimento}
-                />
-              </FormField>
+            <div className="space-y-4">
+              {/* Grupo 1 — parcelas e juros */}
+              <div>
+                <p className="mb-2.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--teal)]">
+                  Parcelas e juros
+                </p>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <FormField
+                    hint={`De 1 a ${MAX_PARCELAS_LIMIT} parcelas.`}
+                    htmlFor="inst-max-parcelas"
+                    label="Máximo de parcelas"
+                  >
+                    <IntField
+                      id="inst-max-parcelas"
+                      max={MAX_PARCELAS_LIMIT}
+                      min={1}
+                      onCommit={(n) => setMaxParcelas(n ?? 1)}
+                      value={value.max_parcelas}
+                    />
+                  </FormField>
+                  <FormField
+                    hint="Parcelas até este número não têm juros."
+                    htmlFor="inst-sem-juros-ate"
+                    label="Sem juros até"
+                  >
+                    <IntField
+                      id="inst-sem-juros-ate"
+                      max={value.max_parcelas}
+                      min={1}
+                      onCommit={(n) => patch({ sem_juros_ate: n ?? 1 })}
+                      value={value.sem_juros_ate}
+                    />
+                  </FormField>
+                  <FormField
+                    hint="Aplicado às parcelas acima do limite sem juros."
+                    htmlFor="inst-juros"
+                    label="Juros mensal (%)"
+                  >
+                    <PercentField
+                      bps={value.juros_mensal_bps}
+                      id="inst-juros"
+                      onCommit={(bps) => patch({ juros_mensal_bps: bps })}
+                    />
+                  </FormField>
+                </div>
+              </div>
+
+              {/* Grupo 2 — valores e vencimento */}
+              <div>
+                <p className="mb-2.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--teal)]">
+                  Valores e vencimento
+                </p>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <FormField
+                    hint="Opções com parcela abaixo deste valor não são ofertadas."
+                    htmlFor="inst-parcela-minima"
+                    label="Parcela mínima"
+                  >
+                    <CurrencyInput
+                      className="w-full"
+                      id="inst-parcela-minima"
+                      onChange={(cents) =>
+                        patch({ valor_minimo_parcela_cents: cents ?? 0 })
+                      }
+                      value={value.valor_minimo_parcela_cents}
+                    />
+                  </FormField>
+                  <FormField
+                    hint="Dias após a confirmação (0 a 365)."
+                    htmlFor="inst-primeiro-vencimento"
+                    label="1º vencimento (dias)"
+                  >
+                    <IntField
+                      id="inst-primeiro-vencimento"
+                      max={365}
+                      min={0}
+                      onCommit={(n) => patch({ primeiro_vencimento_dias: n ?? 30 })}
+                      value={value.primeiro_vencimento_dias}
+                    />
+                  </FormField>
+                  <FormField
+                    hint="Opcional (1 a 28). Vazio usa a data corrida."
+                    htmlFor="inst-dia-vencimento"
+                    label="Dia fixo de vencimento"
+                  >
+                    <IntField
+                      allowEmpty
+                      id="inst-dia-vencimento"
+                      max={28}
+                      min={1}
+                      onCommit={(n) => patch({ dia_vencimento: n })}
+                      placeholder="Sem dia fixo"
+                      value={value.dia_vencimento}
+                    />
+                  </FormField>
+                </div>
+              </div>
             </div>
 
             <div>
               <p className="text-xs font-semibold" style={{ color: "var(--text2)" }}>
                 Métodos de pagamento
               </p>
-              <p className="mt-0.5 text-xs" style={{ color: "var(--text3)" }}>
+              <p className="mt-0.5 text-xs" style={{ color: "var(--text2)" }}>
                 Cada método pode limitar o próprio número máximo de parcelas.
               </p>
-              <div className="mt-3 space-y-3">
+              <div className="mt-3 space-y-2">
                 {METHOD_KEYS.map((key) => {
                   const rule =
                     value.allowed_methods[key] ?? { enabled: false, max_parcelas: 1 };
                   return (
                     <div
-                      className="flex flex-col gap-3 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] p-3 sm:flex-row sm:items-center sm:justify-between"
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-3 py-2"
                       key={key}
                     >
                       <div className="flex items-center gap-3">
@@ -382,7 +399,7 @@ export function InstallmentConfigCard({
                       </div>
                       {key === "cartao" ? (
                         <div className="flex items-center gap-2">
-                          <span className="text-xs" style={{ color: "var(--text3)" }}>
+                          <span className="text-xs" style={{ color: "var(--text2)" }}>
                             Máx. parcelas
                           </span>
                           <IntField
@@ -398,7 +415,7 @@ export function InstallmentConfigCard({
                           />
                         </div>
                       ) : (
-                        <span className="text-xs" style={{ color: "var(--text3)" }}>
+                        <span className="text-xs" style={{ color: "var(--text2)" }}>
                           À vista (1x)
                         </span>
                       )}

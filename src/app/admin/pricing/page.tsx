@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -9,6 +9,11 @@ import {
   Layers,
   Shield,
   RotateCcw,
+  Eye,
+  Wallet,
+  AlertTriangle,
+  Pencil,
+  Check,
 } from "lucide-react";
 
 import { AuthGuard } from "@/components/AuthGuard";
@@ -16,6 +21,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { PageTitle } from "@/components/PageTitle";
 import { Card } from "@/components/Card";
 import { CurrencyInput, centsToReaisLabel } from "@/components/CurrencyInput";
+import { SelectInput } from "@/components/FormField";
 import { Button } from "@/components/Button";
 import { Notification } from "@/components/Notification";
 import { LoadingState } from "@/components/LoadingState";
@@ -33,8 +39,10 @@ import {
   estimatePricing,
   type PricingCatalog,
   type PricingConfig,
+  type PricingEstimate,
   type CasesLimitCheck,
   type InstallmentConfig,
+  type InstallmentOption,
   type UpdatePricingConfigPayload,
 } from "@/src/services/pricing";
 import { errorMessage } from "@/src/lib/errorMessage";
@@ -42,6 +50,25 @@ import { errorMessage } from "@/src/lib/errorMessage";
 const TOAST_MS = 4000;
 
 type Status = "idle" | "loading" | "saving" | "success" | "error";
+
+// Ordem/labels dos métodos de pagamento — espelham o domínio (só o cartão parcela).
+const METHOD_ORDER = ["pix", "boleto", "cartao"] as const;
+const METHOD_LABELS: Record<(typeof METHOD_ORDER)[number], string> = {
+  pix: "Pix",
+  boleto: "Boleto",
+  cartao: "Cartão",
+};
+
+// Seções do editor — usadas pelos atalhos da barra fixa e pelo scroll-spy.
+const SECTIONS = [
+  { id: "sec-limite", label: "Limite" },
+  { id: "sec-modulos", label: "Módulos" },
+  { id: "sec-parcelamento", label: "Parcelamento" },
+] as const;
+
+function jurosLabel(bps: number): string {
+  return `${(bps / 100).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}% a.m.`;
+}
 
 function useToast() {
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(
@@ -78,6 +105,19 @@ export default function AdminPricingPage() {
   const [paymentMode, setPaymentMode] = useState("mock");
   const [notes, setNotes] = useState("");
 
+  // Prévia (F) — reflete a configuração SALVA no servidor para um produto.
+  const [previewProduct, setPreviewProduct] = useState("");
+  const [previewEstimate, setPreviewEstimate] = useState<PricingEstimate | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+
+  // Barra fixa (G) — seção ativa destacada nos atalhos.
+  const [activeSection, setActiveSection] = useState<string>(SECTIONS[0].id);
+  const barRef = useRef<HTMLDivElement>(null);
+  const lastPreviewProduct = useRef<string>("");
+  // Módulo em edição de preço (padrão de "clicar para editar").
+  const [editingModule, setEditingModule] = useState<string | null>(null);
+
   const loadAll = useCallback(async () => {
     setStatus("loading");
     setLoadErr(null);
@@ -103,17 +143,9 @@ export default function AdminPricingPage() {
 
       setInstallmentConfig(normalizeInstallmentConfig(cfg.installment_config));
 
-      // payment_mode só é exposto pelo estimate; falha aqui não bloqueia a tela
-      // e mantém o aviso conservador de simulação (fase local = seam mock).
-      try {
-        const est = await estimatePricing(
-          cat.products[0]?.code ?? "analise_contratual",
-          []
-        );
-        setPaymentMode(est.payment_mode || "mock");
-      } catch {
-        setPaymentMode("mock");
-      }
+      // Produto padrão da prévia; o estimate é buscado pelo efeito dedicado
+      // (que também revalida payment_mode e reage ao salvar / troca de produto).
+      setPreviewProduct(cat.products[0]?.code ?? "analise_contratual");
 
       setNotes(cfg.notes ?? "");
       setStatus("idle");
@@ -133,6 +165,70 @@ export default function AdminPricingPage() {
     const t = window.setTimeout(() => void loadAll(), 0);
     return () => window.clearTimeout(t);
   }, [loadAll]);
+
+  // Prévia: busca o estimate da config SALVA. Reage à troca de produto e à
+  // versão do config (após salvar). payment_mode só é exposto aqui — falha não
+  // bloqueia a tela e mantém o aviso conservador de simulação (seam mock).
+  const configVersion = config?.version;
+  useEffect(() => {
+    if (!previewProduct) return;
+    let cancelled = false;
+    // defer (setTimeout 0): mantém os setState fora do corpo síncrono do efeito
+    // (evita cascade render — mesmo padrão do loadAll/Header).
+    const t = window.setTimeout(() => {
+      // Troca de produto: zera o estimate para exibir skeleton (evita mostrar os
+      // números do produto anterior). Refetch por versão (após salvar) não pisca.
+      const productChanged = lastPreviewProduct.current !== previewProduct;
+      lastPreviewProduct.current = previewProduct;
+      if (productChanged) setPreviewEstimate(null);
+      setPreviewLoading(true);
+      setPreviewError(null);
+      void estimatePricing(previewProduct, [])
+        .then((est) => {
+          if (cancelled) return;
+          setPreviewEstimate(est);
+          setPaymentMode(est.payment_mode || "mock");
+        })
+        .catch((err) => {
+          if (cancelled) return;
+          setPreviewEstimate(null);
+          setPreviewError(errorMessage(err, "Prévia indisponível."));
+          setPaymentMode("mock");
+        })
+        .finally(() => {
+          if (!cancelled) setPreviewLoading(false);
+        });
+    }, 0);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
+  }, [previewProduct, configVersion]);
+
+  // Scroll-spy dos atalhos: a seção ativa é a última cujo topo já passou abaixo
+  // da barra fixa (linha = header + barra + folga). Determinístico e estável —
+  // evita o "piscar" do IntersectionObserver com seções altas. rAF faz o throttle.
+  useEffect(() => {
+    if (status !== "idle" && status !== "saving") return;
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+      const line = 64 + (barRef.current?.offsetHeight ?? 0) + 24;
+      let current: string = SECTIONS[0].id;
+      for (const s of SECTIONS) {
+        const el = document.getElementById(s.id);
+        if (el && el.getBoundingClientRect().top <= line) current = s.id;
+      }
+      setActiveSection(current);
+    };
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(update);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [status]);
 
   const hasChanges = useMemo(() => {
     if (!config) return false;
@@ -164,8 +260,24 @@ export default function AdminPricingPage() {
     return false;
   }, [config, unlimitedCases, casesLimit, moduleOverrides, installmentConfig, notes]);
 
+  // Validações de pagabilidade (P-1/P-2) — derivadas do estado do formulário.
+  const enabledMethods = useMemo(
+    () =>
+      installmentConfig
+        ? METHOD_ORDER.filter((k) => installmentConfig.allowed_methods[k]?.enabled)
+        : [],
+    [installmentConfig]
+  );
+  // P-1: nenhum método habilitado => casos ficariam sem forma de pagamento.
+  const noMethodEnabled = installmentConfig !== null && enabledMethods.length === 0;
+  // P-2: parcelamento ligado mas cartão desligado => nenhuma parcela é ofertada.
+  const installmentsWithoutCard =
+    !!installmentConfig?.enabled &&
+    !installmentConfig.allowed_methods.cartao?.enabled;
+
   const handleReset = () => {
     if (!config) return;
+    setEditingModule(null);
     const unlimited = config.cases_limit === null;
     setUnlimitedCases(unlimited);
     setCasesLimit(unlimited ? null : config.cases_limit);
@@ -220,14 +332,27 @@ export default function AdminPricingPage() {
     }
   };
 
+  const goToSection = (id: string) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    // Offset dinâmico: header do app (64px) + altura real da barra fixa + folga.
+    // Acompanha a barra crescer/quebrar (mobile) — não depende de scroll-mt fixo.
+    const HEADER_H = 64;
+    const barH = barRef.current?.offsetHeight ?? 0;
+    const y =
+      el.getBoundingClientRect().top + window.scrollY - HEADER_H - barH - 12;
+    window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+  };
+
   const isLoading = status === "loading";
   const isSaving = status === "saving";
+  const canSave = hasChanges && !noMethodEnabled;
 
   return (
     <AuthGuard>
       <AppLayout>
-        <div className="mx-auto max-w-5xl space-y-6">
-          {/* Header */}
+        <div className="mx-auto max-w-6xl">
+          {/* Header (título + descrição preservados) */}
           <div className="flex items-center gap-3">
             <button
               aria-label="Voltar para Administração"
@@ -244,16 +369,6 @@ export default function AdminPricingPage() {
             />
           </div>
 
-          {/* Feedback de salvamento (carregamento usa ErrorState abaixo) */}
-          {message && (
-            <Notification
-              onDismiss={() => setMessage(null)}
-              tone={message.type}
-            >
-              {message.text}
-            </Notification>
-          )}
-
           {isLoading ? (
             <LoadingState label="Carregando configuração de pricing..." />
           ) : status === "error" && !config ? (
@@ -264,226 +379,561 @@ export default function AdminPricingPage() {
             />
           ) : (
             <>
-              {/* Cases Limit + Status */}
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                <Card title="Limite de Casos">
-                  <div className="mb-4 flex items-center gap-2">
-                    <Shield size={18} style={{ color: "var(--accent)" }} />
-                    <h3 className="font-semibold" style={{ color: "var(--text)" }}>
-                      Limite de Casos
-                    </h3>
-                  </div>
-                  <div className="space-y-3">
-                    <label className="flex cursor-pointer items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={unlimitedCases}
-                        onChange={(e) => setUnlimitedCases(e.target.checked)}
-                        className="rounded border-[var(--bd)] bg-[var(--surf2)] text-[var(--accent)]"
-                      />
-                      <span style={{ color: "var(--text2)" }}>
-                        Ilimitado (sem restrição)
-                      </span>
-                    </label>
-                    {!unlimitedCases && (
-                      <div className="space-y-1">
-                        <label
-                          className="text-xs"
-                          style={{ color: "var(--text3)" }}
-                        >
-                          Quantidade máxima de casos ativos
-                        </label>
-                        <input
-                          type="number"
-                          min={1}
-                          max={100000}
-                          value={casesLimit ?? ""}
-                          onChange={(e) => {
-                            const v = e.target.value;
-                            if (v === "") {
-                              setCasesLimit(null);
-                              return;
-                            }
-                            const n = parseInt(v, 10);
-                            if (Number.isNaN(n)) return;
-                            setCasesLimit(Math.min(100000, Math.max(1, n)));
-                          }}
-                          placeholder="Ex: 100"
-                          className="w-full rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-3 py-2 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </Card>
-
-                <Card title="Status Atual">
-                  <div className="mb-4 flex items-center gap-2">
-                    <Settings size={18} style={{ color: "var(--accent)" }} />
-                    <h3 className="font-semibold" style={{ color: "var(--text)" }}>
-                      Status Atual
-                    </h3>
-                  </div>
-                  <div className="space-y-2 text-sm">
+              {/* ── Barra fixa (G): status + atalhos + salvar ────────────── */}
+              <div
+                ref={barRef}
+                className="sticky top-16 z-20 -mx-1 mb-5 rounded-xl border border-[var(--bd)] bg-[var(--surf)] px-3 py-2.5 shadow-[0_6px_20px_rgba(0,0,0,0.28)] sm:px-4"
+                role="region"
+                aria-label="Status e ações da configuração"
+              >
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                  {/* Status (antiga aba "Status Atual", agora sempre visível) */}
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                    <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text3)]">
+                      <Settings size={12} aria-hidden="true" />
+                      Status
+                    </span>
                     {limitCheck && (
                       <>
-                        <div className="flex justify-between">
-                          <span style={{ color: "var(--text2)" }}>Casos ativos</span>
-                          <span style={{ color: "var(--text)" }}>
+                        <span className="text-xs text-[var(--text2)]">
+                          Casos ativos{" "}
+                          <b className="font-semibold tabular-nums text-[var(--text)]">
                             {limitCheck.active_cases_count}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span style={{ color: "var(--text2)" }}>Limite</span>
-                          <span style={{ color: "var(--text)" }}>
+                          </b>
+                        </span>
+                        <span className="text-[var(--text3)]">·</span>
+                        <span className="text-xs text-[var(--text2)]">
+                          Limite{" "}
+                          <b className="font-semibold tabular-nums text-[var(--text)]">
                             {limitCheck.cases_limit ?? "Ilimitado"}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span style={{ color: "var(--text2)" }}>Pode criar</span>
-                          <span
-                            style={{
-                              color: limitCheck.allowed ? "#22c55e" : "#ef4444",
-                            }}
+                          </b>
+                        </span>
+                        <span className="text-[var(--text3)]">·</span>
+                        <span className="text-xs text-[var(--text2)]">
+                          Pode criar{" "}
+                          <b
+                            className="font-semibold"
+                            style={{ color: limitCheck.allowed ? "var(--ok)" : "var(--danger)" }}
                           >
                             {limitCheck.allowed ? "Sim" : "Não"}
-                          </span>
-                        </div>
+                          </b>
+                        </span>
                       </>
                     )}
                     {config && (
-                      <div
-                        className="mt-2 flex justify-between pt-2"
-                        style={{ borderTop: "1px solid var(--bd)" }}
-                      >
-                        <span style={{ color: "var(--text2)" }}>Versão</span>
-                        <span style={{ color: "var(--text)" }}>{config.version}</span>
-                      </div>
+                      <>
+                        <span className="text-[var(--text3)]">·</span>
+                        <span className="cv-badge cv-badge-muted px-2 py-0.5">
+                          v{config.version}
+                        </span>
+                      </>
                     )}
                   </div>
-                </Card>
-              </div>
 
-              {/* Module Overrides */}
-              {catalog && (
-                <Card
-                  title={
-                    <span className="flex items-center gap-2">
-                      <Layers size={18} style={{ color: "var(--accent)" }} />
-                      Preços de Módulos
-                    </span>
-                  }
-                  description="Deixe vazio para usar o padrão. Os preços dos produtos são calculados automaticamente a partir dos módulos obrigatórios."
-                >
-                  <div className="space-y-3">
-                    {catalog.modules.map((mod) => {
-                      const overrideCents = moduleOverrides[mod.code] ?? null;
-                      const hasOverride = overrideCents !== null;
+                  {/* Ações (P-6: salvar sempre à mão) */}
+                  <div className="ml-auto flex items-center gap-2">
+                    {hasChanges && (
+                      <Button
+                        disabled={isSaving}
+                        icon={<RotateCcw size={15} />}
+                        onClick={handleReset}
+                        size="sm"
+                        title="Descartar alterações"
+                        variant="secondary"
+                      >
+                        Descartar
+                      </Button>
+                    )}
+                    <Button
+                      disabled={!canSave}
+                      icon={<Save size={15} />}
+                      loading={isSaving}
+                      onClick={() => void handleSave()}
+                      size="sm"
+                      title={
+                        noMethodEnabled
+                          ? "Habilite ao menos um método de pagamento para salvar."
+                          : !hasChanges
+                            ? "Nenhuma alteração para salvar."
+                            : undefined
+                      }
+                    >
+                      {isSaving ? "Salvando..." : "Salvar"}
+                    </Button>
+                  </div>
+
+                  {/* Atalhos de seção */}
+                  <div className="flex w-full items-center gap-1.5 overflow-x-auto border-t border-[var(--bd)] pt-2">
+                    {SECTIONS.map((s) => {
+                      const active = activeSection === s.id;
                       return (
-                        <div
-                          key={mod.code}
-                          className="flex flex-col gap-3 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] p-3 sm:flex-row sm:items-center"
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => goToSection(s.id)}
+                          aria-current={active ? "true" : undefined}
+                          className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                            active
+                              ? "border-[rgba(32,201,151,0.4)] bg-[var(--teal-dim)] text-[var(--teal)]"
+                              : "border-[var(--bd)] text-[var(--text2)] hover:border-[var(--bd2)] hover:text-[var(--text)]"
+                          }`}
                         >
-                          <div className="min-w-0 flex-1">
-                            <div
-                              className="text-sm font-medium"
-                              style={{ color: "var(--text)" }}
-                            >
-                              {mod.title}
-                            </div>
-                            <div
-                              className="mt-0.5 flex items-center gap-2 text-xs"
-                              style={{ color: "var(--text2)" }}
-                            >
-                              <span>Padrão: {centsToReaisLabel(mod.price_cents)}</span>
-                              {hasOverride && (
-                                <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-400">
-                                  override
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <CurrencyInput
-                              value={overrideCents}
-                              onChange={(cents) =>
-                                setModuleOverrides((prev) => ({
-                                  ...prev,
-                                  [mod.code]: cents,
-                                }))
-                              }
-                              placeholder={centsToReaisLabel(mod.price_cents)}
-                              className="w-40"
-                              aria-label={`Preço override para ${mod.title}`}
-                            />
-                            {hasOverride && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setModuleOverrides((prev) => ({
-                                    ...prev,
-                                    [mod.code]: null,
-                                  }))
-                                }
-                                className="text-xs text-[var(--text3)] underline hover:text-[var(--text)]"
-                              >
-                                usar padrão
-                              </button>
-                            )}
-                          </div>
-                        </div>
+                          {s.label}
+                        </button>
                       );
                     })}
                   </div>
-                </Card>
-              )}
-
-              {/* Installments */}
-              {installmentConfig && (
-                <InstallmentConfigCard
-                  onChange={setInstallmentConfig}
-                  paymentMode={paymentMode}
-                  value={installmentConfig}
-                />
-              )}
-
-              {/* Notes */}
-              <Card title="Observações">
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  maxLength={500}
-                  rows={3}
-                  placeholder="Notas internas sobre a configuração de pricing..."
-                  className="w-full resize-none rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-3 py-2 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
-                />
-                <div
-                  className="mt-1 text-right text-xs"
-                  style={{ color: "var(--text3)" }}
-                >
-                  {notes.length}/500
                 </div>
-              </Card>
+              </div>
 
-              {/* Save */}
-              <div className="flex items-center justify-end gap-3">
-                {hasChanges && (
-                  <Button
-                    disabled={isSaving}
-                    icon={<RotateCcw size={15} />}
-                    onClick={handleReset}
-                    variant="secondary"
-                  >
-                    Descartar alterações
-                  </Button>
-                )}
-                <Button
-                  disabled={!hasChanges}
-                  icon={<Save size={16} />}
-                  loading={isSaving}
-                  onClick={() => void handleSave()}
-                >
-                  {isSaving ? "Salvando..." : "Salvar Configuração"}
-                </Button>
+              {/* Feedback de salvamento */}
+              {message && (
+                <Notification onDismiss={() => setMessage(null)} tone={message.type}>
+                  {message.text}
+                </Notification>
+              )}
+
+              {/* ── Editor (esq.) + Prévia (dir.) ────────────────────────── */}
+              <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+                {/* Coluna do editor */}
+                <div className="min-w-0 space-y-5">
+                  {/* Limite de Casos — linha compacta (toggle segmentado) */}
+                  <section id="sec-limite" className="scroll-mt-44">
+                    <div className="cv-card flex flex-wrap items-center gap-x-3 gap-y-3 p-4">
+                      <Shield
+                        size={18}
+                        style={{ color: "var(--teal)" }}
+                        className="shrink-0"
+                        aria-hidden="true"
+                      />
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-[var(--text)]">
+                          Limite de casos
+                        </div>
+                        <div className="text-xs text-[var(--text2)]">
+                          {unlimitedCases
+                            ? "Ilimitado — sem restrição de casos ativos"
+                            : `No máximo ${casesLimit ?? "—"} casos ativos`}
+                        </div>
+                      </div>
+                      <div className="ml-auto flex items-center gap-2">
+                        <div
+                          className="flex overflow-hidden rounded-lg border border-[var(--bd2)] text-xs"
+                          role="group"
+                          aria-label="Modo do limite de casos"
+                        >
+                          <button
+                            type="button"
+                            aria-pressed={unlimitedCases}
+                            onClick={() => setUnlimitedCases(true)}
+                            className={`px-3 py-1.5 font-semibold transition-colors ${
+                              unlimitedCases
+                                ? "bg-[var(--teal)] text-[#04140f]"
+                                : "text-[var(--text2)] hover:text-[var(--text)]"
+                            }`}
+                          >
+                            Ilimitado
+                          </button>
+                          <button
+                            type="button"
+                            aria-pressed={!unlimitedCases}
+                            onClick={() => setUnlimitedCases(false)}
+                            className={`px-3 py-1.5 font-semibold transition-colors ${
+                              !unlimitedCases
+                                ? "bg-[var(--teal)] text-[#04140f]"
+                                : "text-[var(--text2)] hover:text-[var(--text)]"
+                            }`}
+                          >
+                            Definir nº
+                          </button>
+                        </div>
+                        {!unlimitedCases && (
+                          <input
+                            type="number"
+                            min={1}
+                            max={100000}
+                            value={casesLimit ?? ""}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              if (v === "") {
+                                setCasesLimit(null);
+                                return;
+                              }
+                              const n = parseInt(v, 10);
+                              if (Number.isNaN(n)) return;
+                              setCasesLimit(Math.min(100000, Math.max(1, n)));
+                            }}
+                            placeholder="Ex: 100"
+                            aria-label="Quantidade máxima de casos ativos"
+                            className="h-11 w-24 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-3 text-sm tabular-nums text-[var(--text)] outline-none focus:border-[var(--teal)]"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* Preços de Módulos */}
+                  {catalog && (
+                    <section id="sec-modulos" className="scroll-mt-44">
+                      <Card
+                        title={
+                          <span className="flex items-center gap-2">
+                            <Layers size={18} style={{ color: "var(--teal)" }} />
+                            Preços de Módulos
+                          </span>
+                        }
+                        description="Deixe vazio para usar o padrão. Os preços dos produtos são calculados automaticamente a partir dos módulos obrigatórios."
+                      >
+                        <div className="space-y-2">
+                          {catalog.modules.map((mod) => {
+                            const overrideCents = moduleOverrides[mod.code] ?? null;
+                            const hasOverride = overrideCents !== null;
+                            const effectiveCents = overrideCents ?? mod.price_cents;
+                            const isEditing = editingModule === mod.code;
+                            return (
+                              <div
+                                key={mod.code}
+                                className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-3 py-2.5"
+                              >
+                                <div className="min-w-0 flex-1">
+                                  <div
+                                    className="text-sm font-medium"
+                                    style={{ color: "var(--text)" }}
+                                  >
+                                    {mod.title}
+                                  </div>
+                                  <div className="mt-0.5 text-xs text-[var(--text2)]">
+                                    {hasOverride
+                                      ? `Padrão ${centsToReaisLabel(mod.price_cents)}`
+                                      : "Preço padrão do catálogo"}
+                                  </div>
+                                </div>
+                                {isEditing ? (
+                                  <div className="flex items-center gap-2">
+                                    <CurrencyInput
+                                      value={overrideCents}
+                                      onChange={(cents) =>
+                                        setModuleOverrides((prev) => ({
+                                          ...prev,
+                                          [mod.code]: cents,
+                                        }))
+                                      }
+                                      placeholder={centsToReaisLabel(mod.price_cents)}
+                                      className="w-36"
+                                      aria-label={`Preço personalizado para ${mod.title}`}
+                                    />
+                                    {hasOverride && (
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setModuleOverrides((prev) => ({
+                                            ...prev,
+                                            [mod.code]: null,
+                                          }))
+                                        }
+                                        className="text-xs text-[var(--text2)] underline hover:text-[var(--text)]"
+                                      >
+                                        usar padrão
+                                      </button>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingModule(null)}
+                                      className="cv-icon-btn"
+                                      aria-label={`Concluir edição de ${mod.title}`}
+                                    >
+                                      <Check size={15} />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-2.5">
+                                    <span className="text-sm font-bold tabular-nums text-[var(--text)]">
+                                      {centsToReaisLabel(effectiveCents)}
+                                    </span>
+                                    {hasOverride ? (
+                                      <span className="rounded-full border border-[rgba(245,165,36,0.3)] bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-400">
+                                        personalizado
+                                      </span>
+                                    ) : (
+                                      <span className="rounded-full border border-[var(--bd2)] bg-[var(--surf3)] px-2 py-0.5 text-[10px] font-semibold text-[var(--text2)]">
+                                        padrão
+                                      </span>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingModule(mod.code)}
+                                      className="cv-icon-btn"
+                                      aria-label={`Editar preço de ${mod.title}`}
+                                    >
+                                      <Pencil size={13} />
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </Card>
+                    </section>
+                  )}
+
+                  {/* Parcelamento + validações (P-1/P-2) */}
+                  {installmentConfig && (
+                    <section id="sec-parcelamento" className="scroll-mt-44 space-y-3">
+                      <InstallmentConfigCard
+                        onChange={setInstallmentConfig}
+                        paymentMode={paymentMode}
+                        value={installmentConfig}
+                      />
+                      {noMethodEnabled && (
+                        <Notification tone="error" title="Nenhum método de pagamento habilitado">
+                          Sem Pix, Boleto ou Cartão, os casos ficam sem forma de
+                          pagamento. Habilite ao menos um método
+                          {!installmentConfig.enabled
+                            ? " (ative o parcelamento para reexibir os métodos)"
+                            : ""}
+                          . Não é possível salvar nesta condição.
+                        </Notification>
+                      )}
+                      {!noMethodEnabled && installmentsWithoutCard && (
+                        <Notification tone="warning" title="Parcelamento sem cartão">
+                          O parcelamento está habilitado, mas o Cartão está desligado.
+                          Como só o cartão parcela, nenhuma opção de parcelamento será
+                          ofertada — tudo à vista (1x).
+                        </Notification>
+                      )}
+                    </section>
+                  )}
+
+                  {/* Observações */}
+                  <section id="sec-observacoes" className="scroll-mt-44">
+                    <Card title="Observações">
+                      <textarea
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        maxLength={500}
+                        rows={3}
+                        placeholder="Notas internas sobre a configuração de pricing..."
+                        className="w-full resize-none rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-3 py-2 text-sm text-[var(--text)] outline-none focus:border-[var(--teal)]"
+                      />
+                      <div
+                        className="mt-1 text-right text-xs"
+                        style={{ color: "var(--text3)" }}
+                      >
+                        {notes.length}/500
+                      </div>
+                    </Card>
+                  </section>
+                </div>
+
+                {/* Coluna da prévia (F) */}
+                <aside className="lg:sticky lg:top-44 lg:self-start">
+                  <div className="cv-card p-4">
+                    <div className="mb-3 flex items-center gap-2">
+                      <Eye size={16} style={{ color: "var(--teal)" }} />
+                      <h2 className="text-sm font-semibold text-[var(--text)]">Prévia</h2>
+                      <span className="ml-auto text-[10px] uppercase tracking-wider text-[var(--text3)]">
+                        Config. salva
+                      </span>
+                    </div>
+                    <p className="mb-3 text-xs leading-5 text-[var(--text2)]">
+                      Como as opções aparecem na tela de pagamento do caso.
+                    </p>
+
+                    {/* Seletor de produto */}
+                    {catalog && catalog.products.length > 0 && (
+                      <div className="mb-3">
+                        <label
+                          className="mb-1 block text-[11px] font-semibold text-[var(--text2)]"
+                          htmlFor="preview-produto"
+                        >
+                          Produto de referência
+                        </label>
+                        <SelectInput
+                          id="preview-produto"
+                          value={previewProduct}
+                          onChange={(e) => setPreviewProduct(e.target.value)}
+                        >
+                          {catalog.products.map((p) => (
+                            <option key={p.code} value={p.code}>
+                              {p.title}
+                            </option>
+                          ))}
+                        </SelectInput>
+                      </div>
+                    )}
+
+                    {previewLoading && !previewEstimate ? (
+                      <div className="space-y-2">
+                        <div className="skeleton h-14 w-full" />
+                        <div className="skeleton h-10 w-full" />
+                        <div className="skeleton h-10 w-full" />
+                      </div>
+                    ) : previewError ? (
+                      <Notification compact tone="info">
+                        {previewError} Verifique o backend/login; a edição continua
+                        funcionando normalmente.
+                      </Notification>
+                    ) : previewEstimate ? (
+                      <div className="space-y-3">
+                        {/* Total */}
+                        <div className="flex items-center gap-3 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] p-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[rgba(32,201,151,0.22)] bg-[var(--teal-dim)] text-[var(--teal)]">
+                            <Wallet size={15} />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text2)]">
+                              Total do pedido
+                              <span className="rounded-full border border-[rgba(32,201,151,0.3)] bg-[var(--teal-dim)] px-1.5 py-px text-[8px] font-bold text-[var(--teal)]">
+                                salvo
+                              </span>
+                            </p>
+                            <p className="text-base font-bold tabular-nums text-[var(--text)]">
+                              {centsToReaisLabel(previewEstimate.total_price_cents)}
+                            </p>
+                            {previewEstimate.modules_total_cents > 0 && (
+                              <p className="text-[10px] tabular-nums text-[var(--text2)]">
+                                base {centsToReaisLabel(previewEstimate.base_price_cents)} +
+                                módulos {centsToReaisLabel(previewEstimate.modules_total_cents)}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Opções de parcelamento — à vista destacado + grade compacta.
+                            "total" só aparece quando há juros (senão total = base). */}
+                        {previewEstimate.installment_options.length > 0 ? (
+                          (() => {
+                            const opts = previewEstimate.installment_options;
+                            const avista = opts.find((o) => o.parcelas === 1);
+                            const parceladas = opts.filter((o) => o.parcelas > 1);
+                            const methodNames = (ms: string[]) =>
+                              ms
+                                .map(
+                                  (m) =>
+                                    METHOD_LABELS[m as (typeof METHOD_ORDER)[number]] ?? m
+                                )
+                                .join(" · ");
+                            return (
+                              <div className="space-y-3">
+                                {avista && (
+                                  <div>
+                                    <p className="mb-1.5 text-[9.5px] font-semibold uppercase tracking-wider text-[var(--text2)]">
+                                      À vista
+                                    </p>
+                                    <div className="flex items-center justify-between gap-2 rounded-lg border border-[rgba(32,201,151,0.3)] bg-[var(--teal-dim)] px-3 py-2">
+                                      <span className="text-xs font-bold tabular-nums text-[var(--text)]">
+                                        1x · {centsToReaisLabel(avista.valor_parcela_cents)}
+                                      </span>
+                                      {avista.allowed_methods.length > 0 && (
+                                        <span className="text-[10px] font-medium text-[var(--teal)]">
+                                          {methodNames(avista.allowed_methods)}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                                {parceladas.length > 0 && (
+                                  <div>
+                                    <p className="mb-1.5 text-[9.5px] font-semibold uppercase tracking-wider text-[var(--text2)]">
+                                      Parcelado no cartão
+                                    </p>
+                                    <div className="grid grid-cols-3 gap-1.5">
+                                      {parceladas.map((opt: InstallmentOption) => (
+                                        <div
+                                          key={opt.parcelas}
+                                          className="rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-2 py-1.5 text-center"
+                                        >
+                                          <div className="text-[10px] text-[var(--text2)]">
+                                            {opt.parcelas}x
+                                          </div>
+                                          <div className="text-[11px] font-bold tabular-nums text-[var(--text)]">
+                                            {centsToReaisLabel(opt.valor_parcela_cents)}
+                                          </div>
+                                          {opt.has_juros && (
+                                            <div className="text-[8px] font-medium tabular-nums text-amber-400">
+                                              +{centsToReaisLabel(opt.acrescimo_cents)}
+                                            </div>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()
+                        ) : (
+                          <p className="text-xs text-[var(--text2)]">
+                            Nenhuma opção de parcelamento para este produto.
+                          </p>
+                        )}
+
+                        {hasChanges && (
+                          <p className="flex items-start gap-1.5 text-[11px] leading-4 text-[var(--text2)]">
+                            <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+                            Alterações não salvas. A prévia atualiza após salvar.
+                          </p>
+                        )}
+                      </div>
+                    ) : null}
+
+                    {/* Rascunho ao vivo (reflete o formulário) — painel distinto
+                        do bloco "Config. salva" acima, para não confundir. */}
+                    {installmentConfig && (
+                      <div className="mt-4 rounded-lg border border-[var(--bd2)] bg-[var(--surf2)] p-3">
+                        <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold text-[var(--text)]">
+                          <span
+                            className="inline-block h-2 w-2 rounded-full bg-[var(--orange)]"
+                            aria-hidden="true"
+                          />
+                          Rascunho — não salvo
+                        </p>
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="text-[var(--text2)]">Parcelamento</span>
+                            <span
+                              className="font-medium"
+                              style={{
+                                color: installmentConfig.enabled
+                                  ? "var(--teal)"
+                                  : "var(--text3)",
+                              }}
+                            >
+                              {installmentConfig.enabled
+                                ? `até ${installmentConfig.max_parcelas}x`
+                                : "à vista (1x)"}
+                            </span>
+                          </div>
+                          {METHOD_ORDER.map((key) => {
+                            const rule = installmentConfig.allowed_methods[key];
+                            const on = !!rule?.enabled;
+                            return (
+                              <div
+                                key={key}
+                                className="flex items-center justify-between text-[11px]"
+                              >
+                                <span className="text-[var(--text2)]">
+                                  {METHOD_LABELS[key]}
+                                </span>
+                                <span
+                                  className="font-medium tabular-nums"
+                                  style={{ color: on ? "var(--text)" : "var(--text3)" }}
+                                >
+                                  {on
+                                    ? key === "cartao"
+                                      ? `até ${rule?.max_parcelas ?? 1}x`
+                                      : "à vista"
+                                    : "desligado"}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </aside>
               </div>
             </>
           )}

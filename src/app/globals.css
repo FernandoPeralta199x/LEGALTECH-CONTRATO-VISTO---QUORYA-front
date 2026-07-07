@@ -9,6 +9,10 @@
   --teal-dd: #0d6b50;
   --teal-dim: rgba(32, 201, 151, 0.12);
   --teal-glow: rgba(32, 201, 151, 0.2);
+  /* Alias do acento da marca: vários componentes usam var(--accent) (ícones de
+     título, borda de foco do CurrencyInput). Sem esta definição, --accent ficava
+     indefinido e caía para a cor herdada do texto. */
+  --accent: var(--teal);
   --orange: #f97316;
   --orange-dim: rgba(249, 115, 22, 0.12);
   --blue: #60a5fa;
@@ -46,6 +50,9 @@ html[data-theme="dark"] {
   --text: #e4eaf2;
   --text2: #7d8fa8;
   --text3: #3d4f68;
+  /* Cores semânticas de status (contraste AA em ambos os temas) */
+  --ok: #34d399;
+  --danger: #fca5a5;
   --nav-bg: rgba(7, 8, 12, 0.86);
   --mobile-menu-bg: rgba(7, 8, 12, 0.97);
   --input-bg: #111622;
@@ -72,6 +79,8 @@ html[data-theme="light"] {
   --text: #0d1f1a;
   --text2: #406858;
   --text3: #8ab5a2;
+  --ok: #0f7a5a;
+  --danger: #b91c1c;
   --nav-bg: rgba(240, 246, 243, 0.88);
   --mobile-menu-bg: rgba(240, 246, 243, 0.98);
   --input-bg: #ffffff;
@@ -94,7 +103,9 @@ html[data-theme="light"] {
 
 html {
   min-height: 100%;
-  overflow-x: hidden;
+  /* clip (não hidden): impede scroll horizontal SEM criar scroll-container,
+     preservando position:sticky (top do app + barras internas). */
+  overflow-x: clip;
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
@@ -103,7 +114,7 @@ html {
 body {
   min-height: 100%;
   margin: 0;
-  overflow-x: hidden;
+  overflow-x: clip;
   background:
     radial-gradient(ellipse 70% 56% at 26% 0%, var(--hero-glow), transparent 58%),
     radial-gradient(ellipse 60% 45% at 78% 10%, rgba(96, 165, 250, 0.06), transparent 62%),
