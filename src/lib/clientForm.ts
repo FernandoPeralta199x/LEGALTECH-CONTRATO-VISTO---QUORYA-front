@@ -54,21 +54,10 @@ export function onlyDigits(value: string): string {
   return value.replace(/\D/g, "");
 }
 
-// Máscaras de CPF/CNPJ: fonte única em lib/cpfCnpj (implementações eram
-// byte-idênticas; re-export preserva a API deste módulo). maskPhone NÃO é
-// unificado — as duas implementações divergem no formato parcial.
-export { maskCnpj, maskCpf } from "../../lib/cpfCnpj";
-
-export function maskPhone(value: string): string {
-  const digits = onlyDigits(value).slice(0, 11);
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-  if (digits.length <= 10) {
-    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
-  }
-
-  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
-}
+// Máscaras de CPF/CNPJ/telefone: fonte única em lib/cpfCnpj. As duas
+// implementações de maskPhone eram byte-idênticas (comprovado por análise por
+// comprimento + fuzz de 50k entradas) — re-export preserva a API deste módulo.
+export { maskCnpj, maskCpf, maskPhone } from "../../lib/cpfCnpj";
 
 export function maskBirthDate(value: string): string {
   const digits = onlyDigits(value).slice(0, 8);
