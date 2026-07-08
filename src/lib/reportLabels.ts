@@ -77,3 +77,23 @@ export function productLabel(value: unknown): string {
 
   return labels[value] ?? value;
 }
+
+/** Status do relatório do caso; null → "Não gerado". Assinatura estrutural para
+ *  não acoplar este módulo de rótulos ao tipo Report. */
+export function reportStatusLabel(report: { status: string } | null): string {
+  if (!report) return "Não gerado";
+
+  const labels: Record<string, string> = {
+    failed: "Falhou",
+    generating: "Gerando",
+    not_started: "Não iniciado",
+    ready: "Pronto",
+    in_review: "Em revisão",
+    approved: "Aprovado",
+    rejected: "Rejeitado",
+    delivered: "Entregue",
+    draft: "Rascunho"
+  };
+
+  return labels[report.status] ?? report.status;
+}

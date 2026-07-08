@@ -33,6 +33,7 @@ import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CasePaymentCard } from "@/components/cases/CasePaymentCard";
+import { CaseReportTab } from "@/components/cases/CaseReportTab";
 import { TriageModuleCard } from "@/components/cases/TriageModuleCard";
 import { PaymentReceiptSheet } from "@/components/cases/PaymentReceiptSheet";
 import { TriagePrintSheet } from "@/components/cases/TriagePrintSheet";
@@ -60,6 +61,7 @@ import { useDevSession } from "@/src/lib/useDevSession";
 import {
   productLabel,
   recommendationLabel,
+  reportStatusLabel,
   riskLabel,
   triageStatusLabel
 } from "@/src/lib/reportLabels";
@@ -125,24 +127,6 @@ function sourceModeLabel(value: unknown): string {
   };
 
   return labels[value] ?? value;
-}
-
-function reportStatusLabel(report: Report | null): string {
-  if (!report) return "Não gerado";
-
-  const labels: Record<string, string> = {
-    failed: "Falhou",
-    generating: "Gerando",
-    not_started: "Não iniciado",
-    ready: "Pronto",
-    in_review: "Em revisão",
-    approved: "Aprovado",
-    rejected: "Rejeitado",
-    delivered: "Entregue",
-    draft: "Rascunho"
-  };
-
-  return labels[report.status] ?? report.status;
 }
 
 function ProviderResultRow({ result }: { result: ProviderResult }) {
@@ -1070,267 +1054,27 @@ export default function CaseDetailPage({ params }: PageProps) {
 
         {/* Tab: Report */}
         {activeTab === "report" && (
-          <div className="animate-in space-y-6">
-            {/* Final report upload + list (always visible) */}
-            <Card>
-              <div className="flex items-center gap-2 mb-3">
-                <Upload size={18} style={{ color: "var(--accent)" }} />
-                <h3 className="text-sm font-bold text-[var(--text)]">
-                  Relatório final do analista
-                </h3>
-              </div>
-              <p className="text-xs text-[var(--text2)] mb-4">
-                Faça upload do relatório jurídico finalizado pelo analista.
-                Aceita PDF, DOCX ou TXT (máx. 25 MB). Ficará vinculado ao caso e
-                disponível para download posterior.
-              </p>
-
-              {finalReportError && (
-                <div className="mb-3 flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">
-                  <AlertTriangle size={14} />
-                  {finalReportError}
-                </div>
-              )}
-              {finalReportSuccess && (
-                <div className="mb-3 flex items-center gap-2 rounded-lg border border-[rgba(32,201,151,0.3)] bg-[var(--teal-dim)] px-3 py-2 text-xs text-[var(--teal)]">
-                  <CheckCircle2 size={14} />
-                  {finalReportSuccess}
-                </div>
-              )}
-
-              <label
-                className={`flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--bd2)] bg-[var(--surf2)] px-4 py-6 text-sm font-medium text-[var(--text2)] transition hover:border-[var(--accent)] hover:bg-[var(--surf3)] ${
-                  finalReportUploading ? "pointer-events-none opacity-60" : ""
-                }`}
-              >
-                <Upload size={16} />
-                {finalReportUploading
-                  ? "Enviando..."
-                  : "Selecionar arquivo (PDF, DOCX, TXT)"}
-                <input
-                  accept={FINAL_REPORT_ACCEPT_ATTR}
-                  className="hidden"
-                  disabled={finalReportUploading}
-                  onChange={handleFinalReportUpload}
-                  type="file"
-                />
-              </label>
-
-              {finalReports.length > 0 && (
-                <div className="mt-5 space-y-2">
-                  <p className="text-[11px] uppercase tracking-wide text-[var(--text3)]">
-                    Relatórios enviados ({finalReports.length})
-                  </p>
-                  {finalReports.map((doc) => (
-                    <div
-                      className="flex items-center gap-3 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-4 py-3"
-                      key={doc.id}
-                    >
-                      <FileText
-                        className="shrink-0 text-[var(--text2)]"
-                        size={16}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-[var(--text)]">
-                          {doc.filename}
-                        </p>
-                        <p className="text-[11px] text-[var(--text3)]">
-                          {formatBytes(doc.sizeBytes)}
-                          {doc.uploadedAt
-                            ? ` · ${formatDate(doc.uploadedAt)}`
-                            : ""}
-                        </p>
-                      </div>
-                      <button
-                        className="cv-icon-btn"
-                        onClick={() => void handleFinalReportDownload(doc.id)}
-                        title="Baixar"
-                        type="button"
-                      >
-                        <Download size={13} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Card>
-
-            {/* AI-generated preliminary report */}
-            {!caseReport ? (
-              <EmptyState
-                action={
-                  canWrite && !paymentPending ? (
-                    <Button
-                      icon={<FileText aria-hidden="true" size={15} />}
-                      loading={reportBusy}
-                      onClick={handleGenerateReport}
-                    >
-                      Gerar relatório
-                    </Button>
-                  ) : undefined
-                }
-                description="O resumo demonstrativo ainda não está disponível. Gere o parecer a partir das evidências da triagem."
-                icon={<Shield size={20} />}
-                title="Relatório preliminar não disponível"
-              />
-            ) : (
-              <div className="space-y-6">
-                <Card>
-                  <div className="flex items-start justify-between gap-4 mb-4">
-                    <div>
-                      <h2 className="text-sm font-bold text-[var(--text)]">
-                        {caseReport.title}
-                      </h2>
-                      <p className="mt-1 text-[11px] text-[var(--text3)]">
-                        Versão {caseReport.version} ·{" "}
-                        {formatDate(caseReport.generatedAt)}
-                      </p>
-                    </div>
-                    <StatusBadge status={caseReport.status} />
-                  </div>
-
-                  {canWrite && !caseIsCompleted && (
-                    <div className="mb-5 flex flex-wrap gap-2">
-                      <Button
-                        icon={<RefreshCw aria-hidden="true" size={15} />}
-                        loading={reportBusy}
-                        onClick={handleGenerateReport}
-                        variant="secondary"
-                      >
-                        Regerar relatório
-                      </Button>
-                      <Button
-                        disabled={reportBusy}
-                        icon={<CheckCircle2 aria-hidden="true" size={15} />}
-                        onClick={() => setApproveOpen(true)}
-                      >
-                        Aprovar relatório
-                      </Button>
-                    </div>
-                  )}
-
-                  {caseReport.status === "in_review" && (
-                    <div className="mb-5 flex items-center gap-3 rounded-lg border border-[rgba(249,115,22,0.25)] bg-[var(--orange-dim)] px-4 py-3">
-                      <AlertTriangle className="shrink-0 text-[var(--orange)]" size={16} />
-                      <p className="text-xs text-[var(--text2)]">
-                        Este relatório está em revisão demonstrativa. Validação
-                        humana persistida, aprovação real e entrega ao cliente ficam
-                        no roadmap.
-                      </p>
-                    </div>
-                  )}
-
-                  <p className="text-sm leading-6 text-[var(--text2)]">
-                    {caseReport.summary}
-                  </p>
-                  <dl className="mt-5 grid gap-3 border-t border-[var(--bd)] pt-4 text-xs sm:grid-cols-3">
-                    <div>
-                      <dt className="text-[var(--text3)]">Recomendação</dt>
-                      <dd className="mt-0.5 font-semibold text-[var(--text)]">
-                        {recommendationLabel(caseReport.recommendation)}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-[var(--text3)]">Confiança</dt>
-                      <dd className="mt-0.5 font-semibold text-[var(--text)]">
-                        {typeof caseReport.confidence === "number"
-                          ? `${(caseReport.confidence * 100).toFixed(0)}%`
-                          : "Não informado"}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-[var(--text3)]">Status</dt>
-                      <dd className="mt-0.5 font-semibold text-[var(--text)]">
-                        {reportStatusLabel(caseReport)}
-                      </dd>
-                    </div>
-                  </dl>
-                </Card>
-
-                {caseReport.risks.length > 0 && (
-                  <Card title="Indicadores demonstrativos de risco">
-                    <div className="space-y-4">
-                      {caseReport.risks.map((risk) => (
-                        <div
-                          className={`rounded-lg border p-4 ${
-                            risk.level === "high"
-                              ? "border-red-500/20 bg-red-500/5"
-                              : risk.level === "medium"
-                              ? "border-[rgba(249,115,22,0.2)] bg-[var(--orange-dim)]"
-                              : "border-[rgba(32,201,151,0.2)] bg-[var(--teal-dim)]"
-                          }`}
-                          key={risk.id}
-                        >
-                          <div className="flex items-center gap-2 mb-2">
-                            <StatusBadge status={risk.level} />
-                            <p className="text-sm font-semibold text-[var(--text)]">
-                              {risk.title}
-                            </p>
-                          </div>
-                          <p className="text-xs leading-5 text-[var(--text2)]">
-                            {risk.description}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </Card>
-                )}
-
-                {caseReport.recommendations.length > 0 && (
-                  <Card title="Recomendações">
-                    <ul className="space-y-2">
-                      {caseReport.recommendations.map((rec, i) => (
-                        <li className="flex items-start gap-3" key={i}>
-                          <CheckCircle2
-                            className="mt-0.5 shrink-0 text-[var(--teal)]"
-                            size={14}
-                          />
-                          <p className="text-xs leading-5 text-[var(--text2)]">
-                            {recommendationLabel(rec)}
-                          </p>
-                        </li>
-                      ))}
-                    </ul>
-                  </Card>
-                )}
-
-                {caseReport.limitations && caseReport.limitations.length > 0 && (
-                  <Card title="Limitações">
-                    <ul className="space-y-2">
-                      {caseReport.limitations.map((limitation, index) => (
-                        <li className="text-xs leading-5 text-[var(--text2)]" key={index}>
-                          {limitation}
-                        </li>
-                      ))}
-                    </ul>
-                  </Card>
-                )}
-
-                {caseReport.sourceRefs && caseReport.sourceRefs.length > 0 && (
-                  <Card title="Fontes utilizadas">
-                    <ul className="space-y-2">
-                      {caseReport.sourceRefs.map((sourceRef, index) => (
-                        <li className="text-xs leading-5 text-[var(--text2)]" key={index}>
-                          {sourceRef}
-                        </li>
-                      ))}
-                    </ul>
-                  </Card>
-                )}
-
-                <div className="flex items-center gap-3 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] p-4">
-                  <FileText className="shrink-0 text-[var(--text3)]" size={16} />
-                  <p className="text-xs text-[var(--text2)]">
-                    PDF/exportação real ainda não está implementado nesta versão;
-                    permanece como etapa planejada do roadmap.
-                  </p>
-                  <span className="ml-auto shrink-0 cv-badge cv-badge-muted">
-                    Roadmap
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
+          <CaseReportTab
+            finalReport={{
+              acceptAttr: FINAL_REPORT_ACCEPT_ATTR,
+              docs: finalReports,
+              error: finalReportError,
+              onDownload: (documentId: string) =>
+                void handleFinalReportDownload(documentId),
+              onUpload: handleFinalReportUpload,
+              success: finalReportSuccess,
+              uploading: finalReportUploading
+            }}
+            report={{
+              busy: reportBusy,
+              canWrite,
+              data: caseReport,
+              isCompleted: caseIsCompleted,
+              onApprove: () => setApproveOpen(true),
+              onGenerate: handleGenerateReport,
+              paymentPending
+            }}
+          />
         )}
         <TriagePrintSheet
           caseCode={caseData.code}
