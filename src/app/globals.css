@@ -539,7 +539,10 @@ textarea:-webkit-autofill:focus {
 
   .cv-public-shell {
     min-height: 100dvh;
-    overflow-x: hidden;
+    /* clip (não hidden): não cria scroll-container, preservando position:sticky se
+       um sticky for adicionado ao shell público — consistente com o fix global de
+       overflow em html/body/.cv-app-shell. */
+    overflow-x: clip;
     background:
       radial-gradient(ellipse 70% 60% at 25% 5%, var(--hero-glow), transparent 58%),
       linear-gradient(var(--bd) 1px, transparent 1px),
