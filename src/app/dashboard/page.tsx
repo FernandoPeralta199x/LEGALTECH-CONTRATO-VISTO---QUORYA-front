@@ -380,10 +380,14 @@ export default function DashboardPage() {
                       bg: "bg-[var(--orange-dim)] border-[rgba(249,115,22,0.22)]"
                     }
                   ] as const
-                ).map((metric) => {
+                ).map((metric, index) => {
                   const Icon = metric.icon;
                   return (
-                    <div className="cv-card p-5" key={metric.label}>
+                    <div
+                      className="cv-card animate-in p-5"
+                      key={metric.label}
+                      style={{ animationDelay: `${index * 55}ms` }}
+                    >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className="text-xs text-[var(--text2)]">
@@ -428,17 +432,18 @@ export default function DashboardPage() {
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {visibleAreas.map((area) => {
+                {visibleAreas.map((area, index) => {
                     const Icon = area.icon;
                     return (
                       <Link
-                        className={`cv-card cv-card-hover group flex flex-col gap-3 p-4 ${
+                        className={`cv-card cv-card-hover pressable animate-in group flex flex-col gap-3 p-4 ${
                           area.primary
                             ? "border-[rgba(32,201,151,0.35)] bg-[var(--teal-dim)]"
                             : ""
                         }`}
                         href={area.href}
                         key={area.href}
+                        style={{ animationDelay: `${index * 45}ms` }}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div
