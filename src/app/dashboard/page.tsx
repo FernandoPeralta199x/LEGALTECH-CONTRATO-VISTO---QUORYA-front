@@ -390,7 +390,7 @@ export default function DashboardPage() {
                             {metric.label}
                           </p>
                           <p
-                            className={`mt-3 text-3xl font-bold ${metric.color}`}
+                            className={`mt-3 font-mono text-3xl font-bold tracking-tight ${metric.color}`}
                           >
                             {metric.value}
                           </p>
@@ -507,7 +507,7 @@ export default function DashboardPage() {
                         key={legalCase.id}
                       >
                         <div className="min-w-0">
-                          <p className="text-[11px] font-semibold text-brand-teal">
+                          <p className="font-mono text-[11px] font-semibold text-[var(--teal)]">
                             {legalCase.code}
                           </p>
                           <p className="mt-0.5 truncate text-xs font-medium text-[var(--text)]">
@@ -573,7 +573,8 @@ export default function DashboardPage() {
                             {doc.filename}
                           </p>
                           <p className="text-[11px] text-[var(--text2)]">
-                            {doc.caseCode} · {formatDate(doc.uploadedAt)}
+                            <span className="font-mono">{doc.caseCode}</span> ·{" "}
+                            {formatDate(doc.uploadedAt)}
                           </p>
                         </div>
                         <StatusBadge status={doc.status} />
