@@ -5,6 +5,7 @@ import {
   CalendarClock,
   CheckCircle2,
   CreditCard,
+  FileQuestion,
   Wallet
 } from "lucide-react";
 import Link from "next/link";
@@ -17,6 +18,7 @@ import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { CreditCardForm } from "@/components/cases/payment/CreditCardForm";
 import { centsToReaisLabel } from "@/components/CurrencyInput";
+import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingState } from "@/components/LoadingState";
 import { Notification } from "@/components/Notification";
@@ -258,6 +260,39 @@ export default function CasePaymentPage({ params }: PageProps) {
   }
 
   const caseData = aggregate.case;
+
+  // Caso SEM pedido associado (request === null): não há valor nem plano a pagar.
+  // Sem esta guarda a tela mostrava "R$ 0,00" + "Confirmar pagamento" ativo, e o
+  // backend respondia 409 "Caso sem pedido associado". Estado vazio explícito.
+  if (aggregate.request === null) {
+    return (
+      <AuthGuard>
+        <AppLayout>
+          <div className="mx-auto max-w-3xl">
+            <Link
+              className="mb-4 flex items-center gap-1.5 text-xs text-[var(--text2)] transition hover:text-[var(--teal)]"
+              href={`/cases/${id}`}
+            >
+              <ArrowLeft size={14} />
+              Voltar ao caso
+            </Link>
+            <PageTitle
+              description={`${caseData.code} · ${caseDisplayTitle(caseData)}`}
+              eyebrow="Pagamento"
+              title="Concluir pagamento"
+            />
+            <EmptyState
+              action={<Button href={`/cases/${id}`}>Voltar ao caso</Button>}
+              description="Este caso não tem um pedido associado, então não há valor nem plano de parcelamento a pagar. Pedidos com cobrança são criados pelo fluxo de Novo Pedido."
+              icon={<FileQuestion size={18} />}
+              title="Nenhum pedido para pagar"
+            />
+          </div>
+        </AppLayout>
+      </AuthGuard>
+    );
+  }
+
   const alreadyRegistered = aggregate.paymentStatus !== "pending";
 
   return (
