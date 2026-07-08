@@ -119,7 +119,7 @@ function ProgressBar({ value }: { value: number }) {
           style={{ width: `${pct}%` }}
         />
       </span>
-      <span className="min-w-[2.25rem] tabular-nums text-[11px] text-[var(--text2)]">{pct}%</span>
+      <span className="min-w-[2.25rem] font-mono tabular-nums text-[11px] text-[var(--text2)]">{pct}%</span>
     </span>
   );
 }
@@ -299,7 +299,7 @@ export default function AnalystPage() {
                 {tab.label}
                 <span
                   className={cn(
-                    "inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-bold leading-none tabular-nums transition-colors",
+                    "inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-bold leading-none font-mono tabular-nums transition-colors",
                     active
                       ? "bg-brand-teal text-[#05201a]"
                       : "bg-black/25 text-[var(--text2)] group-hover:text-[var(--text)]"
@@ -355,10 +355,11 @@ export default function AnalystPage() {
               return (
                 <div
                   className={cn(
-                    "group flex items-start gap-3.5 px-4 py-3.5 transition hover:bg-[var(--surf2)]",
+                    "group flex items-start gap-3.5 px-4 py-3.5 transition animate-in hover:bg-[var(--surf2)]",
                     index > 0 && "border-t border-[var(--border)]"
                   )}
                   key={legalCase.id}
+                  style={{ animationDelay: `${index * 40}ms` }}
                 >
                   <div
                     className={cn(
@@ -371,7 +372,7 @@ export default function AnalystPage() {
                   <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
                     <div className="min-w-0 flex-1">
                       <div className="mb-2 flex flex-wrap items-center gap-2">
-                        <span className="text-[11px] font-semibold tabular-nums text-brand-teal-dark">
+                        <span className="font-mono text-[11px] font-semibold tabular-nums text-brand-teal-dark">
                           {legalCase.code}
                         </span>
                         <StatusBadge status={legalCase.status} />
@@ -383,7 +384,7 @@ export default function AnalystPage() {
                       <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[11px] text-[var(--text2)]">
                         <span className="inline-flex items-center gap-1.5">
                           <Users aria-hidden="true" className="text-[var(--text3)]" size={12} />
-                          <b className="font-semibold tabular-nums text-[var(--text)]">
+                          <b className="font-mono font-semibold tabular-nums text-[var(--text)]">
                             {partiesCount(legalCase)}
                           </b>
                           partes
@@ -391,7 +392,7 @@ export default function AnalystPage() {
                         <span aria-hidden="true" className="h-1 w-1 rounded-full bg-[var(--text3)]" />
                         <span className="inline-flex items-center gap-1.5">
                           <FileText aria-hidden="true" className="text-[var(--text3)]" size={12} />
-                          <b className="font-semibold tabular-nums text-[var(--text)]">
+                          <b className="font-mono font-semibold tabular-nums text-[var(--text)]">
                             {legalCase.documentsCount}
                           </b>
                           docs
@@ -414,14 +415,14 @@ export default function AnalystPage() {
 
                     <div className="flex shrink-0 items-center gap-2">
                       <Link
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surf)] px-3 py-2 text-xs font-medium text-[var(--text2)] transition hover:border-brand-teal/40 hover:text-[var(--text)]"
+                        className="pressable inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surf)] px-3 py-2 text-xs font-medium text-[var(--text2)] transition hover:border-brand-teal/40 hover:text-[var(--text)]"
                         href={`/cases/${legalCase.id}#documents`}
                       >
                         <FileText aria-hidden="true" size={13} />
                         Documentos
                       </Link>
                       <Link
-                        className="inline-flex items-center gap-1 rounded-lg border border-brand-teal/30 bg-brand-teal/10 px-3 py-2 text-xs font-semibold text-brand-teal transition hover:bg-brand-teal/15"
+                        className="pressable inline-flex items-center gap-1 rounded-lg border border-brand-teal/30 bg-brand-teal/10 px-3 py-2 text-xs font-semibold text-brand-teal transition hover:bg-brand-teal/15"
                         href={`/cases/${legalCase.id}`}
                       >
                         Abrir

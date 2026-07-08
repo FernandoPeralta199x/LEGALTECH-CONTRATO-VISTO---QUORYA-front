@@ -546,7 +546,7 @@ export default function CasesPage() {
           </div>
           {!loading && (
             <p className="text-xs text-[var(--text2)]">
-              {total} caso{total !== 1 ? "s" : ""} no total
+              <span className="font-mono">{total}</span> caso{total !== 1 ? "s" : ""} no total
               {totalPages > 1 ? ` · página ${page} de ${totalPages}` : ""}
             </p>
           )}
@@ -603,11 +603,12 @@ export default function CasesPage() {
           />
         ) : (
           <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-            {cases.map((c) => (
+            {cases.map((c, index) => (
               <Link
-                className="cv-card cv-card-hover group block p-5"
+                className="cv-card cv-card-hover group block p-5 animate-in pressable"
                 href={`/cases/${c.id}`}
                 key={c.id}
+                style={{ animationDelay: `${index * 40}ms` }}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--bd)] bg-[var(--surf2)] transition group-hover:border-[rgba(32,201,151,0.25)] group-hover:bg-[var(--teal-dim)]">
@@ -638,7 +639,7 @@ export default function CasesPage() {
                   </div>
                 </div>
 
-                <p className="mt-4 text-[11px] font-semibold text-brand-teal">
+                <p className="mt-4 text-[11px] font-mono font-semibold text-brand-teal">
                   {c.code}
                 </p>
                 <p className="mt-1 text-[10px] font-semibold uppercase tracking-normal text-[var(--text3)]">
@@ -654,7 +655,7 @@ export default function CasesPage() {
                 <div className="mt-4">
                   <div className="mb-1.5 flex items-center justify-between">
                     <span className="text-[10px] text-[var(--text3)]">Progresso</span>
-                    <span className="text-[10px] font-semibold text-[var(--text2)]">
+                    <span className="text-[10px] font-mono font-semibold text-[var(--text2)]">
                       {c.progressPercent}%
                     </span>
                   </div>
@@ -694,7 +695,7 @@ export default function CasesPage() {
                 <div className="mt-3 flex items-center justify-between gap-3 border-t border-[var(--bd)] pt-3 text-[11px] text-[var(--text3)]">
                   <span className="flex min-w-0 items-center gap-1.5">
                     <Calendar className="shrink-0" size={11} />
-                    <span className="truncate">Atualizado em {formatDate(c.updatedAt)}</span>
+                    <span className="truncate">Atualizado em <span className="font-mono">{formatDate(c.updatedAt)}</span></span>
                   </span>
                   <span className="flex shrink-0 items-center gap-2">
                     <PriorityBadge priority={c.priority} />
@@ -747,7 +748,7 @@ export default function CasesPage() {
                     Editar caso
                   </h2>
                   <p className="mt-1 text-xs text-[var(--text2)]">
-                    {editing.code} · {caseDisplayTitle(editing)}
+                    <span className="font-mono">{editing.code}</span> · {caseDisplayTitle(editing)}
                   </p>
                 </div>
                 <button

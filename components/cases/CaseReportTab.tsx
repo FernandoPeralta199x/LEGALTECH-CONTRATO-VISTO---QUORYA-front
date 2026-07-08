@@ -109,10 +109,11 @@ export function CaseReportTab({ finalReport, report }: CaseReportTabProps) {
             <p className="text-[11px] uppercase tracking-wide text-[var(--text3)]">
               Relatórios enviados ({docs.length})
             </p>
-            {docs.map((doc) => (
+            {docs.map((doc, index) => (
               <div
-                className="flex items-center gap-3 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-4 py-3"
+                className="animate-in flex items-center gap-3 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-4 py-3"
                 key={doc.id}
+                style={{ animationDelay: `${index * 40}ms` }}
               >
                 <FileText className="shrink-0 text-[var(--text2)]" size={16} />
                 <div className="min-w-0 flex-1">
@@ -120,7 +121,7 @@ export function CaseReportTab({ finalReport, report }: CaseReportTabProps) {
                     {doc.filename}
                   </p>
                   <p className="text-[11px] text-[var(--text3)]">
-                    {formatBytes(doc.sizeBytes)}
+                    <span className="font-mono">{formatBytes(doc.sizeBytes)}</span>
                     {doc.uploadedAt ? ` · ${formatDate(doc.uploadedAt)}` : ""}
                   </p>
                 </div>
@@ -165,7 +166,7 @@ export function CaseReportTab({ finalReport, report }: CaseReportTabProps) {
                   {reportData.title}
                 </h2>
                 <p className="mt-1 text-[11px] text-[var(--text3)]">
-                  Versão {reportData.version} ·{" "}
+                  Versão <span className="font-mono">{reportData.version}</span> ·{" "}
                   {formatDate(reportData.generatedAt)}
                 </p>
               </div>
@@ -219,9 +220,13 @@ export function CaseReportTab({ finalReport, report }: CaseReportTabProps) {
               <div>
                 <dt className="text-[var(--text3)]">Confiança</dt>
                 <dd className="mt-0.5 font-semibold text-[var(--text)]">
-                  {typeof reportData.confidence === "number"
-                    ? `${(reportData.confidence * 100).toFixed(0)}%`
-                    : "Não informado"}
+                  {typeof reportData.confidence === "number" ? (
+                    <span className="font-mono">
+                      {(reportData.confidence * 100).toFixed(0)}%
+                    </span>
+                  ) : (
+                    "Não informado"
+                  )}
                 </dd>
               </div>
               <div>
@@ -236,9 +241,9 @@ export function CaseReportTab({ finalReport, report }: CaseReportTabProps) {
           {reportData.risks.length > 0 && (
             <Card title="Indicadores demonstrativos de risco">
               <div className="space-y-4">
-                {reportData.risks.map((risk) => (
+                {reportData.risks.map((risk, index) => (
                   <div
-                    className={`rounded-lg border p-4 ${
+                    className={`animate-in rounded-lg border p-4 ${
                       risk.level === "high"
                         ? "border-red-500/20 bg-red-500/5"
                         : risk.level === "medium"
@@ -246,6 +251,7 @@ export function CaseReportTab({ finalReport, report }: CaseReportTabProps) {
                           : "border-[rgba(32,201,151,0.2)] bg-[var(--teal-dim)]"
                     }`}
                     key={risk.id}
+                    style={{ animationDelay: `${index * 40}ms` }}
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <StatusBadge status={risk.level} />
@@ -266,7 +272,11 @@ export function CaseReportTab({ finalReport, report }: CaseReportTabProps) {
             <Card title="Recomendações">
               <ul className="space-y-2">
                 {reportData.recommendations.map((rec, i) => (
-                  <li className="flex items-start gap-3" key={i}>
+                  <li
+                    className="animate-in flex items-start gap-3"
+                    key={i}
+                    style={{ animationDelay: `${i * 40}ms` }}
+                  >
                     <CheckCircle2
                       className="mt-0.5 shrink-0 text-[var(--teal)]"
                       size={14}
@@ -285,8 +295,9 @@ export function CaseReportTab({ finalReport, report }: CaseReportTabProps) {
               <ul className="space-y-2">
                 {reportData.limitations.map((limitation, index) => (
                   <li
-                    className="text-xs leading-5 text-[var(--text2)]"
+                    className="animate-in text-xs leading-5 text-[var(--text2)]"
                     key={index}
+                    style={{ animationDelay: `${index * 40}ms` }}
                   >
                     {limitation}
                   </li>
@@ -300,8 +311,9 @@ export function CaseReportTab({ finalReport, report }: CaseReportTabProps) {
               <ul className="space-y-2">
                 {reportData.sourceRefs.map((sourceRef, index) => (
                   <li
-                    className="text-xs leading-5 text-[var(--text2)]"
+                    className="animate-in text-xs leading-5 text-[var(--text2)]"
                     key={index}
+                    style={{ animationDelay: `${index * 40}ms` }}
                   >
                     {sourceRef}
                   </li>

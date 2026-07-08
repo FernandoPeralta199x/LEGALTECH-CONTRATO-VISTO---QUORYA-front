@@ -374,12 +374,14 @@ export function InstallmentConfigCard({
                 Cada método pode limitar o próprio número máximo de parcelas.
               </p>
               <div className="mt-3 space-y-2">
-                {METHOD_KEYS.map((key) => {
+                {METHOD_KEYS.map((key, index) => {
                   const rule =
                     value.allowed_methods[key] ?? { enabled: false, max_parcelas: 1 };
                   return (
                     <div
-                      className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-3 py-2"
+                      // Motion: entrada escalonada das linhas de método.
+                      className="animate-in flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-3 py-2"
+                      style={{ animationDelay: `${index * 40}ms` }}
                       key={key}
                     >
                       <div className="flex items-center gap-3">

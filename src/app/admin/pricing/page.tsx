@@ -408,7 +408,7 @@ export default function AdminPricingPage() {
                       <>
                         <span className="text-xs text-[var(--text2)]">
                           Casos ativos{" "}
-                          <b className="font-semibold tabular-nums text-[var(--text)]">
+                          <b className="font-mono font-semibold tabular-nums text-[var(--text)]">
                             {limitCheck.active_cases_count}
                           </b>
                         </span>
@@ -434,7 +434,7 @@ export default function AdminPricingPage() {
                     {config && (
                       <>
                         <span className="text-[var(--text3)]">·</span>
-                        <span className="cv-badge cv-badge-muted px-2 py-0.5">
+                        <span className="cv-badge cv-badge-muted px-2 py-0.5 font-mono">
                           v{config.version}
                         </span>
                       </>
@@ -596,7 +596,7 @@ export default function AdminPricingPage() {
                         description="Deixe vazio para usar o padrão. Os preços dos produtos são calculados automaticamente a partir dos módulos obrigatórios."
                       >
                         <div className="space-y-2">
-                          {catalog.modules.map((mod) => {
+                          {catalog.modules.map((mod, index) => {
                             const overrideCents = moduleOverrides[mod.code] ?? null;
                             const hasOverride = overrideCents !== null;
                             const effectiveCents = overrideCents ?? mod.price_cents;
@@ -604,7 +604,9 @@ export default function AdminPricingPage() {
                             return (
                               <div
                                 key={mod.code}
-                                className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-3 py-2.5"
+                                // Motion: entrada escalonada das linhas de módulo.
+                                className="animate-in flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-3 py-2.5"
+                                style={{ animationDelay: `${index * 40}ms` }}
                               >
                                 <div className="min-w-0 flex-1">
                                   <div
@@ -614,9 +616,16 @@ export default function AdminPricingPage() {
                                     {mod.title}
                                   </div>
                                   <div className="mt-0.5 text-xs text-[var(--text2)]">
-                                    {hasOverride
-                                      ? `Padrão ${centsToReaisLabel(mod.price_cents)}`
-                                      : "Preço padrão do catálogo"}
+                                    {hasOverride ? (
+                                      <>
+                                        Padrão{" "}
+                                        <span className="font-mono">
+                                          {centsToReaisLabel(mod.price_cents)}
+                                        </span>
+                                      </>
+                                    ) : (
+                                      "Preço padrão do catálogo"
+                                    )}
                                   </div>
                                 </div>
                                 {isEditing ? (
@@ -658,7 +667,7 @@ export default function AdminPricingPage() {
                                   </div>
                                 ) : (
                                   <div className="flex items-center gap-2.5">
-                                    <span className="text-sm font-bold tabular-nums text-[var(--text)]">
+                                    <span className="font-mono text-sm font-bold tabular-nums text-[var(--text)]">
                                       {centsToReaisLabel(effectiveCents)}
                                     </span>
                                     {hasOverride ? (

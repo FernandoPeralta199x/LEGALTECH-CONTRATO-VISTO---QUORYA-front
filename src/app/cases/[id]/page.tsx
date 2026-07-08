@@ -552,14 +552,14 @@ export default function CaseDetailPage({ params }: PageProps) {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-2">
-                <span className="text-xs font-semibold text-brand-teal">
+                <span className="font-mono text-xs font-semibold text-brand-teal">
                   {caseData.code}
                 </span>
                 <StatusBadge status={caseData.status} />
                 <PriorityBadge priority={caseData.priority} />
                 {paymentPending && <Badge tone="orange">Pagamento pendente</Badge>}
               </div>
-              <h1 className="text-xl font-bold text-[var(--text)]">
+              <h1 className="text-xl font-bold tracking-tight text-[var(--text)]">
                 {caseDisplayTitle(caseData)}
               </h1>
               <p className="mt-1 text-sm text-[var(--text2)]">
@@ -571,7 +571,7 @@ export default function CaseDetailPage({ params }: PageProps) {
             </div>
             <div className="shrink-0 text-left sm:text-right">
               <div className="mb-3 text-left sm:text-right">
-                <span className="text-2xl font-bold text-[var(--text)]">
+                <span className="font-mono text-2xl font-bold tracking-tight text-[var(--text)]">
                   {caseData.progressPercent}%
                 </span>
                 <p className="text-[11px] text-[var(--text2)]">Progresso geral</p>
@@ -648,7 +648,7 @@ export default function CaseDetailPage({ params }: PageProps) {
             <Card title="Status atual">
               <div className="flex items-center gap-4">
                 <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-4 border-[rgba(32,201,151,0.3)] bg-[var(--teal-dim)]">
-                  <span className="text-sm font-bold text-[var(--teal)]">
+                  <span className="font-mono text-sm font-bold text-[var(--teal)]">
                     {caseData.progressPercent}%
                   </span>
                 </div>
@@ -679,7 +679,7 @@ export default function CaseDetailPage({ params }: PageProps) {
                 ].map((stat) => (
                   <div key={stat.label}>
                     <dt className="text-[11px] text-[var(--text3)]">{stat.label}</dt>
-                    <dd className="mt-0.5 text-lg font-bold text-[var(--text)]">{stat.value}</dd>
+                    <dd className="mt-0.5 font-mono text-lg font-bold tracking-tight text-[var(--text)]">{stat.value}</dd>
                   </div>
                 ))}
               </dl>
@@ -799,8 +799,13 @@ export default function CaseDetailPage({ params }: PageProps) {
               />
             ) : (
               <div className="grid gap-4 sm:grid-cols-2">
-                {caseParties.map((party) => (
-                  <Card key={party.id}>
+                {caseParties.map((party, index) => (
+                  <div
+                    className="animate-in"
+                    key={party.id}
+                    style={{ animationDelay: `${index * 40}ms` }}
+                  >
+                    <Card>
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex min-w-0 items-start gap-3">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--bd)] bg-[var(--surf2)] text-xs font-bold text-[var(--teal)]">
@@ -844,7 +849,8 @@ export default function CaseDetailPage({ params }: PageProps) {
                         {party.notes}
                       </p>
                     )}
-                  </Card>
+                    </Card>
+                  </div>
                 ))}
               </div>
             )}
@@ -954,10 +960,11 @@ export default function CaseDetailPage({ params }: PageProps) {
                 title="Sem documentos"
               />
             ) : (
-              caseDocuments.map((doc) => (
+              caseDocuments.map((doc, index) => (
                 <div
-                  className="flex flex-col gap-3 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-5 py-4 sm:flex-row sm:items-center sm:gap-4"
+                  className="animate-in flex flex-col gap-3 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-5 py-4 sm:flex-row sm:items-center sm:gap-4"
                   key={doc.id}
+                  style={{ animationDelay: `${index * 40}ms` }}
                 >
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--surf3)]">
                     <FileText className="text-[var(--text2)]" size={18} />
@@ -1036,13 +1043,18 @@ export default function CaseDetailPage({ params }: PageProps) {
               />
             ) : (
               <div className="grid gap-3 sm:grid-cols-2">
-                {triageModules.map((module) => (
-                  <TriageModuleCard
+                {triageModules.map((module, index) => (
+                  <div
+                    className="animate-in"
                     key={module.id}
-                    module={module}
-                    onPrint={setPrintTarget}
-                    result={resultByModule.get(module.id)}
-                  />
+                    style={{ animationDelay: `${index * 40}ms` }}
+                  >
+                    <TriageModuleCard
+                      module={module}
+                      onPrint={setPrintTarget}
+                      result={resultByModule.get(module.id)}
+                    />
+                  </div>
                 ))}
               </div>
             )}

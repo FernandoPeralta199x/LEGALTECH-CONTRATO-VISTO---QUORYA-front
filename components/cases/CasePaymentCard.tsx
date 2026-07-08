@@ -98,7 +98,7 @@ export function CasePaymentCard({
                 <dt className="text-[11px] text-[var(--text3)]">
                   {item.label}
                 </dt>
-                <dd className="mt-0.5 text-sm font-semibold text-[var(--text)]">
+                <dd className="mt-0.5 font-mono text-sm font-semibold text-[var(--text)]">
                   {item.value}
                 </dd>
               </div>
@@ -107,11 +107,16 @@ export function CasePaymentCard({
           {installmentPlan.hasJuros && (
             <p className="mt-3 text-[11px] text-[var(--text3)]">
               Juros de{" "}
-              {(installmentPlan.jurosMensalBps / 100).toLocaleString("pt-BR", {
-                maximumFractionDigits: 2
-              })}
-              % a.m. · acréscimo de{" "}
-              {centsToReaisLabel(installmentPlan.acrescimoCents)}
+              <span className="font-mono">
+                {(installmentPlan.jurosMensalBps / 100).toLocaleString("pt-BR", {
+                  maximumFractionDigits: 2
+                })}
+                %
+              </span>{" "}
+              a.m. · acréscimo de{" "}
+              <span className="font-mono">
+                {centsToReaisLabel(installmentPlan.acrescimoCents)}
+              </span>
             </p>
           )}
           {installmentPlan.schedule.length > 0 && (
@@ -120,10 +125,11 @@ export function CasePaymentCard({
                 Cronograma
               </p>
               <div className="space-y-1.5">
-                {installmentPlan.schedule.map((item) => (
+                {installmentPlan.schedule.map((item, index) => (
                   <div
-                    className="flex items-center justify-between gap-3 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-3 py-1.5 text-xs"
+                    className="animate-in flex items-center justify-between gap-3 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-3 py-1.5 text-xs"
                     key={item.numero}
+                    style={{ animationDelay: `${index * 40}ms` }}
                   >
                     <span className="text-[var(--text2)]">
                       Parcela {item.numero}
@@ -131,7 +137,7 @@ export function CasePaymentCard({
                     <span className="text-[var(--text2)]">
                       {formatDueDate(item.vencimento)}
                     </span>
-                    <span className="font-semibold text-[var(--text)]">
+                    <span className="font-mono font-semibold text-[var(--text)]">
                       {centsToReaisLabel(item.valorCents)}
                     </span>
                   </div>
@@ -182,20 +188,20 @@ export function CasePaymentCard({
                 </div>
                 <div className="flex justify-between gap-4">
                   <dt className="text-[var(--text3)]">Parcelas</dt>
-                  <dd className="text-right font-medium text-[var(--text)]">
+                  <dd className="text-right font-mono font-medium text-[var(--text)]">
                     {installmentPlan.parcelas}x
                   </dd>
                 </div>
                 <div className="flex justify-between gap-4">
                   <dt className="text-[var(--text3)]">Valor total</dt>
-                  <dd className="text-right font-medium text-[var(--text)]">
+                  <dd className="text-right font-mono font-medium text-[var(--text)]">
                     {centsToReaisLabel(installmentPlan.valorTotalCents)}
                   </dd>
                 </div>
                 {installmentPlan.payment?.authorizationCode && (
                   <div className="flex justify-between gap-4">
                     <dt className="text-[var(--text3)]">Autorização</dt>
-                    <dd className="text-right font-medium text-[var(--text)]">
+                    <dd className="text-right font-mono font-medium text-[var(--text)]">
                       {installmentPlan.payment.authorizationCode}
                     </dd>
                   </div>
@@ -203,7 +209,7 @@ export function CasePaymentCard({
                 {installmentPlan.payment?.externalReference && (
                   <div className="flex justify-between gap-4">
                     <dt className="text-[var(--text3)]">Referência</dt>
-                    <dd className="break-all text-right font-medium text-[var(--text)]">
+                    <dd className="break-all text-right font-mono font-medium text-[var(--text)]">
                       {installmentPlan.payment.externalReference}
                     </dd>
                   </div>

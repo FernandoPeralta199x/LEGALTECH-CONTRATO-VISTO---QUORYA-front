@@ -52,9 +52,11 @@ const config: Config = {
           blue:       "#2563eb",
           "blue-light": "#3b82f6",
           "blue-dark":  "#1d4ed8",
-          teal:         "#059669",
-          "teal-light": "#10b981",
-          "teal-dark":  "#047857"
+          /* Alinhado ao accent real do app (CSS var --teal e derivados). Antes era
+             #059669 (resíduo de um tema claro antigo), destoando do teal do dark. */
+          teal:         "#20c997",
+          "teal-light": "#3dd7ab",
+          "teal-dark":  "#17a882"
         }
       },
 

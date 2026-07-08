@@ -44,7 +44,7 @@ export function PricingPreview({
       <div className="cv-card p-4">
         <div className="mb-3 flex items-center gap-2">
           <Eye size={16} style={{ color: "var(--teal)" }} />
-          <h2 className="text-sm font-semibold text-[var(--text)]">Prévia</h2>
+          <h2 className="text-sm font-semibold tracking-tight text-[var(--text)]">Prévia</h2>
           <span className="ml-auto text-[10px] uppercase tracking-wider text-[var(--text3)]">
             Config. salva
           </span>
@@ -101,11 +101,11 @@ export function PricingPreview({
                     salvo
                   </span>
                 </p>
-                <p className="text-base font-bold tabular-nums text-[var(--text)]">
+                <p className="font-mono text-base font-bold tabular-nums text-[var(--text)]">
                   {centsToReaisLabel(previewEstimate.total_price_cents)}
                 </p>
                 {previewEstimate.modules_total_cents > 0 && (
-                  <p className="text-[10px] tabular-nums text-[var(--text2)]">
+                  <p className="font-mono text-[10px] tabular-nums text-[var(--text2)]">
                     base {centsToReaisLabel(previewEstimate.base_price_cents)} +
                     módulos{" "}
                     {centsToReaisLabel(previewEstimate.modules_total_cents)}
@@ -136,7 +136,7 @@ export function PricingPreview({
                           À vista
                         </p>
                         <div className="flex items-center justify-between gap-2 rounded-lg border border-[rgba(32,201,151,0.3)] bg-[var(--teal-dim)] px-3 py-2">
-                          <span className="text-xs font-bold tabular-nums text-[var(--text)]">
+                          <span className="font-mono text-xs font-bold tabular-nums text-[var(--text)]">
                             1x · {centsToReaisLabel(avista.valor_parcela_cents)}
                           </span>
                           {avista.allowed_methods.length > 0 && (
@@ -153,19 +153,21 @@ export function PricingPreview({
                           Parcelado no cartão
                         </p>
                         <div className="grid grid-cols-3 gap-1.5">
-                          {parceladas.map((opt: InstallmentOption) => (
+                          {parceladas.map((opt: InstallmentOption, index) => (
                             <div
                               key={opt.parcelas}
-                              className="rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-2 py-1.5 text-center"
+                              // Motion: entrada escalonada das opções de parcela.
+                              className="animate-in rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-2 py-1.5 text-center"
+                              style={{ animationDelay: `${index * 40}ms` }}
                             >
-                              <div className="text-[10px] text-[var(--text2)]">
+                              <div className="font-mono text-[10px] text-[var(--text2)]">
                                 {opt.parcelas}x
                               </div>
-                              <div className="text-[11px] font-bold tabular-nums text-[var(--text)]">
+                              <div className="font-mono text-[11px] font-bold tabular-nums text-[var(--text)]">
                                 {centsToReaisLabel(opt.valor_parcela_cents)}
                               </div>
                               {opt.has_juros && (
-                                <div className="text-[8px] font-medium tabular-nums text-amber-400">
+                                <div className="font-mono text-[8px] font-medium tabular-nums text-amber-400">
                                   +{centsToReaisLabel(opt.acrescimo_cents)}
                                 </div>
                               )}
@@ -219,13 +221,15 @@ export function PricingPreview({
                     : "à vista (1x)"}
                 </span>
               </div>
-              {METHOD_ORDER.map((key) => {
+              {METHOD_ORDER.map((key, index) => {
                 const rule = installmentConfig.allowed_methods[key];
                 const on = !!rule?.enabled;
                 return (
                   <div
                     key={key}
-                    className="flex items-center justify-between text-[11px]"
+                    // Motion: entrada escalonada das linhas de método (rascunho).
+                    className="animate-in flex items-center justify-between text-[11px]"
+                    style={{ animationDelay: `${index * 40}ms` }}
                   >
                     <span className="text-[var(--text2)]">
                       {METHOD_LABELS[key]}
