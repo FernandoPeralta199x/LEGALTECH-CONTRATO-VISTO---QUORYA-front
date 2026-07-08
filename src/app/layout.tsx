@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next";
+import { GeistMono } from "geist/font/mono";
+import { GeistSans } from "geist/font/sans";
 
 import { ThemeProvider } from "@/components/ThemeProvider";
 
@@ -23,7 +25,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html className="dark" data-theme="dark" lang="pt-BR" suppressHydrationWarning>
+    <html
+      className={`dark ${GeistSans.variable} ${GeistMono.variable}`}
+      data-theme="dark"
+      lang="pt-BR"
+      suppressHydrationWarning
+    >
       <body>
         <ThemeProvider>{children}</ThemeProvider>
       </body>

@@ -11,15 +11,12 @@ const config: Config = {
     extend: {
       /* ── Typographic scale ──────────────────────────────────────────────── */
       fontFamily: {
-        sans: [
-          '"Inter var"',
-          "Inter",
-          "ui-sans-serif",
-          "system-ui",
-          "-apple-system",
-          "BlinkMacSystemFont",
-          '"Segoe UI"',
-          "sans-serif"
+        sans: ["var(--font-geist-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+        mono: [
+          "var(--font-geist-mono)",
+          "ui-monospace",
+          "SFMono-Regular",
+          "monospace"
         ]
       },
       fontSize: {
