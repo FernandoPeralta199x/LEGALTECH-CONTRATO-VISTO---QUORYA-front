@@ -60,11 +60,18 @@ const METHOD_LABELS: Record<(typeof METHOD_ORDER)[number], string> = {
 };
 
 // Seções do editor — usadas pelos atalhos da barra fixa e pelo scroll-spy.
+// "Observações" é ancorada (sec-observacoes) mas NÃO entra aqui de propósito: não
+// tem atalho (removido a pedido). No fim da página o scroll-spy mantém a última
+// seção (Parcelamento) acesa ao rolar por Observações — comportamento coerente.
 const SECTIONS = [
   { id: "sec-limite", label: "Limite" },
   { id: "sec-modulos", label: "Módulos" },
   { id: "sec-parcelamento", label: "Parcelamento" },
 ] as const;
+
+// Altura do header fixo do app (h-16 = 64px). A linha do scroll-spy e o alvo do
+// goToSection somam a altura REAL da barra fixa (barRef) a esta base — fonte única.
+const HEADER_OFFSET = 64;
 
 function jurosLabel(bps: number): string {
   return `${(bps / 100).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}% a.m.`;
@@ -209,15 +216,26 @@ export default function AdminPricingPage() {
   // da barra fixa (linha = header + barra + folga). Determinístico e estável —
   // evita o "piscar" do IntersectionObserver com seções altas. rAF faz o throttle.
   useEffect(() => {
-    if (status !== "idle" && status !== "saving") return;
+    // Só pula enquanto CARREGA (as seções ainda não estão no DOM). Antes gatilhava
+    // em !idle && !saving, o que REMOVIA o listener após um save com erro e
+    // congelava o destaque — agora o scroll-spy segue ativo em 'error' e 'saving'.
+    if (status === "loading") return;
     let ticking = false;
     const update = () => {
       ticking = false;
-      const line = 64 + (barRef.current?.offsetHeight ?? 0) + 24;
+      const line = HEADER_OFFSET + (barRef.current?.offsetHeight ?? 0) + 24;
       let current: string = SECTIONS[0].id;
       for (const s of SECTIONS) {
         const el = document.getElementById(s.id);
         if (el && el.getBoundingClientRect().top <= line) current = s.id;
+      }
+      // Fim da página: a última seção pode ser curta demais para o topo cruzar a
+      // linha — ao chegar ao fim, ativa a última mesmo assim. Só quando há rolagem
+      // real (senão, com a página inteira visível, o topo já contaria como "fim").
+      const scrollable =
+        document.documentElement.scrollHeight - window.innerHeight;
+      if (scrollable > 4 && window.scrollY >= scrollable - 2) {
+        current = SECTIONS[SECTIONS.length - 1].id;
       }
       setActiveSection(current);
     };
@@ -226,8 +244,13 @@ export default function AdminPricingPage() {
       ticking = true;
       requestAnimationFrame(update);
     };
+    update(); // estado correto no mount/re-anexo, sem depender de um evento de scroll
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    window.addEventListener("resize", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
   }, [status]);
 
   const hasChanges = useMemo(() => {
@@ -335,12 +358,11 @@ export default function AdminPricingPage() {
   const goToSection = (id: string) => {
     const el = document.getElementById(id);
     if (!el) return;
-    // Offset dinâmico: header do app (64px) + altura real da barra fixa + folga.
-    // Acompanha a barra crescer/quebrar (mobile) — não depende de scroll-mt fixo.
-    const HEADER_H = 64;
+    // Offset dinâmico: header do app (HEADER_OFFSET) + altura real da barra fixa +
+    // folga. Acompanha a barra crescer/quebrar (mobile) — não depende de scroll-mt.
     const barH = barRef.current?.offsetHeight ?? 0;
     const y =
-      el.getBoundingClientRect().top + window.scrollY - HEADER_H - barH - 12;
+      el.getBoundingClientRect().top + window.scrollY - HEADER_OFFSET - barH - 12;
     window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
   };
 
