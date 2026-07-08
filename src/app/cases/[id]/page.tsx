@@ -9,7 +9,6 @@ import {
   ClipboardList,
   Clock,
   CreditCard,
-  Download,
   FileText,
   Mail,
   Pencil,
@@ -19,7 +18,6 @@ import {
   Printer,
   RefreshCw,
   Shield,
-  Upload,
   Users
 } from "lucide-react";
 import type { FormEvent } from "react";
@@ -45,7 +43,7 @@ import { Notification } from "@/components/Notification";
 import { PriorityBadge } from "@/components/PriorityBadge";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Timeline } from "@/components/Timeline";
-import { formatBytes, caseDisplayTitle, formatDate } from "@/lib/formatters";
+import { caseDisplayTitle, formatDate } from "@/lib/formatters";
 import { errorMessage } from "@/src/lib/errorMessage";
 import {
   aggregatePartyFromCaseParty,
@@ -78,8 +76,7 @@ import type {
   CaseAggregate,
   CaseParty,
   Document,
-  ProviderResult,
-  Report
+  ProviderResult
 } from "@/types";
 
 const TABS = [
