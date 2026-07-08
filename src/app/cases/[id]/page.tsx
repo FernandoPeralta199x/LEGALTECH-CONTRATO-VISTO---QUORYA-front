@@ -32,7 +32,7 @@ import { Badge } from "@/components/Badge";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { centsToReaisLabel } from "@/components/CurrencyInput";
+import { CasePaymentCard } from "@/components/cases/CasePaymentCard";
 import { TriageModuleCard } from "@/components/cases/TriageModuleCard";
 import { PaymentReceiptSheet } from "@/components/cases/PaymentReceiptSheet";
 import { TriagePrintSheet } from "@/components/cases/TriagePrintSheet";
@@ -125,29 +125,6 @@ function sourceModeLabel(value: unknown): string {
   };
 
   return labels[value] ?? value;
-}
-
-const paymentMethodLabel: Record<string, string> = {
-  boleto: "Boleto",
-  cartao: "Cartão",
-  pix: "Pix"
-};
-
-const paymentStatusLabel: Record<string, string> = {
-  canceled: "Cancelado",
-  expired: "Expirado",
-  failed: "Falhou",
-  paid: "Pago",
-  pending: "Pendente",
-  refunded: "Reembolsado",
-  simulated: "Simulado"
-};
-
-/** Formata "AAAA-MM-DD" como dd/mm/aaaa sem passar por Date (evita shift de fuso). */
-function formatDueDate(isoDate: string): string {
-  const [year, month, day] = isoDate.split("-");
-  if (!year || !month || !day) return isoDate;
-  return `${day}/${month}/${year}`;
 }
 
 function reportStatusLabel(report: Report | null): string {
@@ -252,7 +229,6 @@ export default function CaseDetailPage({ params }: PageProps) {
   const [approveOpen, setApproveOpen] = useState(false);
   const [approving, setApproving] = useState(false);
   const [printTarget, setPrintTarget] = useState<string | null>(null);
-  const [showReceipt, setShowReceipt] = useState(false);
   const [printReceipt, setPrintReceipt] = useState(false);
   const [workflowNotice, setWorkflowNotice] = useState<{
     tone: "success" | "error";
@@ -729,199 +705,13 @@ export default function CaseDetailPage({ params }: PageProps) {
             </Card>
 
             {showPayment && (
-              <Card
-                className="lg:col-span-2"
-                title={
-                  <span className="flex items-center gap-2">
-                    <CreditCard size={16} style={{ color: "var(--accent)" }} />
-                    Pagamento
-                  </span>
-                }
-              >
-                {installmentPlan ? (
-                  <div>
-                    <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                      {[
-                        {
-                          label: "Parcelas",
-                          value: `${installmentPlan.parcelas}x de ${centsToReaisLabel(
-                            installmentPlan.schedule[0]?.valorCents ??
-                              installmentPlan.valorTotalCents
-                          )}`
-                        },
-                        {
-                          label: "Valor total",
-                          value: centsToReaisLabel(installmentPlan.valorTotalCents)
-                        },
-                        {
-                          label: "Método",
-                          value:
-                            paymentMethodLabel[installmentPlan.method] ??
-                            installmentPlan.method
-                        },
-                        {
-                          label: "Status",
-                          value: paymentStatusLabel[paymentStatus] ?? paymentStatus
-                        }
-                      ].map((item) => (
-                        <div key={item.label}>
-                          <dt className="text-[11px] text-[var(--text3)]">
-                            {item.label}
-                          </dt>
-                          <dd className="mt-0.5 text-sm font-semibold text-[var(--text)]">
-                            {item.value}
-                          </dd>
-                        </div>
-                      ))}
-                    </dl>
-                    {installmentPlan.hasJuros && (
-                      <p className="mt-3 text-[11px] text-[var(--text3)]">
-                        Juros de{" "}
-                        {(installmentPlan.jurosMensalBps / 100).toLocaleString(
-                          "pt-BR",
-                          { maximumFractionDigits: 2 }
-                        )}
-                        % a.m. · acréscimo de{" "}
-                        {centsToReaisLabel(installmentPlan.acrescimoCents)}
-                      </p>
-                    )}
-                    {installmentPlan.schedule.length > 0 && (
-                      <div className="mt-4 border-t border-[var(--bd)] pt-4">
-                        <p className="mb-2 text-[11px] uppercase tracking-wide text-[var(--text3)]">
-                          Cronograma
-                        </p>
-                        <div className="space-y-1.5">
-                          {installmentPlan.schedule.map((item) => (
-                            <div
-                              className="flex items-center justify-between gap-3 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-3 py-1.5 text-xs"
-                              key={item.numero}
-                            >
-                              <span className="text-[var(--text2)]">
-                                Parcela {item.numero}
-                              </span>
-                              <span className="text-[var(--text2)]">
-                                {formatDueDate(item.vencimento)}
-                              </span>
-                              <span className="font-semibold text-[var(--text)]">
-                                {centsToReaisLabel(item.valorCents)}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    <div className="mt-4 flex justify-end">
-                      <Button
-                        icon={<CheckCircle2 aria-hidden="true" size={15} />}
-                        onClick={() => setShowReceipt((v) => !v)}
-                        variant="secondary"
-                      >
-                        {showReceipt ? "Ocultar comprovante" : "Ver comprovante"}
-                      </Button>
-                    </div>
-                    {showReceipt && (
-                      <div className="mt-3 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] p-4">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2
-                            className="shrink-0 text-[var(--teal)]"
-                            size={18}
-                          />
-                          <p className="text-sm font-semibold text-[var(--text)]">
-                            {(installmentPlan.payment?.simulated ?? true)
-                              ? "Pagamento simulado confirmado"
-                              : "Pagamento confirmado"}
-                          </p>
-                        </div>
-                        <p className="mt-1 text-[11px] text-[var(--text3)]">
-                          Ambiente local — nenhuma cobrança real foi gerada.
-                        </p>
-                        <dl className="mt-3 space-y-1.5 text-xs">
-                          <div className="flex justify-between gap-4">
-                            <dt className="text-[var(--text3)]">Método</dt>
-                            <dd className="text-right font-medium text-[var(--text)]">
-                              {paymentMethodLabel[installmentPlan.method] ??
-                                installmentPlan.method}
-                              {installmentPlan.method === "cartao" &&
-                              installmentPlan.payment?.last4
-                                ? ` · ${
-                                    installmentPlan.payment.brand
-                                      ? installmentPlan.payment.brand + " "
-                                      : ""
-                                  }•••• ${installmentPlan.payment.last4}`
-                                : ""}
-                            </dd>
-                          </div>
-                          <div className="flex justify-between gap-4">
-                            <dt className="text-[var(--text3)]">Parcelas</dt>
-                            <dd className="text-right font-medium text-[var(--text)]">
-                              {installmentPlan.parcelas}x
-                            </dd>
-                          </div>
-                          <div className="flex justify-between gap-4">
-                            <dt className="text-[var(--text3)]">Valor total</dt>
-                            <dd className="text-right font-medium text-[var(--text)]">
-                              {centsToReaisLabel(installmentPlan.valorTotalCents)}
-                            </dd>
-                          </div>
-                          {installmentPlan.payment?.authorizationCode && (
-                            <div className="flex justify-between gap-4">
-                              <dt className="text-[var(--text3)]">Autorização</dt>
-                              <dd className="text-right font-medium text-[var(--text)]">
-                                {installmentPlan.payment.authorizationCode}
-                              </dd>
-                            </div>
-                          )}
-                          {installmentPlan.payment?.externalReference && (
-                            <div className="flex justify-between gap-4">
-                              <dt className="text-[var(--text3)]">Referência</dt>
-                              <dd className="break-all text-right font-medium text-[var(--text)]">
-                                {installmentPlan.payment.externalReference}
-                              </dd>
-                            </div>
-                          )}
-                          {installmentPlan.payment?.requestedAt && (
-                            <div className="flex justify-between gap-4">
-                              <dt className="text-[var(--text3)]">Data</dt>
-                              <dd className="text-right font-medium text-[var(--text)]">
-                                {new Date(
-                                  installmentPlan.payment.requestedAt
-                                ).toLocaleString("pt-BR")}
-                              </dd>
-                            </div>
-                          )}
-                        </dl>
-                        <div className="mt-4 flex justify-end">
-                          <Button
-                            icon={<Printer aria-hidden="true" size={15} />}
-                            onClick={() => setPrintReceipt(true)}
-                            variant="secondary"
-                          >
-                            Imprimir / salvar PDF
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : paymentPending ? (
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-sm text-[var(--text2)]">
-                      O pagamento deste caso ainda está pendente. Conclua para
-                      registrar o plano de parcelamento.
-                    </p>
-                    <Button
-                      href={`/cases/${caseData.id}/pagamento`}
-                      icon={<CreditCard aria-hidden="true" size={15} />}
-                    >
-                      Concluir pagamento
-                    </Button>
-                  </div>
-                ) : (
-                  <p className="text-sm text-[var(--text2)]">
-                    Status do pagamento:{" "}
-                    {paymentStatusLabel[paymentStatus] ?? paymentStatus}.
-                  </p>
-                )}
-              </Card>
+              <CasePaymentCard
+                caseId={caseData.id}
+                installmentPlan={installmentPlan}
+                onPrint={() => setPrintReceipt(true)}
+                paymentPending={paymentPending}
+                paymentStatus={paymentStatus}
+              />
             )}
 
             <Card className="lg:col-span-2" title="Próximos passos">
