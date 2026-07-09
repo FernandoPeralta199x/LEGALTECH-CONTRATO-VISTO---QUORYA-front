@@ -2,22 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ArrowLeft,
-  Save,
-  Settings,
-  Layers,
-  Shield,
-  RotateCcw,
-  Pencil,
-  Check,
-} from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 import { AuthGuard } from "@/components/AuthGuard";
 import { AppLayout } from "@/components/AppLayout";
 import { PageTitle } from "@/components/PageTitle";
 import { Card } from "@/components/Card";
-import { CurrencyInput, centsToReaisLabel } from "@/components/CurrencyInput";
 import { Button } from "@/components/Button";
 import { Notification } from "@/components/Notification";
 import { LoadingState } from "@/components/LoadingState";
@@ -27,6 +17,9 @@ import {
   normalizeInstallmentConfig,
 } from "@/components/pricing/InstallmentConfigCard";
 import { PricingPreview } from "@/components/pricing/PricingPreview";
+import { PricingStatusBar } from "@/components/pricing/PricingStatusBar";
+import { PricingLimitCard } from "@/components/pricing/PricingLimitCard";
+import { PricingModulesEditor } from "@/components/pricing/PricingModulesEditor";
 
 import {
   getPricingCatalog,
@@ -391,111 +384,20 @@ export default function AdminPricingPage() {
           ) : (
             <>
               {/* ── Barra fixa (G): status + atalhos + salvar ────────────── */}
-              <div
-                ref={barRef}
-                className="cv-glass-bar sticky top-16 z-20 -mx-1 mb-5 rounded-xl px-3 py-2.5 backdrop-blur-md backdrop-saturate-150 sm:px-4"
-                role="region"
-                aria-label="Status e ações da configuração"
-              >
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                  {/* Status (antiga aba "Status Atual", agora sempre visível) */}
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                    <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text3)]">
-                      <Settings size={12} aria-hidden="true" />
-                      Status
-                    </span>
-                    {limitCheck && (
-                      <>
-                        <span className="text-xs text-[var(--text2)]">
-                          Casos ativos{" "}
-                          <b className="font-mono font-semibold tabular-nums text-[var(--text)]">
-                            {limitCheck.active_cases_count}
-                          </b>
-                        </span>
-                        <span className="text-[var(--text3)]">·</span>
-                        <span className="text-xs text-[var(--text2)]">
-                          Limite{" "}
-                          <b className="font-semibold tabular-nums text-[var(--text)]">
-                            {limitCheck.cases_limit ?? "Ilimitado"}
-                          </b>
-                        </span>
-                        <span className="text-[var(--text3)]">·</span>
-                        <span className="text-xs text-[var(--text2)]">
-                          Pode criar{" "}
-                          <b
-                            className="font-semibold"
-                            style={{ color: limitCheck.allowed ? "var(--ok)" : "var(--danger)" }}
-                          >
-                            {limitCheck.allowed ? "Sim" : "Não"}
-                          </b>
-                        </span>
-                      </>
-                    )}
-                    {config && (
-                      <>
-                        <span className="text-[var(--text3)]">·</span>
-                        <span className="cv-badge cv-badge-muted px-2 py-0.5 font-mono">
-                          v{config.version}
-                        </span>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Ações (P-6: salvar sempre à mão) */}
-                  <div className="ml-auto flex items-center gap-2">
-                    {hasChanges && (
-                      <Button
-                        disabled={isSaving}
-                        icon={<RotateCcw size={15} />}
-                        onClick={handleReset}
-                        size="sm"
-                        title="Descartar alterações"
-                        variant="secondary"
-                      >
-                        Descartar
-                      </Button>
-                    )}
-                    <Button
-                      disabled={!canSave}
-                      icon={<Save size={15} />}
-                      loading={isSaving}
-                      onClick={() => void handleSave()}
-                      size="sm"
-                      title={
-                        noMethodEnabled
-                          ? "Habilite ao menos um método de pagamento para salvar."
-                          : !hasChanges
-                            ? "Nenhuma alteração para salvar."
-                            : undefined
-                      }
-                    >
-                      {isSaving ? "Salvando..." : "Salvar"}
-                    </Button>
-                  </div>
-
-                  {/* Atalhos de seção */}
-                  <div className="flex w-full items-center gap-1.5 overflow-x-auto border-t border-[var(--bd)] pt-2">
-                    {SECTIONS.map((s) => {
-                      const active = activeSection === s.id;
-                      return (
-                        <button
-                          key={s.id}
-                          type="button"
-                          onClick={() => goToSection(s.id)}
-                          aria-current={active ? "true" : undefined}
-                          className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-                            active
-                              ? "border-[rgba(32,201,151,0.4)] bg-[var(--teal-dim)] text-[var(--teal)]"
-                              : "border-[var(--bd)] text-[var(--text2)] hover:border-[var(--bd2)] hover:text-[var(--text)]"
-                          }`}
-                        >
-                          {s.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
+              <PricingStatusBar
+                barRef={barRef}
+                limitCheck={limitCheck}
+                config={config}
+                hasChanges={hasChanges}
+                isSaving={isSaving}
+                canSave={canSave}
+                noMethodEnabled={noMethodEnabled}
+                onReset={handleReset}
+                onSave={() => void handleSave()}
+                sections={SECTIONS}
+                activeSection={activeSection}
+                onSectionClick={goToSection}
+              />
 
               {/* Feedback de salvamento */}
               {message && (
@@ -509,192 +411,22 @@ export default function AdminPricingPage() {
                 {/* Coluna do editor */}
                 <div className="min-w-0 space-y-5">
                   {/* Limite de Casos — linha compacta (toggle segmentado) */}
-                  <section id="sec-limite" className="scroll-mt-44">
-                    <div className="cv-card flex flex-wrap items-center gap-x-3 gap-y-3 p-4">
-                      <Shield
-                        size={18}
-                        style={{ color: "var(--teal)" }}
-                        className="shrink-0"
-                        aria-hidden="true"
-                      />
-                      <div className="min-w-0">
-                        <div className="text-sm font-semibold text-[var(--text)]">
-                          Limite de casos
-                        </div>
-                        <div className="text-xs text-[var(--text2)]">
-                          {unlimitedCases
-                            ? "Ilimitado — sem restrição de casos ativos"
-                            : `No máximo ${casesLimit ?? "—"} casos ativos`}
-                        </div>
-                      </div>
-                      <div className="ml-auto flex items-center gap-2">
-                        <div
-                          className="flex overflow-hidden rounded-lg border border-[var(--bd2)] text-xs"
-                          role="group"
-                          aria-label="Modo do limite de casos"
-                        >
-                          <button
-                            type="button"
-                            aria-pressed={unlimitedCases}
-                            onClick={() => setUnlimitedCases(true)}
-                            className={`px-3 py-1.5 font-semibold transition-colors ${
-                              unlimitedCases
-                                ? "bg-[var(--teal)] text-[#04140f]"
-                                : "text-[var(--text2)] hover:text-[var(--text)]"
-                            }`}
-                          >
-                            Ilimitado
-                          </button>
-                          <button
-                            type="button"
-                            aria-pressed={!unlimitedCases}
-                            onClick={() => setUnlimitedCases(false)}
-                            className={`px-3 py-1.5 font-semibold transition-colors ${
-                              !unlimitedCases
-                                ? "bg-[var(--teal)] text-[#04140f]"
-                                : "text-[var(--text2)] hover:text-[var(--text)]"
-                            }`}
-                          >
-                            Definir nº
-                          </button>
-                        </div>
-                        {!unlimitedCases && (
-                          <input
-                            type="number"
-                            min={1}
-                            max={100000}
-                            value={casesLimit ?? ""}
-                            onChange={(e) => {
-                              const v = e.target.value;
-                              if (v === "") {
-                                setCasesLimit(null);
-                                return;
-                              }
-                              const n = parseInt(v, 10);
-                              if (Number.isNaN(n)) return;
-                              setCasesLimit(Math.min(100000, Math.max(1, n)));
-                            }}
-                            placeholder="Ex: 100"
-                            aria-label="Quantidade máxima de casos ativos"
-                            className="h-11 w-24 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-3 text-sm tabular-nums text-[var(--text)] outline-none focus:border-[var(--teal)]"
-                          />
-                        )}
-                      </div>
-                    </div>
-                  </section>
+                  <PricingLimitCard
+                    unlimitedCases={unlimitedCases}
+                    casesLimit={casesLimit}
+                    onUnlimitedChange={setUnlimitedCases}
+                    onCasesLimitChange={setCasesLimit}
+                  />
 
                   {/* Preços de Módulos */}
                   {catalog && (
-                    <section id="sec-modulos" className="scroll-mt-44">
-                      <Card
-                        title={
-                          <span className="flex items-center gap-2">
-                            <Layers size={18} style={{ color: "var(--teal)" }} />
-                            Preços de Módulos
-                          </span>
-                        }
-                        description="Deixe vazio para usar o padrão. Os preços dos produtos são calculados automaticamente a partir dos módulos obrigatórios."
-                      >
-                        <div className="space-y-2">
-                          {catalog.modules.map((mod, index) => {
-                            const overrideCents = moduleOverrides[mod.code] ?? null;
-                            const hasOverride = overrideCents !== null;
-                            const effectiveCents = overrideCents ?? mod.price_cents;
-                            const isEditing = editingModule === mod.code;
-                            return (
-                              <div
-                                key={mod.code}
-                                // Motion: entrada escalonada das linhas de módulo.
-                                className="animate-in flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-3 py-2.5"
-                                style={{ animationDelay: `${index * 40}ms` }}
-                              >
-                                <div className="min-w-0 flex-1">
-                                  <div
-                                    className="text-sm font-medium"
-                                    style={{ color: "var(--text)" }}
-                                  >
-                                    {mod.title}
-                                  </div>
-                                  <div className="mt-0.5 text-xs text-[var(--text2)]">
-                                    {hasOverride ? (
-                                      <>
-                                        Padrão{" "}
-                                        <span className="font-mono">
-                                          {centsToReaisLabel(mod.price_cents)}
-                                        </span>
-                                      </>
-                                    ) : (
-                                      "Preço padrão do catálogo"
-                                    )}
-                                  </div>
-                                </div>
-                                {isEditing ? (
-                                  <div className="flex items-center gap-2">
-                                    <CurrencyInput
-                                      value={overrideCents}
-                                      onChange={(cents) =>
-                                        setModuleOverrides((prev) => ({
-                                          ...prev,
-                                          [mod.code]: cents,
-                                        }))
-                                      }
-                                      placeholder={centsToReaisLabel(mod.price_cents)}
-                                      className="w-36"
-                                      aria-label={`Preço personalizado para ${mod.title}`}
-                                    />
-                                    {hasOverride && (
-                                      <button
-                                        type="button"
-                                        onClick={() =>
-                                          setModuleOverrides((prev) => ({
-                                            ...prev,
-                                            [mod.code]: null,
-                                          }))
-                                        }
-                                        className="text-xs text-[var(--text2)] underline hover:text-[var(--text)]"
-                                      >
-                                        usar padrão
-                                      </button>
-                                    )}
-                                    <button
-                                      type="button"
-                                      onClick={() => setEditingModule(null)}
-                                      className="cv-icon-btn"
-                                      aria-label={`Concluir edição de ${mod.title}`}
-                                    >
-                                      <Check size={15} />
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center gap-2.5">
-                                    <span className="font-mono text-sm font-bold tabular-nums text-[var(--text)]">
-                                      {centsToReaisLabel(effectiveCents)}
-                                    </span>
-                                    {hasOverride ? (
-                                      <span className="rounded-full border border-[rgba(245,165,36,0.3)] bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-400">
-                                        personalizado
-                                      </span>
-                                    ) : (
-                                      <span className="rounded-full border border-[var(--bd2)] bg-[var(--surf3)] px-2 py-0.5 text-[10px] font-semibold text-[var(--text2)]">
-                                        padrão
-                                      </span>
-                                    )}
-                                    <button
-                                      type="button"
-                                      onClick={() => setEditingModule(mod.code)}
-                                      className="cv-icon-btn"
-                                      aria-label={`Editar preço de ${mod.title}`}
-                                    >
-                                      <Pencil size={13} />
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </Card>
-                    </section>
+                    <PricingModulesEditor
+                      catalog={catalog}
+                      moduleOverrides={moduleOverrides}
+                      onModuleOverridesChange={setModuleOverrides}
+                      editingModule={editingModule}
+                      onEditingModuleChange={setEditingModule}
+                    />
                   )}
 
                   {/* Parcelamento + validações (P-1/P-2) */}

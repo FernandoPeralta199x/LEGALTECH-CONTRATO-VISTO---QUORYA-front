@@ -1,22 +1,12 @@
 "use client";
 
 import {
-  AlertTriangle,
   ArrowLeft,
   Bot,
   Calendar,
-  CheckCircle2,
   ClipboardList,
   Clock,
-  CreditCard,
   FileText,
-  Mail,
-  Pencil,
-  Phone,
-  Play,
-  Plus,
-  Printer,
-  RefreshCw,
   Shield,
   Users
 } from "lucide-react";
@@ -30,14 +20,14 @@ import { Badge } from "@/components/Badge";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { CasePaymentCard } from "@/components/cases/CasePaymentCard";
+import { CaseAgentsTab } from "@/components/cases/CaseAgentsTab";
+import { CaseOverviewTab } from "@/components/cases/CaseOverviewTab";
+import { CasePartiesTab } from "@/components/cases/CasePartiesTab";
 import { CaseReportTab } from "@/components/cases/CaseReportTab";
-import { TriageModuleCard } from "@/components/cases/TriageModuleCard";
 import { PaymentReceiptSheet } from "@/components/cases/PaymentReceiptSheet";
 import { TriagePrintSheet } from "@/components/cases/TriagePrintSheet";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
-import { FormField, SelectInput, TextArea, TextInput } from "@/components/FormField";
 import { LoadingState } from "@/components/LoadingState";
 import { Notification } from "@/components/Notification";
 import { PriorityBadge } from "@/components/PriorityBadge";
@@ -59,9 +49,7 @@ import { useDevSession } from "@/src/lib/useDevSession";
 import {
   productLabel,
   recommendationLabel,
-  reportStatusLabel,
-  riskLabel,
-  triageStatusLabel
+  riskLabel
 } from "@/src/lib/reportLabels";
 import {
   FINAL_REPORT_ACCEPT_ATTR,
@@ -87,26 +75,6 @@ const TABS = [
   { id: "agents", label: "Triagem local", icon: Bot },
   { id: "report", label: "Relatório", icon: Shield }
 ];
-
-const partyTypeOptions = [
-  { label: "Cliente", value: "cliente" },
-  { label: "Contraparte", value: "contraparte" },
-  { label: "Testemunha", value: "testemunha" },
-  { label: "Responsável", value: "responsavel" },
-  { label: "Outro", value: "outro" }
-];
-
-const partyTypeLabel: Record<string, string> = {
-  avalista: "Avalista",
-  cliente: "Cliente",
-  contraparte: "Contraparte",
-  contratada: "Contratada",
-  contratante: "Contratante",
-  fiador: "Fiador",
-  outro: "Outro",
-  responsavel: "Responsável",
-  testemunha: "Testemunha"
-};
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -644,305 +612,42 @@ export default function CaseDetailPage({ params }: PageProps) {
 
         {/* Tab: Overview */}
         {activeTab === "overview" && (
-          <div className="grid gap-6 lg:grid-cols-2 animate-in">
-            <Card title="Status atual">
-              <div className="flex items-center gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-4 border-[rgba(32,201,151,0.3)] bg-[var(--teal-dim)]">
-                  <span className="font-mono text-sm font-bold text-[var(--teal)]">
-                    {caseData.progressPercent}%
-                  </span>
-                </div>
-                <div>
-                  <StatusBadge status={caseData.status} />
-                  {caseData.assignedTo && (
-                    <p className="mt-1.5 text-xs text-[var(--text2)]">
-                      Responsável: {caseData.assignedTo}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </Card>
-
-            <Card title="Estatísticas">
-              <dl className="grid grid-cols-2 gap-4">
-                {[
-                  { label: "Documentos", value: summary?.documentsCount ?? caseData.documentsCount },
-                  { label: "Partes", value: summary?.partiesCount ?? caseParties.length },
-                  {
-                    label: "Triagem",
-                    value: triageStatusLabel(summary?.triageStatus)
-                  },
-                  {
-                    label: "Relatório",
-                    value: reportStatusLabel(caseReport)
-                  }
-                ].map((stat) => (
-                  <div key={stat.label}>
-                    <dt className="text-[11px] text-[var(--text3)]">{stat.label}</dt>
-                    <dd className="mt-0.5 font-mono text-lg font-bold tracking-tight text-[var(--text)]">{stat.value}</dd>
-                  </div>
-                ))}
-              </dl>
-            </Card>
-
-            {showPayment && (
-              <CasePaymentCard
-                caseId={caseData.id}
-                installmentPlan={installmentPlan}
-                onPrint={() => setPrintReceipt(true)}
-                paymentPending={paymentPending}
-                paymentStatus={paymentStatus}
-              />
-            )}
-
-            <Card className="lg:col-span-2" title="Próximos passos">
-              {caseIsCompleted ? (
-                <div className="flex items-center gap-3">
-                  <CheckCircle2 className="shrink-0 text-[var(--teal)]" size={18} />
-                  <p className="text-sm text-[var(--text2)]">
-                    Caso concluído — relatório aprovado. Nenhuma ação pendente.
-                  </p>
-                </div>
-              ) : paymentPending ? (
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <p className="text-sm text-[var(--text2)]">
-                    Conclua o pagamento do pedido para liberar a triagem.
-                  </p>
-                  {canWrite && (
-                    <Button
-                      href={`/cases/${caseData.id}/pagamento`}
-                      icon={<CreditCard aria-hidden="true" size={15} />}
-                    >
-                      Concluir pagamento
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <p className="text-sm text-[var(--text2)]">
-                    {!triageHasRun
-                      ? "Execute a triagem para coletar as evidências dos provedores."
-                      : !caseReport
-                        ? "Gere o parecer consolidando as evidências da triagem."
-                        : "Revise o parecer e aprove para concluir o caso."}
-                  </p>
-                  {canWrite ? (
-                    !triageHasRun ? (
-                      <Button
-                        icon={<Play aria-hidden="true" size={15} />}
-                        loading={triageRunning}
-                        onClick={handleRunTriage}
-                      >
-                        Rodar triagem
-                      </Button>
-                    ) : !caseReport ? (
-                      <Button
-                        icon={<FileText aria-hidden="true" size={15} />}
-                        loading={reportBusy}
-                        onClick={handleGenerateReport}
-                      >
-                        Gerar relatório
-                      </Button>
-                    ) : (
-                      <Button
-                        icon={<CheckCircle2 aria-hidden="true" size={15} />}
-                        onClick={() => setApproveOpen(true)}
-                      >
-                        Aprovar relatório
-                      </Button>
-                    )
-                  ) : (
-                    <span className="text-xs text-[var(--text3)]">Somente admin/analista</span>
-                  )}
-                </div>
-              )}
-            </Card>
-
-            {caseData.status === "revisao_humana" && (
-              <div className="lg:col-span-2 rounded-lg border border-[rgba(249,115,22,0.25)] bg-[var(--orange-dim)] p-5">
-                <div className="flex items-center gap-3">
-                  <AlertTriangle className="shrink-0 text-[var(--orange)]" size={20} />
-                  <div>
-                      <p className="text-sm font-semibold text-[var(--text)]">
-                      Revisão demonstrativa
-                    </p>
-                    <p className="mt-0.5 text-xs text-[var(--text2)]">
-                      Este caso está em etapa demonstrativa de revisão. Revisão
-                      humana persistida, aprovação real e entrega ao cliente ficam no
-                      roadmap.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          <CaseOverviewTab
+            canWrite={canWrite}
+            caseData={caseData}
+            caseIsCompleted={caseIsCompleted}
+            caseParties={caseParties}
+            caseReport={caseReport}
+            installmentPlan={installmentPlan}
+            onGenerateReport={handleGenerateReport}
+            onOpenApprove={() => setApproveOpen(true)}
+            onPrintReceipt={() => setPrintReceipt(true)}
+            onRunTriage={handleRunTriage}
+            paymentPending={paymentPending}
+            paymentStatus={paymentStatus}
+            reportBusy={reportBusy}
+            showPayment={showPayment}
+            summary={summary}
+            triageHasRun={triageHasRun}
+            triageRunning={triageRunning}
+          />
         )}
 
         {/* Tab: Parties */}
         {activeTab === "parties" && (
-          <div className="animate-in">
-            <div className="mb-4 flex justify-end">
-              <Button icon={<Plus aria-hidden="true" size={15} />} onClick={startCreateParty}>
-                Adicionar parte
-              </Button>
-            </div>
-            {caseParties.length === 0 ? (
-              <EmptyState
-                action={
-                  <Button icon={<Plus size={15} />} onClick={startCreateParty}>
-                    Adicionar parte
-                  </Button>
-                }
-                description="Cadastre partes fictícias vinculadas a este caso para validar o fluxo local."
-                icon={<Users size={20} />}
-                title="Nenhuma parte registrada"
-              />
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {caseParties.map((party, index) => (
-                  <div
-                    className="animate-in"
-                    key={party.id}
-                    style={{ animationDelay: `${index * 40}ms` }}
-                  >
-                    <Card>
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex min-w-0 items-start gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--bd)] bg-[var(--surf2)] text-xs font-bold text-[var(--teal)]">
-                          {party.name.slice(0, 2).toUpperCase()}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-[var(--text)]">
-                            {party.name}
-                          </p>
-                          <span className="inline-flex rounded-md bg-[var(--surf3)] px-2 py-0.5 text-[11px] text-[var(--text2)]">
-                            {partyTypeLabel[party.type] ?? party.type}
-                          </span>
-                        </div>
-                      </div>
-                      <Button
-                        aria-label={`Editar parte ${party.name}`}
-                        icon={<Pencil aria-hidden="true" size={14} />}
-                        onClick={() => startEditParty(party)}
-                        size="sm"
-                        variant="secondary"
-                      >
-                        Editar
-                      </Button>
-                    </div>
-                    <dl className="mt-4 space-y-2 text-xs">
-                      <div className="flex min-w-0 items-center gap-2 text-[var(--text2)]">
-                        <FileText size={12} className="shrink-0 text-[var(--text3)]" />
-                        <span className="truncate">{party.document || "Documento não informado"}</span>
-                      </div>
-                      <div className="flex min-w-0 items-center gap-2 text-[var(--text2)]">
-                        <Mail size={12} className="shrink-0 text-[var(--text3)]" />
-                        <span className="truncate">{party.email || "E-mail não informado"}</span>
-                      </div>
-                      <div className="flex min-w-0 items-center gap-2 text-[var(--text2)]">
-                        <Phone size={12} className="shrink-0 text-[var(--text3)]" />
-                        <span className="truncate">{party.phone || "Telefone não informado"}</span>
-                      </div>
-                    </dl>
-                    {party.notes && (
-                      <p className="mt-3 border-t border-[var(--bd)] pt-3 text-xs leading-5 text-[var(--text2)]">
-                        {party.notes}
-                      </p>
-                    )}
-                    </Card>
-                  </div>
-                ))}
-              </div>
-            )}
-            {showPartyForm && (
-              <div
-                aria-labelledby="party-form-title"
-                aria-modal="true"
-                className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 py-8 backdrop-blur-sm"
-                role="dialog"
-              >
-                <form
-                  className="cv-card max-h-[calc(100vh-4rem)] w-full max-w-2xl overflow-y-auto p-5 shadow-2xl"
-                  onSubmit={handlePartySubmit}
-                >
-                  <div className="mb-5">
-                    <h2 className="text-sm font-semibold text-[var(--text)]" id="party-form-title">
-                      {editingParty ? "Editar parte" : "Adicionar parte"}
-                    </h2>
-                    <p className="mt-1 text-xs leading-5 text-[var(--text2)]">
-                      Use apenas dados fictícios. A referência de organização e caso é validada pela API local quando disponível.
-                    </p>
-                  </div>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <FormField error={partyFormErrors.name} label="Nome da parte" required>
-                      <TextInput
-                        invalid={Boolean(partyFormErrors.name)}
-                        onChange={(event) => updatePartyForm("name", event.target.value)}
-                        placeholder="Parte fictícia"
-                        value={partyForm.name}
-                      />
-                    </FormField>
-                    <FormField error={partyFormErrors.party_type} label="Papel" required>
-                      <SelectInput
-                        invalid={Boolean(partyFormErrors.party_type)}
-                        onChange={(event) => updatePartyForm("party_type", event.target.value)}
-                        value={partyForm.party_type}
-                      >
-                        {partyTypeOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </SelectInput>
-                    </FormField>
-                    <FormField
-                      error={partyFormErrors.document}
-                      hint="Opcional. Use identificadores fictícios em ambiente local."
-                      label="Documento"
-                    >
-                      <TextInput
-                        invalid={Boolean(partyFormErrors.document)}
-                        onChange={(event) => updatePartyForm("document", event.target.value)}
-                        placeholder="00000000000"
-                        value={partyForm.document ?? ""}
-                      />
-                    </FormField>
-                    <FormField error={partyFormErrors.email} label="E-mail">
-                      <TextInput
-                        invalid={Boolean(partyFormErrors.email)}
-                        onChange={(event) => updatePartyForm("email", event.target.value)}
-                        placeholder="parte@example.test"
-                        type="email"
-                        value={partyForm.email ?? ""}
-                      />
-                    </FormField>
-                    <FormField label="Telefone">
-                      <TextInput
-                        onChange={(event) => updatePartyForm("phone", event.target.value)}
-                        placeholder="+5500000000000"
-                        value={partyForm.phone ?? ""}
-                      />
-                    </FormField>
-                    <FormField label="Observações">
-                      <TextArea
-                        onChange={(event) => updatePartyForm("notes", event.target.value)}
-                        placeholder="Observações fictícias sobre a parte"
-                        value={partyForm.notes ?? ""}
-                      />
-                    </FormField>
-                  </div>
-                  <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                    <Button disabled={partySubmitting} onClick={resetPartyForm} variant="secondary">
-                      Cancelar
-                    </Button>
-                    <Button loading={partySubmitting} type="submit">
-                      {editingParty ? "Salvar alterações" : "Adicionar parte"}
-                    </Button>
-                  </div>
-                </form>
-              </div>
-            )}
-          </div>
+          <CasePartiesTab
+            caseParties={caseParties}
+            editingParty={editingParty}
+            handlePartySubmit={handlePartySubmit}
+            partyForm={partyForm}
+            partyFormErrors={partyFormErrors}
+            partySubmitting={partySubmitting}
+            resetPartyForm={resetPartyForm}
+            showPartyForm={showPartyForm}
+            startCreateParty={startCreateParty}
+            startEditParty={startEditParty}
+            updatePartyForm={updatePartyForm}
+          />
         )}
 
         {/* Tab: Documents */}
@@ -1000,65 +705,18 @@ export default function CaseDetailPage({ params }: PageProps) {
 
         {/* Tab: Agents */}
         {activeTab === "agents" && (
-          <div className="animate-in">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <Bot className="text-brand-teal" size={18} />
-                <h2 className="text-sm font-semibold text-[var(--text)]">
-                  Módulos de triagem do caso
-                </h2>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                {providerResults.length > 0 && (
-                  <Button
-                    icon={<Printer aria-hidden="true" size={15} />}
-                    onClick={() => setPrintTarget("all")}
-                    variant="secondary"
-                  >
-                    Imprimir tudo
-                  </Button>
-                )}
-                {canWrite && !caseIsCompleted && !paymentPending && (
-                  <Button
-                    icon={
-                      triageHasRun ? (
-                        <RefreshCw aria-hidden="true" size={15} />
-                      ) : (
-                        <Play aria-hidden="true" size={15} />
-                      )
-                    }
-                    loading={triageRunning}
-                    onClick={handleRunTriage}
-                  >
-                    {triageHasRun ? "Reexecutar triagem" : "Rodar triagem"}
-                  </Button>
-                )}
-              </div>
-            </div>
-            {triageModules.length === 0 ? (
-              <EmptyState
-                description="Nenhum módulo de triagem foi registrado para este caso."
-                icon={<Bot size={20} />}
-                title="Triagem ainda não iniciada"
-              />
-            ) : (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {triageModules.map((module, index) => (
-                  <div
-                    className="animate-in"
-                    key={module.id}
-                    style={{ animationDelay: `${index * 40}ms` }}
-                  >
-                    <TriageModuleCard
-                      module={module}
-                      onPrint={setPrintTarget}
-                      result={resultByModule.get(module.id)}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <CaseAgentsTab
+            canWrite={canWrite}
+            caseIsCompleted={caseIsCompleted}
+            onPrint={setPrintTarget}
+            onRunTriage={handleRunTriage}
+            paymentPending={paymentPending}
+            providerResults={providerResults}
+            resultByModule={resultByModule}
+            triageHasRun={triageHasRun}
+            triageModules={triageModules}
+            triageRunning={triageRunning}
+          />
         )}
 
         {/* Tab: Report */}
