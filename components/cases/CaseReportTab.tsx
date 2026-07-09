@@ -125,14 +125,16 @@ export function CaseReportTab({ finalReport, report }: CaseReportTabProps) {
                     {doc.uploadedAt ? ` · ${formatDate(doc.uploadedAt)}` : ""}
                   </p>
                 </div>
-                <button
-                  className="cv-icon-btn"
-                  onClick={() => void onDownload(doc.id)}
-                  title="Baixar"
-                  type="button"
-                >
-                  <Download size={13} />
-                </button>
+                {canWrite && (
+                  <button
+                    className="cv-icon-btn"
+                    onClick={() => void onDownload(doc.id)}
+                    title="Baixar"
+                    type="button"
+                  >
+                    <Download size={13} />
+                  </button>
+                )}
               </div>
             ))}
           </div>

@@ -27,6 +27,7 @@ import { PageTitle } from "@/components/PageTitle";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatBytes, formatDate } from "@/lib/formatters";
 import { errorMessage } from "@/src/lib/errorMessage";
+import { useDevSession } from "@/src/lib/useDevSession";
 import { listCases } from "@/src/services/cases";
 import {
   enqueueDocumentProcessing,
@@ -83,6 +84,11 @@ function documentSourceLabel(document: Document): string {
 }
 
 export default function DocumentsPage() {
+  const session = useDevSession();
+  // Papel de escrita (admin/analyst). Viewer é somente-leitura: a URL de download
+  // é writer-only no backend (contorna mascaramento de PII), então o botão fica
+  // oculto p/ viewer — senão a ação daria 403 na tela.
+  const canWrite = session ? ["admin", "analyst"].includes(session.role) : false;
   const [actionMessage, setActionMessage] = useState("");
   const [actionBusyId, setActionBusyId] = useState("");
   const [cases, setCases] = useState<Case[]>([]);
@@ -549,14 +555,16 @@ export default function DocumentsPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 md:ml-auto">
-                    <IconButton
-                      disabled={Boolean(actionBusyId)}
-                      label="Gerar URL temporária local"
-                      loading={actionBusyId === `download-${doc.id}`}
-                      onClick={() => void handleDownloadUrl(doc.id)}
-                    >
-                      <Download size={13} />
-                    </IconButton>
+                    {canWrite && (
+                      <IconButton
+                        disabled={Boolean(actionBusyId)}
+                        label="Gerar URL temporária local"
+                        loading={actionBusyId === `download-${doc.id}`}
+                        onClick={() => void handleDownloadUrl(doc.id)}
+                      >
+                        <Download size={13} />
+                      </IconButton>
+                    )}
                     <IconButton
                       disabled={Boolean(actionBusyId)}
                       label="Registrar processamento local"
