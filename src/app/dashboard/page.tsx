@@ -9,13 +9,10 @@ import {
   Info,
   Plus,
   RefreshCw,
-  Shield,
   Upload,
-  UserPlus,
   UsersRound
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
@@ -28,122 +25,10 @@ import { Notification } from "@/components/Notification";
 import { PageTitle } from "@/components/PageTitle";
 import { PriorityBadge } from "@/components/PriorityBadge";
 import { StatusBadge } from "@/components/StatusBadge";
-import { formatDate } from "@/lib/formatters";
-import { errorMessage } from "@/lib/errorMessage";
+import { badgeStyle, processAreas } from "@/components/dashboard/config";
+import { caseDisplayTitle, formatDate } from "@/lib/formatters";
+import { useDashboardData } from "@/lib/useDashboardData";
 import { useDevSession } from "@/lib/useDevSession";
-import { listCases } from "@/services/cases";
-import { listClients } from "@/services/clients";
-import { getDashboardStats, type DashboardStats } from "@/services/dashboard";
-import { listDocuments } from "@/services/documents";
-import type { Case, Client, Document } from "@/types";
-
-type ActionBadge =
-  | "Base"
-  | "Entrada"
-  | "Entrega"
-  | "Governança"
-  | "Insumos"
-  | "MVP local"
-  | "Operacional"
-  | "Simulado";
-
-const badgeStyle: Record<ActionBadge, string> = {
-  Base:
-    "bg-[var(--blue-dim)] text-[var(--blue)] border-[rgba(96,165,250,0.25)]",
-  Entrada:
-    "bg-[var(--teal-dim)] text-[var(--teal)] border-[rgba(32,201,151,0.3)]",
-  Entrega:
-    "bg-[var(--surf3)] text-[var(--text2)] border-[var(--bd)]",
-  Governança:
-    "bg-[var(--orange-dim)] text-[var(--orange)] border-[rgba(249,115,22,0.25)]",
-  Insumos:
-    "bg-[var(--blue-dim)] text-[var(--blue)] border-[rgba(96,165,250,0.25)]",
-  Operacional:
-    "bg-[var(--teal-dim)] text-[var(--teal)] border-[rgba(32,201,151,0.25)]",
-  "MVP local":
-    "bg-[var(--blue-dim)] text-[var(--blue)] border-[rgba(96,165,250,0.25)]",
-  Simulado:
-    "bg-[var(--surf3)] text-[var(--text2)] border-[var(--bd)]"
-};
-
-const ACTIVE_STATUSES = new Set<string>([
-  "submitted",
-  "triagem_pendente",
-  "coleta_pendente",
-  "processamento_documental",
-  "analise_contratual",
-  "compliance",
-  "minuta_relatorio",
-  "revisao_humana",
-  "processing",
-  "review",
-  "approved"
-]);
-
-const processAreas = [
-  {
-    title: "Novo Pedido",
-    description: "Entrada principal pelo wizard MVP local.",
-    href: "/cases/new",
-    icon: Plus,
-    badge: "Entrada" as ActionBadge,
-    primary: true
-  },
-  {
-    title: "Casos",
-    description: "Acompanhamento operacional dos pedidos criados.",
-    href: "/cases",
-    icon: BriefcaseBusiness,
-    badge: "Operacional" as ActionBadge,
-    primary: false
-  },
-  {
-    title: "Documentos",
-    description: "Arquivos locais e metadados como insumos.",
-    href: "/documents",
-    icon: Upload,
-    badge: "Insumos" as ActionBadge,
-    primary: false
-  },
-  {
-    title: "Analista",
-    description: "Triagem local e revisão conceitual.",
-    href: "/analyst",
-    icon: ClipboardCheck,
-    badge: "Governança" as ActionBadge,
-    primary: false
-  },
-  {
-    title: "Relatórios",
-    description: "Entrega e revisão do MVP local.",
-    href: "/reports",
-    icon: FileText,
-    badge: "Entrega" as ActionBadge,
-    primary: false
-  },
-  {
-    title: "Clientes",
-    description: "Base de relacionamento da operação.",
-    href: "/clients",
-    icon: UserPlus,
-    badge: "Base" as ActionBadge,
-    primary: false
-  },
-  {
-    title: "Administração",
-    description: "Governança local e papéis demonstrativos.",
-    href: "/admin",
-    icon: Shield,
-    badge: "Governança" as ActionBadge,
-    primary: false,
-    adminOnly: true
-  }
-] as const;
-
-function caseTitle(legalCase: Case): string {
-  const title = legalCase.metadata?.title;
-  return typeof title === "string" && title.trim() ? title : legalCase.caseType;
-}
 
 export default function DashboardPage() {
   const session = useDevSession();
@@ -151,80 +36,21 @@ export default function DashboardPage() {
   const visibleAreas = processAreas.filter(
     (area) => !("adminOnly" in area) || session?.role === "admin"
   );
-  const [cases, setCases] = useState<Case[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [error, setError] = useState("");
-  const [fallbackActive, setFallbackActive] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  // stats falhou (totais consolidados indisponíveis) => os cards mostram só a 1ª página
-  const [statsDegraded, setStatsDegraded] = useState(false);
-
-  const refreshDashboard = useCallback(async () => {
-    setLoading(true);
-    setError("");
-
-    try {
-      const clientsResult = await listClients();
-      const [casesResult, documentsResult, statsResult] = await Promise.all([
-        listCases(clientsResult.data),
-        listDocuments(),
-        getDashboardStats().catch(() => ({ data: null, source: "mock" as const }))
-      ]);
-      setStats(statsResult.data);
-      // stats falhou mas as listas responderam: totais viram contagem parcial (1ª página)
-      setStatsDegraded(statsResult.data === null);
-      setClients(clientsResult.data);
-      setDocuments(documentsResult.data);
-      setCases(
-        casesResult.data.map((legalCase) => ({
-          ...legalCase,
-          documentsCount: documentsResult.data.filter(
-            (document) => document.caseId === legalCase.id
-          ).length
-        }))
-      );
-      setFallbackActive(
-        clientsResult.source === "mock" ||
-          casesResult.source === "mock" ||
-          documentsResult.source === "mock"
-      );
-    } catch (err) {
-      setError(errorMessage(err, "Não foi possível carregar o dashboard."));
-      setFallbackActive(false);
-      setStatsDegraded(false);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void refreshDashboard();
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [refreshDashboard]);
-
-  const activeCasesCount = useMemo(
-    () => cases.filter((c) => ACTIVE_STATUSES.has(c.status)).length,
-    [cases]
-  );
-  // Totais reais vêm de /dashboard/stats (a lista carregada é só a 1ª página).
-  const totalCasesDisplay = stats?.totalCases ?? cases.length;
-  const totalClientsDisplay = stats?.totalClients ?? clients.length;
-  const activeCasesDisplay = stats
-    ? Math.max(
-        0,
-        stats.totalCases -
-          (stats.casesByStatus["completed"] ?? 0) -
-          (stats.casesByStatus["closed"] ?? 0)
-      )
-    : activeCasesCount;
-  const recentCases = useMemo(() => cases.slice(0, 4), [cases]);
-  const recentDocuments = useMemo(() => documents.slice(0, 3), [documents]);
-  const hasData =
-    cases.length > 0 || clients.length > 0 || documents.length > 0;
+  const {
+    documents,
+    error,
+    setError,
+    fallbackActive,
+    loading,
+    statsDegraded,
+    refreshDashboard,
+    totalCasesDisplay,
+    totalClientsDisplay,
+    activeCasesDisplay,
+    recentCases,
+    recentDocuments,
+    hasData
+  } = useDashboardData();
 
   return (
     <AuthGuard>
@@ -516,7 +342,7 @@ export default function DashboardPage() {
                             {legalCase.code}
                           </p>
                           <p className="mt-0.5 truncate text-xs font-medium text-[var(--text)]">
-                            {caseTitle(legalCase)}
+                            {caseDisplayTitle(legalCase)}
                           </p>
                           <p className="text-[11px] text-[var(--text2)]">
                             {legalCase.clientName}
