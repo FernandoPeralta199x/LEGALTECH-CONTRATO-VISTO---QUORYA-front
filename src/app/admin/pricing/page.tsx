@@ -393,7 +393,7 @@ export default function AdminPricingPage() {
               {/* ── Barra fixa (G): status + atalhos + salvar ────────────── */}
               <div
                 ref={barRef}
-                className="sticky top-16 z-20 -mx-1 mb-5 rounded-xl border border-[var(--bd)] bg-[var(--surf)] px-3 py-2.5 shadow-[0_6px_20px_rgba(0,0,0,0.28)] sm:px-4"
+                className="cv-glass-bar sticky top-16 z-20 -mx-1 mb-5 rounded-xl px-3 py-2.5 backdrop-blur-md backdrop-saturate-150 sm:px-4"
                 role="region"
                 aria-label="Status e ações da configuração"
               >

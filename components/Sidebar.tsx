@@ -144,7 +144,7 @@ export function Sidebar() {
   const isActive = (href: string) => isNavItemActive(pathname, href);
 
   return (
-    <aside className="cv-sidebar sticky top-0 hidden h-screen w-64 shrink-0 flex-col lg:flex">
+    <aside className="cv-sidebar sticky top-0 hidden h-screen w-64 shrink-0 flex-col backdrop-blur-lg backdrop-saturate-150 lg:flex">
       {/* Logo */}
       <div className="px-5 pt-6 pb-4">
         <Link className="group flex items-center gap-3" href="/">
@@ -244,7 +244,7 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
       {/* Drawer */}
       <aside
         className={cn(
-          "cv-mobile-menu fixed inset-y-0 left-0 z-50 flex w-72 max-w-[88vw] flex-col lg:hidden",
+          "cv-mobile-menu fixed inset-y-0 left-0 z-50 flex w-72 max-w-[88vw] flex-col backdrop-blur-lg backdrop-saturate-150 lg:hidden",
           "transition-transform duration-slow ease-smooth",
           open ? "translate-x-0" : "-translate-x-full"
         )}

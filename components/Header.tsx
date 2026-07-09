@@ -96,7 +96,7 @@ export function Header({ onMenuClick }: HeaderProps) {
     : "??";
 
   return (
-    <header className="cv-header sticky top-0 z-30">
+    <header className="cv-header sticky top-0 z-30 backdrop-blur-lg backdrop-saturate-150">
       <div className="flex h-16 items-center gap-3 px-4 md:px-6">
 
         {/* Hamburger — mobile only */}

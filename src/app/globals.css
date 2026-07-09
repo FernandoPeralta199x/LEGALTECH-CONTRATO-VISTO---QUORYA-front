@@ -53,8 +53,11 @@ html[data-theme="dark"] {
   /* Cores semânticas de status (contraste AA em ambos os temas) */
   --ok: #34d399;
   --danger: #fca5a5;
-  --nav-bg: rgba(7, 8, 12, 0.86);
-  --mobile-menu-bg: rgba(7, 8, 12, 0.97);
+  --nav-bg: rgba(7, 8, 12, 0.72);
+  --mobile-menu-bg: rgba(7, 8, 12, 0.95);
+  /* Glass real (nav/barras): realce de borda interna (refração) + profundidade. */
+  --glass-hi: rgba(255, 255, 255, 0.06);
+  --glass-sh: 0 10px 30px -16px rgba(0, 0, 0, 0.7);
   --input-bg: #111622;
   --input-border: rgba(255, 255, 255, 0.09);
   --input-focus-bg: rgba(32, 201, 151, 0.04);
@@ -81,8 +84,10 @@ html[data-theme="light"] {
   --text3: #8ab5a2;
   --ok: #0f7a5a;
   --danger: #b91c1c;
-  --nav-bg: rgba(240, 246, 243, 0.88);
-  --mobile-menu-bg: rgba(240, 246, 243, 0.98);
+  --nav-bg: rgba(240, 246, 243, 0.80);
+  --mobile-menu-bg: rgba(240, 246, 243, 0.97);
+  --glass-hi: rgba(255, 255, 255, 0.75);
+  --glass-sh: 0 10px 30px -16px rgba(15, 100, 70, 0.22);
   --input-bg: #ffffff;
   --input-border: rgba(15, 100, 70, 0.14);
   --input-focus-bg: rgba(32, 201, 151, 0.05);
@@ -225,7 +230,7 @@ textarea:-webkit-autofill:focus {
   }
 
   .pressable {
-    transition: transform var(--duration-fast) var(--ease-out);
+    transition: transform var(--duration-base) var(--ease-spring);
   }
 
   .pressable:active {
@@ -265,25 +270,38 @@ textarea:-webkit-autofill:focus {
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
   }
 
+  /* Glass real das barras/nav: bg translúcido + realce de borda interna (refração)
+     + profundidade ficam AQUI. O BLUR vem das utilities Tailwind
+     `backdrop-blur-* backdrop-saturate-*` no JSX (Header/Sidebar/MobileSidebar/
+     .cv-glass-bar). Motivo (verificado no computed style): neste build o
+     autoprefixer reduz um `backdrop-filter` CRU escrito em CSS a só
+     `-webkit-backdrop-filter` (remove a versão padrão), que este runtime não
+     suporta — a regra crua não pinta. As utilities emitem o `backdrop-filter`
+     padrão (valor via var --tw-*) e por isso funcionam. */
   .cv-header {
     border-bottom: 1px solid var(--bd);
     background: var(--nav-bg);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
+    box-shadow: inset 0 1px 0 var(--glass-hi), var(--glass-sh);
   }
 
   .cv-sidebar {
     border-right: 1px solid var(--bd);
-    background: color-mix(in srgb, var(--surf) 88%, transparent);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
+    background: color-mix(in srgb, var(--surf) 80%, transparent);
+    box-shadow: inset -1px 0 0 var(--glass-hi);
   }
 
   .cv-mobile-menu {
     border-right: 1px solid var(--bd);
     background: var(--mobile-menu-bg);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
+    box-shadow: inset -1px 0 0 var(--glass-hi), var(--glass-sh);
+  }
+
+  /* Barra fixa em vidro (glass) — barras sticky internas (ex.: salvar do pricing).
+     bg translúcido + realce + profundidade; o blur vem de backdrop-blur-* no JSX. */
+  .cv-glass-bar {
+    border: 1px solid var(--bd);
+    background: color-mix(in srgb, var(--surf) 72%, transparent);
+    box-shadow: inset 0 1px 0 var(--glass-hi), var(--glass-sh);
   }
 
   .cv-card {
@@ -294,7 +312,7 @@ textarea:-webkit-autofill:focus {
     background: var(--card-bg);
     box-shadow: var(--sh-card);
     color: var(--text);
-    transition: border-color var(--t), box-shadow var(--t), transform var(--t), background var(--t);
+    transition: border-color var(--t), box-shadow var(--t), transform var(--duration-slow) var(--ease-spring), background var(--t);
   }
 
   .cv-card::after {
@@ -374,7 +392,7 @@ textarea:-webkit-autofill:focus {
   .cv-btn {
     min-height: 44px;
     border-radius: 11px;
-    transition: border-color var(--t), box-shadow var(--t), color var(--t), background var(--t), transform 0.15s ease;
+    transition: border-color var(--t), box-shadow var(--t), color var(--t), background var(--t), transform var(--duration-base) var(--ease-spring);
   }
 
   .cv-btn-primary {
@@ -570,8 +588,7 @@ textarea:-webkit-autofill:focus {
   .cv-public-shell nav {
     border-color: var(--bd);
     background: var(--nav-bg);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
+    box-shadow: inset 0 1px 0 var(--glass-hi), var(--glass-sh);
   }
 
   .cv-public-shell section:nth-of-type(even) {
