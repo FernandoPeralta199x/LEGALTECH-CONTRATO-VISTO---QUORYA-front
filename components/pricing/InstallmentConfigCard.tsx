@@ -10,14 +10,15 @@ import { Notification } from "@/components/Notification";
 import { Switch } from "@/components/Switch";
 import type { InstallmentConfig, MethodRule } from "@/src/services/pricing";
 
-const METHOD_KEYS = ["pix", "boleto", "cartao"] as const;
+const METHOD_KEYS = ["pix", "boleto", "cartao", "debito"] as const;
 
 type MethodKey = (typeof METHOD_KEYS)[number];
 
 const METHOD_LABELS: Record<MethodKey, string> = {
   pix: "Pix",
   boleto: "Boleto",
-  cartao: "Cartão"
+  cartao: "Cartão de crédito",
+  debito: "Cartão de débito"
 };
 
 const MAX_PARCELAS_LIMIT = 24;
@@ -34,9 +35,10 @@ const DEFAULT_CONFIG: InstallmentConfig = {
 };
 
 /**
- * Preenche defaults e materializa os métodos (pix/boleto/cartão) a partir do
- * installment_config do backend. Espelha a semântica do domínio: allowed_methods
- * vazio equivale a Pix/Boleto 1x + Cartão até max_parcelas.
+ * Preenche defaults e materializa os métodos (pix/boleto/cartão de crédito/
+ * cartão de débito) a partir do installment_config do backend. Espelha a
+ * semântica do domínio: allowed_methods vazio equivale a Pix/Boleto/Débito 1x
+ * + Cartão de crédito até max_parcelas.
  */
 export function normalizeInstallmentConfig(
   raw?: Partial<InstallmentConfig> | null
@@ -59,7 +61,7 @@ export function normalizeInstallmentConfig(
   const methods: Record<string, MethodRule> = {};
   for (const key of METHOD_KEYS) {
     const rule = rawMethods[key];
-    // Só o cartão parcela — Pix/Boleto são sempre 1x (à vista).
+    // Só o cartão de crédito parcela — Pix/Boleto/Débito são sempre 1x (à vista).
     if (hasExplicitMethods) {
       methods[key] = rule
         ? {

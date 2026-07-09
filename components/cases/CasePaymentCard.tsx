@@ -10,7 +10,8 @@ import type { InstallmentPlan } from "@/types";
 
 const paymentMethodLabel: Record<string, string> = {
   boleto: "Boleto",
-  cartao: "Cartão",
+  cartao: "Cartão de crédito",
+  debito: "Cartão de débito",
   pix: "Pix"
 };
 
@@ -176,7 +177,8 @@ export function CasePaymentCard({
                   <dd className="text-right font-medium text-[var(--text)]">
                     {paymentMethodLabel[installmentPlan.method] ??
                       installmentPlan.method}
-                    {installmentPlan.method === "cartao" &&
+                    {(installmentPlan.method === "cartao" ||
+                      installmentPlan.method === "debito") &&
                     installmentPlan.payment?.last4
                       ? ` · ${
                           installmentPlan.payment.brand

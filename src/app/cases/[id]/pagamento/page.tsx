@@ -39,7 +39,8 @@ type PageProps = { params: Promise<{ id: string }> };
 const METHOD_LABELS: Record<PaymentMethod, string> = {
   pix: "Pix",
   boleto: "Boleto",
-  cartao: "Cartão"
+  cartao: "Cartão de crédito",
+  debito: "Cartão de débito"
 };
 
 const PAYMENT_STATUS_LABELS: Record<string, string> = {
@@ -53,7 +54,17 @@ const PAYMENT_STATUS_LABELS: Record<string, string> = {
 };
 
 function isPaymentMethod(value: string): value is PaymentMethod {
-  return value === "pix" || value === "boleto" || value === "cartao";
+  return (
+    value === "pix" ||
+    value === "boleto" ||
+    value === "cartao" ||
+    value === "debito"
+  );
+}
+
+/** Débito é um cartão: reusa o formulário de cartão e a mesma tokenização. */
+function isCardMethod(value: PaymentMethod | null): value is "cartao" | "debito" {
+  return value === "cartao" || value === "debito";
 }
 
 /** Formata "AAAA-MM-DD" como dd/mm/aaaa sem passar por Date (evita shift de fuso). */
@@ -172,7 +183,8 @@ export default function CasePaymentPage({ params }: PageProps) {
   // O objeto `card` cru NUNCA é logado, serializado nem persistido; qualquer erro
   // (incl. de tokenização) vira mensagem genérica — jamais o erro cru.
   async function handleCardSubmit(card: RawCard): Promise<boolean> {
-    if (submitting || !selectedOption) return false;
+    // Cartão de crédito e de débito compartilham este fluxo (débito é um cartão).
+    if (submitting || !selectedOption || !isCardMethod(method)) return false;
     setSubmitting(true);
     setSubmitError("");
     setConflict(false);
@@ -180,7 +192,7 @@ export default function CasePaymentPage({ params }: PageProps) {
       const tok = await tokenizeCard(card);
       await createCasePayment(id, {
         parcelas: selectedOption.parcelas,
-        method: "cartao",
+        method,
         pricing_config_version: estimate?.pricing_config_version,
         idempotency_key: idempotencyKey,
         card_token: tok.token,
@@ -413,7 +425,9 @@ export default function CasePaymentPage({ params }: PageProps) {
                     </p>
                   </Card>
 
-                  {/* Options */}
+                  {/* Options — o débito é sempre à vista (1x), então o seletor
+                      de parcelamento fica oculto quando ele está selecionado. */}
+                  {method !== "debito" && (
                   <Card
                     description="Escolha em quantas vezes deseja pagar."
                     title="Parcelamento"
@@ -469,6 +483,7 @@ export default function CasePaymentPage({ params }: PageProps) {
                       })}
                     </div>
                   </Card>
+                  )}
 
                   {/* Method */}
                   {selectedOption && (
@@ -493,6 +508,10 @@ export default function CasePaymentPage({ params }: PageProps) {
                                 onClick={() => {
                                   setMethod(allowedMethod);
                                   setSubmitError("");
+                                  // Débito é à vista: trava o plano em 1x.
+                                  if (allowedMethod === "debito") {
+                                    setSelectedParcelas(1);
+                                  }
                                 }}
                                 style={{ animationDelay: `${index * 40}ms` }}
                                 type="button"
@@ -541,7 +560,7 @@ export default function CasePaymentPage({ params }: PageProps) {
 
                   {/* Confirm */}
                   {selectedOption &&
-                  method === "cartao" &&
+                  isCardMethod(method) &&
                   estimate.payment_mode === "mock" ? (
                     <CreditCardForm
                       onSubmit={handleCardSubmit}

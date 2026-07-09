@@ -515,7 +515,7 @@ export type PaymentStatus =
   | "expired"
   | "refunded";
 
-export type PaymentMethod = "pix" | "boleto" | "cartao";
+export type PaymentMethod = "pix" | "boleto" | "cartao" | "debito";
 
 export type InstallmentPlanScheduleItem = {
   numero: number;

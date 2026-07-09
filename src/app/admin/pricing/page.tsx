@@ -707,8 +707,9 @@ export default function AdminPricingPage() {
                       />
                       {noMethodEnabled && (
                         <Notification tone="error" title="Nenhum método de pagamento habilitado">
-                          Sem Pix, Boleto ou Cartão, os casos ficam sem forma de
-                          pagamento. Habilite ao menos um método
+                          Sem Pix, Boleto, Cartão de crédito ou Cartão de débito,
+                          os casos ficam sem forma de pagamento. Habilite ao menos
+                          um método
                           {!installmentConfig.enabled
                             ? " (ative o parcelamento para reexibir os métodos)"
                             : ""}
@@ -716,10 +717,10 @@ export default function AdminPricingPage() {
                         </Notification>
                       )}
                       {!noMethodEnabled && installmentsWithoutCard && (
-                        <Notification tone="warning" title="Parcelamento sem cartão">
-                          O parcelamento está habilitado, mas o Cartão está desligado.
-                          Como só o cartão parcela, nenhuma opção de parcelamento será
-                          ofertada — tudo à vista (1x).
+                        <Notification tone="warning" title="Parcelamento sem cartão de crédito">
+                          O parcelamento está habilitado, mas o Cartão de crédito está
+                          desligado. Como só o cartão de crédito parcela, nenhuma opção
+                          de parcelamento será ofertada — tudo à vista (1x).
                         </Notification>
                       )}
                     </section>
