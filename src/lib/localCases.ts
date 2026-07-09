@@ -1,5 +1,5 @@
-import { MODULOS, PRODUTOS, type Modulo } from "../../lib/produtoConfig";
-import type { Case, CaseParty, CaseStatus, Priority, ProductType } from "../../types";
+import { MODULOS, PRODUTOS, type Modulo } from "@/lib/produtoConfig";
+import type { Case, CaseParty, CaseStatus, Priority, ProductType } from "@/types";
 import { assertBrowserPersistDisallowedInProduction } from "./runtimeEnv";
 
 export const LOCAL_CASES_STORAGE_KEY = "legaltech.local.cases.v1";

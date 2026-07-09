@@ -8,8 +8,8 @@
  */
 import { useState, type FormEvent } from "react";
 
-import { errorMessage } from "@/src/lib/errorMessage";
-import { isValidEmail } from "@/src/lib/validation";
+import { errorMessage } from "./errorMessage";
+import { isValidEmail } from "./validation";
 import { createCaseParty, updateCaseParty } from "@/src/services/caseParties";
 import type {
   CaseAggregate,

@@ -1,4 +1,4 @@
-import type { Client, ClientCreate, ClientUpdate } from "../../types";
+import type { Client, ClientCreate, ClientUpdate } from "@/types";
 
 import { maskDocumentForDisplay } from "./clientForm";
 import { assertBrowserPersistDisallowedInProduction } from "./runtimeEnv";

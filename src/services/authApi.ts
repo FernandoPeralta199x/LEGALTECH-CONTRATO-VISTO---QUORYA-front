@@ -1,4 +1,4 @@
-import { apiClient } from "@/src/services/apiClient";
+import { apiClient } from "./apiClient";
 
 export interface LoginPayload {
   email: string;

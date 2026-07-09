@@ -12,7 +12,7 @@ import {
   visibleClientFields,
   type ClientFormState
 } from "./clientForm";
-import type { Client } from "../../types";
+import type { Client } from "@/types";
 
 const baseForm: ClientFormState = {
   address: "Rua Teste, 100",

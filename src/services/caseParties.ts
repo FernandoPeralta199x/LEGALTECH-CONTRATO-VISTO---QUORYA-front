@@ -1,4 +1,4 @@
-import type { CaseParty, CasePartyCreate, CasePartyUpdate } from "../../types";
+import type { CaseParty, CasePartyCreate, CasePartyUpdate } from "@/types";
 import { apiClient } from "./apiClient";
 import { fallbackReason, shouldUseMockFallback, type ServiceResult } from "./fallback";
 

@@ -6,7 +6,7 @@
  * Aligns with 28P-B gate: sem fallback R$0,00, sem mock/fake/seed.
  */
 
-import { apiClient } from "@/src/services/apiClient";
+import { apiClient } from "./apiClient";
 
 // ---------------------------------------------------------------------------
 // Types — mirror backend Pydantic schemas

@@ -9,7 +9,7 @@ import {
   readStoredSessionValue,
   type StoredSessionInvalidReason
 } from "./authStorage";
-import type { DevSession } from "../types/auth";
+import type { DevSession } from "@/src/types/auth";
 import { isProduction } from "./runtimeEnv";
 
 export type DevSessionStatus =

@@ -1,5 +1,5 @@
 import { formatBytes } from "@/lib/formatters";
-import type { Document, DocumentCreate } from "../../types";
+import type { Document, DocumentCreate } from "@/types";
 import { apiClient } from "./apiClient";
 import { shouldUseMockFallback, fallbackReason, type ServiceResult } from "./fallback";
 

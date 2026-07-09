@@ -1,4 +1,4 @@
-import { isValidCnpj, isValidCpf, isValidEmail } from "../../lib/cpfCnpj";
+import { isValidCnpj, isValidCpf, isValidEmail } from "@/lib/cpfCnpj";
 import { decodeJwtPayload } from "./devJwt";
 
 // Regra única de e-mail (local@domínio.tld) — fonte: lib/cpfCnpj.

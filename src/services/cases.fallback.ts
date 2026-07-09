@@ -4,7 +4,7 @@
  * Só é usado quando o mock fallback está habilitado (ver services/fallback.ts);
  * nunca mascara erro em produção.
  */
-import { MODULOS, type Modulo } from "../../lib/produtoConfig";
+import { MODULOS, type Modulo } from "@/lib/produtoConfig";
 import { formatBytes } from "@/lib/formatters";
 import type {
   Case,
@@ -16,7 +16,7 @@ import type {
   Party,
   TimelineEvent,
   TriageModule
-} from "../../types";
+} from "@/types";
 import { clampProgress, productFromMetadata } from "./cases.mappers";
 
 function fallbackDocumentsFromCase(legalCase: Case): Document[] {

@@ -5,7 +5,7 @@
  * separando os relatórios finais dos demais uploads do caso (wizard/OCR).
  */
 
-import { apiClient } from "@/src/services/apiClient";
+import { apiClient } from "./apiClient";
 
 /** Classificação que separa relatórios finais dos demais documentos do caso. */
 const FINAL_REPORT_KIND = "final_report";

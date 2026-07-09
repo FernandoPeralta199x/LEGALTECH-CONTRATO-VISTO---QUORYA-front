@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import type { Case } from "../../types";
+import type { Case } from "@/types";
 import {
   LOCAL_CASES_STORAGE_KEY,
   createLocalCaseFromWizard,

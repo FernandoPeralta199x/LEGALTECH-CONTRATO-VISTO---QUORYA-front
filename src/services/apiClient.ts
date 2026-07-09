@@ -1,6 +1,6 @@
-import { clearStoredSession, getStoredToken } from "../lib/authStorage";
-import type { ApiError, ApiErrorResponse, ApiResponse, ApiSuccessResponse } from "../../types/api";
-import { SOURCE_MODE_VALUES, type SourceMode } from "../../types";
+import { clearStoredSession, getStoredToken } from "@/src/lib/authStorage";
+import type { ApiError, ApiErrorResponse, ApiResponse, ApiSuccessResponse } from "@/types/api";
+import { SOURCE_MODE_VALUES, type SourceMode } from "@/types";
 
 const DEFAULT_API_PORT = "8000";
 const LOCAL_API_FALLBACK_HOST = "127.0.0.1";

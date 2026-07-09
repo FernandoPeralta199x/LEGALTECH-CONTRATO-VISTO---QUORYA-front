@@ -4,7 +4,7 @@ import type {
   ClientCreate,
   ClientUpdate,
   ClientPersonType
-} from "../../types";
+} from "@/types";
 
 export type ClientFormState = {
   address: string;
@@ -57,7 +57,7 @@ export function onlyDigits(value: string): string {
 // Máscaras de CPF/CNPJ/telefone: fonte única em lib/cpfCnpj. As duas
 // implementações de maskPhone eram byte-idênticas (comprovado por análise por
 // comprimento + fuzz de 50k entradas) — re-export preserva a API deste módulo.
-export { maskCnpj, maskCpf, maskPhone } from "../../lib/cpfCnpj";
+export { maskCnpj, maskCpf, maskPhone } from "@/lib/cpfCnpj";
 
 export function maskBirthDate(value: string): string {
   const digits = onlyDigits(value).slice(0, 8);

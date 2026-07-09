@@ -7,7 +7,7 @@
  *   cases.fallback.ts -> mocks/fallback local (API indisponível)
  *   cases.ts          -> este arquivo (API pública do service)
  */
-import { PRODUTOS } from "../../lib/produtoConfig";
+import { PRODUTOS } from "@/lib/produtoConfig";
 import type {
   Case,
   CaseAggregate,
@@ -18,14 +18,14 @@ import type {
   InstallmentPlan,
   PaymentMethod,
   PaymentStatus
-} from "../../types";
+} from "@/types";
 import {
   findStoredLocalCase,
   getStoredLocalCases,
   removeStoredLocalCase,
   saveLocalCaseFromWizard,
   saveStoredLocalCase
-} from "../lib/localCases";
+} from "@/src/lib/localCases";
 import { ApiClientError, apiClient } from "./apiClient";
 import { fallbackReason, shouldUseMockFallback, type ServiceResult } from "./fallback";
 import type {

@@ -6,7 +6,7 @@ import type {
   CaseAggregate,
   CaseListFilters,
   PaginatedResponse
-} from "../../types";
+} from "@/types";
 import {
   CASE_STATUS_VALUES,
   DOCUMENT_STATUS_VALUES,
@@ -16,7 +16,7 @@ import {
   REQUEST_STATUS_VALUES,
   RISK_LEVEL_VALUES,
   SOURCE_MODE_VALUES
-} from "../../types";
+} from "@/types";
 
 test("exports canonical multi-request enum values", () => {
   assert.deepEqual([...REQUEST_STATUS_VALUES], [

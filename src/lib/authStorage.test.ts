@@ -11,7 +11,7 @@ import {
   readStoredSessionValue,
   saveStoredSession
 } from "./authStorage";
-import type { DevSession } from "../types/auth";
+import type { DevSession } from "@/src/types/auth";
 
 class MemoryStorage {
   private values = new Map<string, string>();

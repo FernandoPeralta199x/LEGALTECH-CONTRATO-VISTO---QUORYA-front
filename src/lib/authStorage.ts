@@ -1,5 +1,5 @@
-import type { DevSession } from "../types/auth";
-import { DEV_ROLES } from "../types/auth";
+import type { DevSession } from "@/src/types/auth";
+import { DEV_ROLES } from "@/src/types/auth";
 import { LOCAL_CASES_STORAGE_KEY } from "./localCases";
 import { LOCAL_CLIENTS_STORAGE_KEY } from "./localClients";
 import {

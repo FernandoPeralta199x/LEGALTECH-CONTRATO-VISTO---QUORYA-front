@@ -1,4 +1,4 @@
-import type { Case, Report } from "../../types";
+import type { Case, Report } from "@/types";
 import { getCaseAggregate, listCases } from "./cases";
 import type { ServiceResult } from "./fallback";
 

@@ -1,7 +1,7 @@
-import { saveStoredSession } from "../lib/authStorage";
-import { decodeJwtPayload } from "../lib/devJwt";
-import type { DecodedDevJwt, DevLoginInput, DevRole, DevSession } from "../types/auth";
-import { DEV_ROLES } from "../types/auth";
+import { saveStoredSession } from "@/src/lib/authStorage";
+import { decodeJwtPayload } from "@/src/lib/devJwt";
+import type { DecodedDevJwt, DevLoginInput, DevRole, DevSession } from "@/src/types/auth";
+import { DEV_ROLES } from "@/src/types/auth";
 import { apiClient } from "./apiClient";
 
 type BackendCurrentUser = {

@@ -8,7 +8,7 @@ import {
   PRODUTOS,
   type Modulo,
   type Produto
-} from "../../lib/produtoConfig";
+} from "@/lib/produtoConfig";
 import { formatBytes } from "@/lib/formatters";
 import type {
   Case,
@@ -27,8 +27,8 @@ import type {
   Report,
   TimelineEvent,
   TriageModule
-} from "../../types";
-import type { LocalCaseWizardInput } from "../lib/localCases";
+} from "@/types";
+import type { LocalCaseWizardInput } from "@/src/lib/localCases";
 import type {
   BackendAggregateCase,
   BackendAggregateDocument,
