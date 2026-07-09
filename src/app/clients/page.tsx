@@ -13,7 +13,7 @@ import {
   UsersRound
 } from "lucide-react";
 import type { FormEvent } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
@@ -71,7 +71,12 @@ export default function ClientsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
+  // Sequenciador de requisições: guarda contra respostas obsoletas sobrescreverem a
+  // lista (mesmo padrão de cases/[id]/page.tsx) — fe-ts-01.
+  const latestLoad = useRef(0);
+
   const refreshClients = useCallback(async () => {
+    const token = ++latestLoad.current;
     setLoading(true);
     setError("");
     setSuccessMessage("");
@@ -82,15 +87,17 @@ export default function ClientsPage() {
         page,
         pageSize: CLIENTS_PAGE_SIZE
       });
+      if (token !== latestLoad.current) return; // uma busca mais nova já saiu
       setClients(result.data);
       setTotal(result.total);
       setTotalPages(result.totalPages);
       setFallbackReason(result.source === "mock" ? result.fallbackReason ?? "" : "");
     } catch (err) {
+      if (token !== latestLoad.current) return;
       setError(errorMessage(err, "Não foi possível carregar clientes."));
       setFallbackReason("");
     } finally {
-      setLoading(false);
+      if (token === latestLoad.current) setLoading(false);
     }
   }, [debouncedQuery, page]);
 
@@ -100,17 +107,16 @@ export default function ClientsPage() {
     return () => window.clearTimeout(t);
   }, [refreshClients]);
 
-  // busca server-side com debounce (acha em toda a base, não só na página)
+  // busca server-side com debounce (acha em toda a base, não só na página). Reseta a
+  // página JUNTO com o debounce: uma nova busca dispara UM único fetch (page=1), sem a
+  // requisição intermediária com a página antiga — fe-ts-02 (espelha cases/page.tsx).
   useEffect(() => {
-    const t = window.setTimeout(() => setDebouncedQuery(query.trim()), 350);
+    const t = window.setTimeout(() => {
+      setDebouncedQuery(query.trim());
+      setPage(1);
+    }, 350);
     return () => window.clearTimeout(t);
   }, [query]);
-
-  // ao mudar a busca, volta para a 1a página (deferido)
-  useEffect(() => {
-    const t = window.setTimeout(() => setPage(1), 0);
-    return () => window.clearTimeout(t);
-  }, [debouncedQuery]);
 
   function updateForm<K extends keyof ClientFormState>(
     field: K,

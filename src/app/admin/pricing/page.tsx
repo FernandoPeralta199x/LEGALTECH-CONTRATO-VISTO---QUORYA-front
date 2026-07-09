@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { AuthGuard } from "@/components/AuthGuard";
+import { AdminGuard } from "@/components/AdminGuard";
 import { AppLayout } from "@/components/AppLayout";
 import { PageTitle } from "@/components/PageTitle";
 import { Card } from "@/components/Card";
@@ -354,6 +355,7 @@ export default function AdminPricingPage() {
 
   return (
     <AuthGuard>
+      <AdminGuard>
       <AppLayout>
         <div className="mx-auto max-w-6xl">
           {/* Header (título + descrição preservados) */}
@@ -495,6 +497,7 @@ export default function AdminPricingPage() {
           )}
         </div>
       </AppLayout>
+      </AdminGuard>
     </AuthGuard>
   );
 }

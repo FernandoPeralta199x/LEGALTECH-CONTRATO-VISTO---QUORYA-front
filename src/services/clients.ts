@@ -33,6 +33,7 @@ type BackendClient = {
   source_mode?: string | null;
   status?: string | null;
   trade_name?: string | null;
+  cases_count?: number | null;
   metadata: Record<string, unknown>;
   organization_id?: string | null;
   created_at: string;
@@ -93,7 +94,7 @@ export function mapBackendClient(client: BackendClient): Client {
     status: (client.status ?? "active") as Client["status"],
     riskLevel: (client.risk_level ?? "low") as Client["riskLevel"],
     sourceMode: client.source_mode as Client["sourceMode"],
-    casesCount: 0,
+    casesCount: client.cases_count ?? 0,
     metadata: client.metadata,
     tradeName: client.trade_name ?? metadataString(client, "trade_name"),
     createdAt: client.created_at,

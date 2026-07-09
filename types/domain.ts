@@ -2,8 +2,6 @@ import type { InstallmentOption } from "@/src/services/pricing";
 
 // ─── Enums & literals ─────────────────────────────────────────────────────────
 
-export type Role = "owner" | "admin" | "analyst" | "client" | "support" | "viewer";
-
 export const REQUEST_STATUS_VALUES = [
   "draft",
   "submitted",

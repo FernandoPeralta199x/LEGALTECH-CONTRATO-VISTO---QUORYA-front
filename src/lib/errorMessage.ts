@@ -13,13 +13,24 @@ export function errorMessage(
   }
 
   if (error instanceof ApiClientError) {
-    if (error.status === 401 || error.status === 403) {
-      return isDev
-        ? "Sessão inválida ou sem permissão. Faça login novamente."
-        : "Sem autorização.";
+    if (error.status === 401) {
+      return "Sua sessão expirou. Faça login novamente.";
     }
 
-    if (error.status === 500) {
+    if (error.status === 403) {
+      return "Você não tem permissão para esta ação.";
+    }
+
+    if (error.status === 404) {
+      return "Recurso não encontrado.";
+    }
+
+    if (error.status === 422) {
+      // Erro de validação: a mensagem do backend costuma orientar o usuário.
+      return isDev ? `${error.code}: ${error.message}` : error.message;
+    }
+
+    if (error.status >= 500) {
       return isDev
         ? "Erro interno da API local. Verifique os logs do backend."
         : "Erro interno do servidor.";

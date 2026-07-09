@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import type { FormEvent } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
@@ -171,10 +171,13 @@ export default function CasesPage() {
     setEditSaving(true);
     setError("");
     try {
-      const payload: CaseUpdate = {
-        priority: editPriority,
-        status: editStatus
-      };
+      // Só envia 'status' quando o usuário o alterou de fato: reenviar o status
+      // corrente (ex.: 'triage_completed', estado de sistema) causava 400 no backend
+      // (fe-be-dto-01). Priority é sempre editável.
+      const payload: CaseUpdate = { priority: editPriority };
+      if (editStatus !== editing.status) {
+        payload.status = editStatus;
+      }
       const result = await updateCase(editing.id, payload, clients);
       setCases((current) =>
         current.map((c) => (c.id === editing.id ? result.data : c))
@@ -236,7 +239,11 @@ export default function CasesPage() {
     setDeleteCandidate(null);
   }
 
+  // Sequenciador de requisições: guarda contra respostas obsoletas — fe-ts-01.
+  const latestLoad = useRef(0);
+
   const refreshCases = useCallback(async () => {
+    const token = ++latestLoad.current;
     setLoading(true);
     setError("");
     setSuccessMessage("");
@@ -252,6 +259,7 @@ export default function CasesPage() {
         },
         clientsResult.data
       );
+      if (token !== latestLoad.current) return; // uma busca mais nova já saiu
       setClients(clientsResult.data);
       setCases(casesResult.data);
       setTotal(casesResult.total);
@@ -266,10 +274,11 @@ export default function CasesPage() {
           : ""
       );
     } catch (err) {
+      if (token !== latestLoad.current) return;
       setError(errorMessage(err, "Não foi possível carregar casos."));
       setFallbackReason("");
     } finally {
-      setLoading(false);
+      if (token === latestLoad.current) setLoading(false);
     }
   }, [debouncedQuery, filter, page]);
 

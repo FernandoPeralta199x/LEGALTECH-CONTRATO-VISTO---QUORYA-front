@@ -1,4 +1,4 @@
-import { getStoredToken } from "../lib/authStorage";
+import { clearStoredSession, getStoredToken } from "../lib/authStorage";
 import type { ApiError, ApiErrorResponse, ApiResponse, ApiSuccessResponse } from "../../types/api";
 import { SOURCE_MODE_VALUES, type SourceMode } from "../../types";
 
@@ -277,6 +277,13 @@ export async function apiRequest<T>(
           message: `Erro HTTP ${response.status}.`,
           details: {}
         };
+
+    // Sessão expirada/revogada no servidor: limpa a sessão local para o AuthGuard
+    // redirecionar ao login (fe-err-01). Só quando havia token (não em falha de
+    // login). clearStoredSession é no-op fora do browser (SSR/testes).
+    if (response.status === 401 && bearerToken) {
+      clearStoredSession();
+    }
 
     throw new ApiClientError(error, response.status);
   }
