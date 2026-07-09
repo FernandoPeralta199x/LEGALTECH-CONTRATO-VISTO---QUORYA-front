@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   LogOut,
   Plus,
-  Scale,
   Settings,
   Shield,
   Upload,
@@ -15,6 +14,7 @@ import {
   X,
   type LucideIcon
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -148,15 +148,14 @@ export function Sidebar() {
       {/* Logo */}
       <div className="px-5 pt-6 pb-4">
         <Link className="group flex items-center gap-3" href="/">
-          <span
-            className={cn(
-              "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
-              "bg-gradient-brand shadow-glow-teal",
-              "transition-shadow duration-base group-hover:shadow-glow-teal-lg"
-            )}
-          >
-            <Scale aria-hidden="true" className="text-white" size={18} />
-          </span>
+          <Image
+            alt="Contrato Visto"
+            className="h-10 w-10 shrink-0 rounded-lg object-contain transition-transform duration-base group-hover:scale-105"
+            height={40}
+            priority
+            src="/logo-contrato-visto.png"
+            width={40}
+          />
           <div>
             <span className="block text-[13px] font-bold text-[var(--text)]">
               Contrato Visto
@@ -255,9 +254,13 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
             href="/"
             onClick={onClose}
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-brand">
-              <Scale aria-hidden="true" className="text-white" size={18} />
-            </span>
+            <Image
+              alt="Contrato Visto"
+              className="h-10 w-10 rounded-lg object-contain"
+              height={40}
+              src="/logo-contrato-visto.png"
+              width={40}
+            />
             <span className="text-[13px] font-bold text-[var(--text)]">
               Contrato Visto
             </span>
