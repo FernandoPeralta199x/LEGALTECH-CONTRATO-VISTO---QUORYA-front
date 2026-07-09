@@ -34,8 +34,8 @@ import {
   type CasesLimitCheck,
   type InstallmentConfig,
   type UpdatePricingConfigPayload,
-} from "@/src/services/pricing";
-import { errorMessage } from "@/src/lib/errorMessage";
+} from "@/services/pricing";
+import { errorMessage } from "@/lib/errorMessage";
 import { METHOD_ORDER } from "@/lib/paymentMethods";
 
 const TOAST_MS = 4000;

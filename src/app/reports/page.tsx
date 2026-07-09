@@ -25,12 +25,12 @@ import { Notification } from "@/components/Notification";
 import { PageTitle } from "@/components/PageTitle";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatDate } from "@/lib/formatters";
-import { errorMessage } from "@/src/lib/errorMessage";
-import { recommendationLabel } from "@/src/lib/reportLabels";
+import { errorMessage } from "@/lib/errorMessage";
+import { recommendationLabel } from "@/lib/reportLabels";
 import {
   listOperationalReports,
   type OperationalReportListItem
-} from "@/src/services/reports";
+} from "@/services/reports";
 
 const statusIcon: Record<string, ReactNode> = {
   failed: <AlertTriangle className="text-red-700" size={16} />,

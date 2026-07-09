@@ -8,10 +8,10 @@ import { FormEvent, Suspense, useState } from "react";
 import { Button } from "@/components/Button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/cn";
-import { errorMessage } from "@/src/lib/errorMessage";
-import { saveDevSession } from "@/src/services/auth";
-import { verifyEmail } from "@/src/services/authApi";
-import { DEV_ROLES, type DevRole } from "@/src/types/auth";
+import { errorMessage } from "@/lib/errorMessage";
+import { saveDevSession } from "@/services/auth";
+import { verifyEmail } from "@/services/authApi";
+import { DEV_ROLES, type DevRole } from "@/types/auth";
 
 type ToastState = {
   message: string;

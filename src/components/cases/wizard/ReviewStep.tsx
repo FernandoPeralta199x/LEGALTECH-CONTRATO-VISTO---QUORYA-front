@@ -5,8 +5,8 @@ import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 
 import { usePricingMatrix } from "@/components/pricing/PricingCatalogContext";
-import { errorMessage } from "@/src/lib/errorMessage";
-import { estimatePricing } from "@/src/services/pricing";
+import { errorMessage } from "@/lib/errorMessage";
+import { estimatePricing } from "@/services/pricing";
 import {
   computeProductBasePrice,
   estimarPrazoHoras,

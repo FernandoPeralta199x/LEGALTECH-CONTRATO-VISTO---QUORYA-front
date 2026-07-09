@@ -12,7 +12,7 @@ import {
   luhnValid,
   validExp,
   type RawCard
-} from "@/src/services/payment/tokenize";
+} from "@/services/payment/tokenize";
 
 type CreditCardFormProps = {
   /** Recebe o cartão cru, tokeniza/cobra e resolve `true` no sucesso (limpa o form),

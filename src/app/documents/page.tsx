@@ -26,17 +26,17 @@ import { Notification } from "@/components/Notification";
 import { PageTitle } from "@/components/PageTitle";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatBytes, formatDate } from "@/lib/formatters";
-import { errorMessage } from "@/src/lib/errorMessage";
-import { useDevSession } from "@/src/lib/useDevSession";
-import { listCases } from "@/src/services/cases";
+import { errorMessage } from "@/lib/errorMessage";
+import { useDevSession } from "@/lib/useDevSession";
+import { listCases } from "@/services/cases";
 import {
   enqueueDocumentProcessing,
   getDocumentDownloadUrl,
   listDocuments,
   uploadDocument,
   type UploadProgress
-} from "@/src/services/documents";
-import { validateDocumentUploadForm, type ValidationErrors } from "@/src/lib/validation";
+} from "@/services/documents";
+import { validateDocumentUploadForm, type ValidationErrors } from "@/lib/validation";
 import type { Case, Document } from "@/types";
 
 type DocumentForm = {

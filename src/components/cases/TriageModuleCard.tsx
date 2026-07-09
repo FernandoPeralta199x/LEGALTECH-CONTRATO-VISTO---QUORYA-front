@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import { Card } from "@/components/Card";
 import { StatusBadge } from "@/components/StatusBadge";
-import { evidenceRows, maskedNormalized } from "@/src/lib/evidence";
+import { evidenceRows, maskedNormalized } from "@/lib/evidence";
 import type { ProviderResult, TriageModule } from "@/types";
 
 function sourceModeLabel(value: string | null | undefined): string {

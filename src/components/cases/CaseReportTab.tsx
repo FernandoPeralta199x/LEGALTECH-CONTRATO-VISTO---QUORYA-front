@@ -16,8 +16,8 @@ import { Card } from "@/components/Card";
 import { EmptyState } from "@/components/EmptyState";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatBytes, formatDate } from "@/lib/formatters";
-import { recommendationLabel, reportStatusLabel } from "@/src/lib/reportLabels";
-import type { FinalReportDocument } from "@/src/services/finalReports";
+import { recommendationLabel, reportStatusLabel } from "@/lib/reportLabels";
+import type { FinalReportDocument } from "@/services/finalReports";
 import type { Report } from "@/types";
 
 type CaseReportTabProps = {

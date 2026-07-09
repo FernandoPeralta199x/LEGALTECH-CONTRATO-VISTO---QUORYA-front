@@ -25,7 +25,7 @@ import {
   removeStoredLocalCase,
   saveLocalCaseFromWizard,
   saveStoredLocalCase
-} from "@/src/lib/localCases";
+} from "@/lib/localCases";
 import { ApiClientError, apiClient } from "./apiClient";
 import { fallbackReason, shouldUseMockFallback, type ServiceResult } from "./fallback";
 import type {
@@ -52,7 +52,7 @@ import {
 import { makeFallbackAggregate, makeMockCase } from "./cases.fallback";
 
 // Superfície pública preservada: consumidores seguem importando os tipos do
-// wizard a partir de "@/src/services/cases".
+// wizard a partir de "@/services/cases".
 export type {
   WizardOperationalSubmitInput,
   WizardOperationalSubmitResult

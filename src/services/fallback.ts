@@ -1,4 +1,4 @@
-import { isProduction } from "@/src/lib/runtimeEnv";
+import { isProduction } from "@/lib/runtimeEnv";
 import { ApiNetworkError } from "./apiClient";
 
 export type DataSource = "api" | "mock";

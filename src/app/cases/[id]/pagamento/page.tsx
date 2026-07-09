@@ -24,14 +24,14 @@ import { LoadingState } from "@/components/LoadingState";
 import { Notification } from "@/components/Notification";
 import { PageTitle } from "@/components/PageTitle";
 import { caseDisplayTitle } from "@/lib/formatters";
-import { errorMessage } from "@/src/lib/errorMessage";
-import { ApiClientError } from "@/src/services/apiClient";
-import { createCasePayment, getCaseAggregate } from "@/src/services/cases";
-import { tokenizeCard, type RawCard } from "@/src/services/payment/tokenize";
+import { errorMessage } from "@/lib/errorMessage";
+import { ApiClientError } from "@/services/apiClient";
+import { createCasePayment, getCaseAggregate } from "@/services/cases";
+import { tokenizeCard, type RawCard } from "@/services/payment/tokenize";
 import {
   type InstallmentOption,
   type PricingEstimate
-} from "@/src/services/pricing";
+} from "@/services/pricing";
 import type { CaseAggregate, PaymentMethod } from "@/types";
 
 type PageProps = { params: Promise<{ id: string }> };

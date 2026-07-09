@@ -29,12 +29,12 @@ import { PageTitle } from "@/components/PageTitle";
 import { PriorityBadge } from "@/components/PriorityBadge";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatDate } from "@/lib/formatters";
-import { errorMessage } from "@/src/lib/errorMessage";
-import { useDevSession } from "@/src/lib/useDevSession";
-import { listCases } from "@/src/services/cases";
-import { listClients } from "@/src/services/clients";
-import { getDashboardStats, type DashboardStats } from "@/src/services/dashboard";
-import { listDocuments } from "@/src/services/documents";
+import { errorMessage } from "@/lib/errorMessage";
+import { useDevSession } from "@/lib/useDevSession";
+import { listCases } from "@/services/cases";
+import { listClients } from "@/services/clients";
+import { getDashboardStats, type DashboardStats } from "@/services/dashboard";
+import { listDocuments } from "@/services/documents";
 import type { Case, Client, Document } from "@/types";
 
 type ActionBadge =

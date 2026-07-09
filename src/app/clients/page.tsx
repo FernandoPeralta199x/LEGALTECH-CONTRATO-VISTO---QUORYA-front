@@ -26,9 +26,9 @@ import { Notification } from "@/components/Notification";
 import { PageTitle } from "@/components/PageTitle";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatDate } from "@/lib/formatters";
-import { errorMessage } from "@/src/lib/errorMessage";
-import { createClient, listClientsPaged, updateClient } from "@/src/services/clients";
-import { validateClientForm, type ValidationErrors } from "@/src/lib/validation";
+import { errorMessage } from "@/lib/errorMessage";
+import { createClient, listClientsPaged, updateClient } from "@/services/clients";
+import { validateClientForm, type ValidationErrors } from "@/lib/validation";
 import {
   buildClientCreatePayload,
   buildClientUpdatePayload,
@@ -41,7 +41,7 @@ import {
   maskCpf,
   maskPhone,
   type ClientFormState
-} from "@/src/lib/clientForm";
+} from "@/lib/clientForm";
 import type { Client } from "@/types";
 
 const riskConfig: Record<string, { label: string; className: string }> = {

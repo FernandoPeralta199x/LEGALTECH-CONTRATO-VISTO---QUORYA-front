@@ -7,7 +7,7 @@ import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { EmptyState } from "@/components/EmptyState";
 import { FormField, SelectInput, TextArea, TextInput } from "@/components/FormField";
-import type { PartyFormErrors } from "@/src/lib/useCasePartiesEditor";
+import type { PartyFormErrors } from "@/lib/useCasePartiesEditor";
 import type { CaseParty, CasePartyCreate } from "@/types";
 
 const partyTypeOptions = [

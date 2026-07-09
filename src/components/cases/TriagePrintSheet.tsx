@@ -1,4 +1,4 @@
-import { evidenceRows, truncate } from "@/src/lib/evidence";
+import { evidenceRows, truncate } from "@/lib/evidence";
 import type { ProviderResult, TriageModule } from "@/types";
 
 type TriagePrintSheetProps = {

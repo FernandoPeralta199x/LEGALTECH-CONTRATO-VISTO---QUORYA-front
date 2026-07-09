@@ -25,7 +25,7 @@ import { Card } from "@/components/Card";
 import { Notification } from "@/components/Notification";
 import { PageTitle } from "@/components/PageTitle";
 import { cn } from "@/lib/cn";
-import { useDevSession } from "@/src/lib/useDevSession";
+import { useDevSession } from "@/lib/useDevSession";
 import {
   applyThemePreference,
   getStoredNotificationPreferences,
@@ -36,8 +36,8 @@ import {
   type NotificationPreferenceKey,
   type NotificationPreferences,
   type ThemePreference
-} from "@/src/lib/preferences";
-import { validatePasswordChange } from "@/src/lib/validation";
+} from "@/lib/preferences";
+import { validatePasswordChange } from "@/lib/validation";
 
 const TABS = [
   { id: "org", label: "Organização", icon: Building2 },

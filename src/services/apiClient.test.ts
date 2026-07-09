@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { clearStoredSession, saveStoredSession } from "@/src/lib/authStorage";
+import { clearStoredSession, saveStoredSession } from "@/lib/authStorage";
 import { ApiClientError, apiClient } from "./apiClient";
 
 class MemoryStorage {

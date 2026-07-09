@@ -1,4 +1,4 @@
-import type { InstallmentOption } from "@/src/services/pricing";
+import type { InstallmentOption } from "@/services/pricing";
 
 // ─── Enums & literals ─────────────────────────────────────────────────────────
 

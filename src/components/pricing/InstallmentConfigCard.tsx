@@ -8,7 +8,7 @@ import { CurrencyInput } from "@/components/CurrencyInput";
 import { FormField, TextInput } from "@/components/FormField";
 import { Notification } from "@/components/Notification";
 import { Switch } from "@/components/Switch";
-import type { InstallmentConfig, MethodRule } from "@/src/services/pricing";
+import type { InstallmentConfig, MethodRule } from "@/services/pricing";
 
 const METHOD_KEYS = ["pix", "boleto", "cartao", "debito"] as const;
 

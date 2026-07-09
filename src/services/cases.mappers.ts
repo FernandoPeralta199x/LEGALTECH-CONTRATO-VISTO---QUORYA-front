@@ -28,7 +28,7 @@ import type {
   TimelineEvent,
   TriageModule
 } from "@/types";
-import type { LocalCaseWizardInput } from "@/src/lib/localCases";
+import type { LocalCaseWizardInput } from "@/lib/localCases";
 import type {
   BackendAggregateCase,
   BackendAggregateDocument,

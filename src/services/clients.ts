@@ -1,11 +1,11 @@
 import type { Client, ClientCreate, ClientUpdate } from "@/types";
-import { maskDocumentForDisplay } from "@/src/lib/clientForm";
+import { maskDocumentForDisplay } from "@/lib/clientForm";
 import {
   createStoredLocalClient,
   findStoredLocalClient,
   getStoredLocalClients,
   updateStoredLocalClient
-} from "@/src/lib/localClients";
+} from "@/lib/localClients";
 import { apiClient } from "./apiClient";
 import { fallbackReason, shouldUseMockFallback, type ServiceResult } from "./fallback";
 

@@ -7,7 +7,7 @@ import {
   applyThemePreference,
   getStoredThemePreference,
   THEME_STORAGE_KEY
-} from "@/src/lib/preferences";
+} from "@/lib/preferences";
 
 type ThemeProviderProps = {
   children: ReactNode;

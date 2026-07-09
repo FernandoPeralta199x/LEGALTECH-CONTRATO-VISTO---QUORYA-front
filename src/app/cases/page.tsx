@@ -34,11 +34,11 @@ import { PageTitle } from "@/components/PageTitle";
 import { PriorityBadge } from "@/components/PriorityBadge";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatDate, caseDisplayTitle } from "@/lib/formatters";
-import { errorMessage } from "@/src/lib/errorMessage";
-import { productLabel } from "@/src/lib/reportLabels";
-import { createCase, deleteCase, listCasesPaged, updateCase } from "@/src/services/cases";
-import { listClients } from "@/src/services/clients";
-import { validateCaseForm, type ValidationErrors } from "@/src/lib/validation";
+import { errorMessage } from "@/lib/errorMessage";
+import { productLabel } from "@/lib/reportLabels";
+import { createCase, deleteCase, listCasesPaged, updateCase } from "@/services/cases";
+import { listClients } from "@/services/clients";
+import { validateCaseForm, type ValidationErrors } from "@/lib/validation";
 import type { Case, CaseCreate, CaseStatus, CaseUpdate, Client, Priority, ProductType } from "@/types";
 
 const contractTypes = [

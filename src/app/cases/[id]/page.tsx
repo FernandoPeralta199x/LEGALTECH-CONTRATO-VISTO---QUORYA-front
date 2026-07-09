@@ -33,23 +33,23 @@ import { PriorityBadge } from "@/components/PriorityBadge";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Timeline } from "@/components/Timeline";
 import { caseDisplayTitle, formatDate } from "@/lib/formatters";
-import { errorMessage } from "@/src/lib/errorMessage";
+import { errorMessage } from "@/lib/errorMessage";
 import {
   aggregatePartyFromCaseParty,
   useCasePartiesEditor
-} from "@/src/lib/useCasePartiesEditor";
-import { getCaseAggregate } from "@/src/services/cases";
+} from "@/lib/useCasePartiesEditor";
+import { getCaseAggregate } from "@/services/cases";
 import {
   generateCaseReport,
   reviewCaseReport,
   runCaseTriage
-} from "@/src/services/caseWorkflow";
-import { useDevSession } from "@/src/lib/useDevSession";
+} from "@/services/caseWorkflow";
+import { useDevSession } from "@/lib/useDevSession";
 import {
   productLabel,
   recommendationLabel,
   riskLabel
-} from "@/src/lib/reportLabels";
+} from "@/lib/reportLabels";
 import {
   FINAL_REPORT_ACCEPT_ATTR,
   FINAL_REPORT_ACCEPTED_MIME,
@@ -57,7 +57,7 @@ import {
   listFinalReports,
   uploadFinalReport,
   type FinalReportDocument
-} from "@/src/services/finalReports";
+} from "@/services/finalReports";
 import type {
   Case,
   CaseAggregate,

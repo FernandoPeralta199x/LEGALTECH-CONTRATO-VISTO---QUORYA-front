@@ -5,7 +5,7 @@ import { Check, Layers, Pencil } from "lucide-react";
 
 import { Card } from "@/components/Card";
 import { CurrencyInput, centsToReaisLabel } from "@/components/CurrencyInput";
-import type { PricingCatalog } from "@/src/services/pricing";
+import type { PricingCatalog } from "@/services/pricing";
 
 type PricingModulesEditorProps = {
   catalog: PricingCatalog;

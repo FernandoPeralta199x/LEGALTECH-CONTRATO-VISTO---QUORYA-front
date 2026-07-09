@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { useEffect } from "react";
 
 import { Button } from "@/components/Button";
-import { useDevSessionState } from "@/src/lib/useDevSession";
+import { useDevSessionState } from "@/lib/useDevSession";
 
 type AuthGuardProps = {
   children: ReactNode;

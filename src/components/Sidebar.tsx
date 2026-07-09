@@ -20,8 +20,8 @@ import { usePathname, useRouter } from "next/navigation";
 
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/cn";
-import { clearStoredSession } from "@/src/lib/authStorage";
-import { useDevSession } from "@/src/lib/useDevSession";
+import { clearStoredSession } from "@/lib/authStorage";
+import { useDevSession } from "@/lib/useDevSession";
 
 type NavItem = {
   href: string;

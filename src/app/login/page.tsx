@@ -19,12 +19,12 @@ import { FormEvent, Suspense, useState } from "react";
 import { Button } from "@/components/Button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/cn";
-import { errorMessage } from "@/src/lib/errorMessage";
-import { saveDevSession } from "@/src/services/auth";
-import { login, register as registerUser, verifyEmail } from "@/src/services/authApi";
-import { useDevSession } from "@/src/lib/useDevSession";
-import { validatePasswordCreate } from "@/src/lib/validation";
-import { DEV_ROLES, type DevRole } from "@/src/types/auth";
+import { errorMessage } from "@/lib/errorMessage";
+import { saveDevSession } from "@/services/auth";
+import { login, register as registerUser, verifyEmail } from "@/services/authApi";
+import { useDevSession } from "@/lib/useDevSession";
+import { validatePasswordCreate } from "@/lib/validation";
+import { DEV_ROLES, type DevRole } from "@/types/auth";
 
 type Tab = "login" | "register";
 type ToastState = {

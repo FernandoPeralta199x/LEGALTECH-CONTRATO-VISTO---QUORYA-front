@@ -25,9 +25,9 @@ import { PriorityBadge } from "@/components/PriorityBadge";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatDate } from "@/lib/formatters";
 import { cn } from "@/lib/cn";
-import { errorMessage } from "@/src/lib/errorMessage";
-import { listCases } from "@/src/services/cases";
-import { triageStatusLabel as triageStatusText } from "@/src/lib/reportLabels";
+import { errorMessage } from "@/lib/errorMessage";
+import { listCases } from "@/services/cases";
+import { triageStatusLabel as triageStatusText } from "@/lib/reportLabels";
 import type { Case, Priority } from "@/types";
 
 // Casos que fazem parte da fila operacional do analista.

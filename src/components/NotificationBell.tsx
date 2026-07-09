@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/cn";
-import { listCases } from "@/src/services/cases";
-import { listDocuments } from "@/src/services/documents";
+import { listCases } from "@/services/cases";
+import { listDocuments } from "@/services/documents";
 import type { Case, Document } from "@/types";
 
 const READ_NOTICES_KEY = "legaltech_read_notices";

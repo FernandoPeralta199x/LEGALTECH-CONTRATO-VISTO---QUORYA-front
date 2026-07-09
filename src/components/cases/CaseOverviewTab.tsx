@@ -12,7 +12,7 @@ import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { CasePaymentCard } from "@/components/cases/CasePaymentCard";
 import { StatusBadge } from "@/components/StatusBadge";
-import { reportStatusLabel, triageStatusLabel } from "@/src/lib/reportLabels";
+import { reportStatusLabel, triageStatusLabel } from "@/lib/reportLabels";
 import type {
   Case,
   CaseOperationSummary,

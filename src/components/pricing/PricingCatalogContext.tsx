@@ -3,13 +3,13 @@
 import { useEffect, useState, useMemo, createContext, useContext } from "react";
 
 import { MATRIZ } from "@/lib/produtoConfig";
-import { errorMessage } from "@/src/lib/errorMessage";
+import { errorMessage } from "@/lib/errorMessage";
 import {
   getPricingCatalog,
   type PricingCatalog,
   type PricingModule,
   type PricingProduct,
-} from "@/src/services/pricing";
+} from "@/services/pricing";
 
 type PricingCatalogContextValue = {
   catalog: PricingCatalog | null;

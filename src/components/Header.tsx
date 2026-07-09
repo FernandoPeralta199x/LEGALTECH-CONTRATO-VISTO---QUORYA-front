@@ -3,10 +3,10 @@
 import { NotificationBell } from "@/components/NotificationBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/cn";
-import { clearStoredSession } from "@/src/lib/authStorage";
-import { useDevSession } from "@/src/lib/useDevSession";
-import { listCases } from "@/src/services/cases";
-import { listClients } from "@/src/services/clients";
+import { clearStoredSession } from "@/lib/authStorage";
+import { useDevSession } from "@/lib/useDevSession";
+import { listCases } from "@/services/cases";
+import { listClients } from "@/services/clients";
 import type { Case, Client } from "@/types";
 import { Briefcase, LogOut, Menu, Search, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";

@@ -10,7 +10,7 @@ import { useState, type FormEvent } from "react";
 
 import { errorMessage } from "./errorMessage";
 import { isValidEmail } from "./validation";
-import { createCaseParty, updateCaseParty } from "@/src/services/caseParties";
+import { createCaseParty, updateCaseParty } from "@/services/caseParties";
 import type {
   CaseAggregate,
   CaseParty,

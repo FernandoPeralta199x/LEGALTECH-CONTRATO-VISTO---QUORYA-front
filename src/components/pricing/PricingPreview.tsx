@@ -11,7 +11,7 @@ import type {
   InstallmentOption,
   PricingCatalog,
   PricingEstimate,
-} from "@/src/services/pricing";
+} from "@/services/pricing";
 
 type PricingPreviewProps = {
   catalog: PricingCatalog | null;

@@ -4,7 +4,7 @@ import type { RefObject } from "react";
 import { RotateCcw, Save, Settings } from "lucide-react";
 
 import { Button } from "@/components/Button";
-import type { CasesLimitCheck, PricingConfig } from "@/src/services/pricing";
+import type { CasesLimitCheck, PricingConfig } from "@/services/pricing";
 
 type PricingStatusBarProps = {
   barRef: RefObject<HTMLDivElement | null>;

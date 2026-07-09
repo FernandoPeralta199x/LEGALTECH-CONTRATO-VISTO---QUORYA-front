@@ -1,4 +1,4 @@
-import { ApiClientError, ApiNetworkError } from "@/src/services/apiClient";
+import { ApiClientError, ApiNetworkError } from "@/services/apiClient";
 
 const isDev = process.env.NODE_ENV !== "production";
 

@@ -7,7 +7,7 @@ import {
   applyThemePreference,
   getStoredThemePreference,
   saveThemePreference
-} from "@/src/lib/preferences";
+} from "@/lib/preferences";
 
 type ThemeToggleProps = {
   className?: string;

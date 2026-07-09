@@ -27,7 +27,7 @@ test("useDevSessionState only clears invalid sessions after hydration", () => {
 });
 
 test("AuthGuard waits for loading before redirecting or rendering restricted state", () => {
-  const source = readFrontendFile("components/AuthGuard.tsx");
+  const source = readFrontendFile("src/components/AuthGuard.tsx");
   const loadingIndex = source.indexOf('status === "loading"');
   const redirectIndex = source.indexOf("router.replace");
   const effectIndex = source.indexOf("useEffect(");

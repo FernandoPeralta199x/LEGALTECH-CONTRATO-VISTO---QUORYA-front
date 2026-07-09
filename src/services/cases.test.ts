@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import type { Case } from "@/types";
-import { saveStoredLocalCase } from "@/src/lib/localCases";
+import { saveStoredLocalCase } from "@/lib/localCases";
 import {
   createCase,
   getCase,

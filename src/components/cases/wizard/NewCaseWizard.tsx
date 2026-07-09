@@ -13,8 +13,8 @@ import {
   type Modulo,
   type Produto
 } from "@/lib/produtoConfig";
-import { submitWizardRequest } from "@/src/services/cases";
-import { listClients } from "@/src/services/clients";
+import { submitWizardRequest } from "@/services/cases";
+import { listClients } from "@/services/clients";
 import type { Client } from "@/types";
 
 import { ContractStep } from "./ContractStep";

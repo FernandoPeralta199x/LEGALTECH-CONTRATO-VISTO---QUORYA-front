@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import * as authService from "./auth";
-import type { DevSession } from "@/src/types/auth";
+import type { DevSession } from "@/types/auth";
 
 function makeJwt(payload: Record<string, unknown>): string {
   const encode = (value: Record<string, unknown>) =>
