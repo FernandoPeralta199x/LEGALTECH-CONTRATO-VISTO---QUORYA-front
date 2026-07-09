@@ -203,7 +203,7 @@ function LoginContent() {
 
       <section
         aria-label="Autenticação"
-        className="cv-login-card relative z-10 w-full max-w-md px-4 pb-8 pt-14 sm:px-10 sm:pb-12 sm:pt-16"
+        className="cv-login-card relative z-10 w-full max-w-md px-4 pb-8 pt-14 backdrop-blur-lg backdrop-saturate-150 sm:px-10 sm:pb-12 sm:pt-16"
       >
         <div aria-hidden="true" className="absolute -top-11 left-1/2 h-[88px] w-[88px] -translate-x-1/2">
           <div className="absolute -inset-3 animate-pulse rounded-full bg-[radial-gradient(circle,rgba(95,200,152,0.24)_0%,transparent_68%)]" />

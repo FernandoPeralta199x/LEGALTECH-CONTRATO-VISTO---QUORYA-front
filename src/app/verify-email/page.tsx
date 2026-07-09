@@ -81,7 +81,7 @@ function VerifyEmailContent() {
 
       <section
         aria-label="Verificação de e-mail"
-        className="cv-login-card relative z-10 w-full max-w-md px-4 pb-8 pt-14 sm:px-10 sm:pb-12 sm:pt-16"
+        className="cv-login-card relative z-10 w-full max-w-md px-4 pb-8 pt-14 backdrop-blur-lg backdrop-saturate-150 sm:px-10 sm:pb-12 sm:pt-16"
       >
         <div className="mb-6 text-center">
           <h1 className="text-lg font-semibold text-[var(--text)]">
