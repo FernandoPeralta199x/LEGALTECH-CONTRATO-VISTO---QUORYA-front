@@ -56,10 +56,6 @@ const SECTIONS = [
 // goToSection somam a altura REAL da barra fixa (barRef) a esta base — fonte única.
 const HEADER_OFFSET = 64;
 
-function jurosLabel(bps: number): string {
-  return `${(bps / 100).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}% a.m.`;
-}
-
 function useToast() {
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(
     null

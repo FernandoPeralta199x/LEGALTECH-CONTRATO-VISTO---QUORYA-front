@@ -3,7 +3,6 @@
 import {
   ArrowLeft,
   Bot,
-  Calendar,
   ClipboardList,
   Clock,
   FileText,
@@ -92,35 +91,6 @@ function sourceModeLabel(value: unknown): string {
   };
 
   return labels[value] ?? value;
-}
-
-function ProviderResultRow({ result }: { result: ProviderResult }) {
-  return (
-    <div className="rounded-lg border border-[var(--bd)] bg-[var(--surf2)] p-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <p className="text-xs font-semibold text-[var(--text)]">{result.provider}</p>
-          <p className="mt-0.5 text-[11px] text-[var(--text3)]">
-            {sourceModeLabel(result.sourceMode)}
-            {typeof result.confidence === "number"
-              ? ` · confiança ${(result.confidence * 100).toFixed(0)}%`
-              : ""}
-          </p>
-        </div>
-        <StatusBadge status={result.status} />
-      </div>
-      {result.summary && (
-        <p className="mt-2 text-xs leading-5 text-[var(--text2)]">
-          {result.summary}
-        </p>
-      )}
-      {result.riskSignals.length > 0 && (
-        <p className="mt-2 text-[11px] text-[var(--text3)]">
-          Sinais: {result.riskSignals.join(", ")}
-        </p>
-      )}
-    </div>
-  );
 }
 
 export default function CaseDetailPage({ params }: PageProps) {
