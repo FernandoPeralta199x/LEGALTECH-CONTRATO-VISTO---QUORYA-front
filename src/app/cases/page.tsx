@@ -40,54 +40,14 @@ import { createCase, deleteCase, listCasesPaged, updateCase } from "@/services/c
 import { listClients } from "@/services/clients";
 import { validateCaseForm, type ValidationErrors } from "@/lib/validation";
 import type { Case, CaseCreate, CaseStatus, CaseUpdate, Client, Priority, ProductType } from "@/types";
-
-const contractTypes = [
-  { id: "contract_analysis", label: "Análise Contratual" },
-  { id: "compra_venda", label: "Compra e Venda" },
-  { id: "prestacao_servicos", label: "Prestação de Serviços" },
-  { id: "locacao", label: "Locação" },
-  { id: "confidencialidade", label: "Confidencialidade (NDA)" },
-  { id: "due_diligence", label: "Due Diligence" },
-  { id: "outro", label: "Outro" }
-];
-
-const productOptions: Array<{ id: ProductType; label: string }> = [
-  { id: "analise_contratual", label: "Análise contratual" },
-  { id: "dados_partes", label: "Dados das partes" },
-  { id: "consulta_objeto", label: "Consulta do objeto" },
-  { id: "reuniao_equipe", label: "Reunião com equipe" }
-];
-
-// Status reais que um caso assume no banco. Usado no filtro (server-side, ?status=)
-// e no modal de edição — todos aceitos pelo CaseUpdate (CASE_STATUS_PATTERN).
-const statusFilterOptions: Array<{ id: CaseStatus; label: string }> = [
-  { id: "awaiting_triage", label: "Aguardando triagem" },
-  { id: "open", label: "Aberto" },
-  { id: "in_progress", label: "Em andamento" },
-  { id: "report_ready", label: "Relatório pronto" },
-  { id: "completed", label: "Concluído" },
-  { id: "closed", label: "Fechado" }
-];
-
-const CASES_PAGE_SIZE = 24;
-
-type CaseForm = {
-  caseType: string;
-  clientId: string;
-  notes: string;
-  priority: Priority;
-  product: ProductType;
-  title: string;
-};
-
-const emptyCaseForm: CaseForm = {
-  caseType: "contract_analysis",
-  clientId: "",
-  notes: "",
-  priority: "normal",
-  product: "analise_contratual",
-  title: ""
-};
+import {
+  CASES_PAGE_SIZE,
+  contractTypes,
+  emptyCaseForm,
+  productOptions,
+  statusFilterOptions,
+  type CaseForm
+} from "@/lib/caseFormOptions";
 
 function reportStatusLabel(legalCase: Case): string {
   const reportStatus = legalCase.metadata?.reportStatus;
