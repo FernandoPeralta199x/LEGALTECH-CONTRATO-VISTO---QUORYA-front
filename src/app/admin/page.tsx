@@ -40,21 +40,21 @@ export default function AdminPage() {
           actions={
             <>
               <Link
-                className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2.5 text-sm font-semibold text-white shadow-glow-teal transition hover:bg-brand-teal-dark"
+                className="pressable inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2.5 text-sm font-semibold text-white shadow-glow-teal transition hover:bg-brand-teal-dark"
                 href="/cases/new"
               >
                 <Activity size={15} />
                 Novo Pedido
               </Link>
               <Link
-                className="inline-flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surf)] px-3.5 py-2.5 text-sm font-medium text-[var(--text)] transition hover:border-brand-teal/40"
+                className="pressable inline-flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surf)] px-3.5 py-2.5 text-sm font-medium text-[var(--text)] transition hover:border-brand-teal/40"
                 href="/settings"
               >
                 <Settings size={15} />
                 Configurações
               </Link>
               <Link
-                className="inline-flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surf)] px-3.5 py-2.5 text-sm font-medium text-[var(--text)] transition hover:border-brand-teal/40"
+                className="pressable inline-flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surf)] px-3.5 py-2.5 text-sm font-medium text-[var(--text)] transition hover:border-brand-teal/40"
                 href="/admin/pricing"
               >
                 <DollarSign size={15} />
@@ -117,11 +117,12 @@ export default function AdminPage() {
               { href: "/analyst", label: "Analista" },
               { href: "/reports", label: "Relatórios" },
               { href: "/clients", label: "Clientes" }
-            ].map((item) => (
+            ].map((item, index) => (
               <Link
-                className="rounded-lg border border-[var(--border)] px-3 py-2 text-xs font-medium text-[var(--text)] transition hover:border-brand-teal/40"
+                className="pressable animate-in rounded-lg border border-[var(--border)] px-3 py-2 text-xs font-medium text-[var(--text)] transition hover:border-brand-teal/40"
                 href={item.href}
                 key={item.href}
+                style={{ animationDelay: `${index * 40}ms` }}
               >
                 {item.label}
               </Link>
@@ -152,10 +153,11 @@ export default function AdminPage() {
                   role: "viewer",
                   desc: "Referência de leitura: acompanha informações sem permissões técnicas novas nesta tela."
                 }
-              ].map((item) => (
+              ].map((item, index) => (
                 <div
-                  className="flex items-start gap-3 rounded-lg border border-[var(--border)] bg-[var(--surf2)] p-4"
+                  className="animate-in flex items-start gap-3 rounded-lg border border-[var(--border)] bg-[var(--surf2)] p-4"
                   key={item.role}
+                  style={{ animationDelay: `${index * 40}ms` }}
                 >
                   <span
                     className={`inline-flex shrink-0 items-center rounded border px-2.5 py-1 text-xs font-semibold ${

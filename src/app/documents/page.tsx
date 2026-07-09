@@ -359,7 +359,7 @@ export default function DocumentsPage() {
                 <div className="flex items-center gap-3">
                   <label
                     htmlFor="cv-file-upload"
-                    className={`cv-btn cv-btn-secondary inline-flex cursor-pointer items-center gap-2 px-3 py-2 text-xs font-semibold ${
+                    className={`cv-btn cv-btn-secondary pressable inline-flex cursor-pointer items-center gap-2 px-3 py-2 text-xs font-semibold ${
                       formErrors.file ? "border-red-500/60 text-red-400" : ""
                     }`}
                   >
@@ -389,12 +389,12 @@ export default function DocumentsPage() {
                     {selectedFile.name}
                   </p>
                   <p className="text-[11px] text-[var(--text3)]">
-                    {formatBytes(selectedFile.size)} · {documentTypeLabel(selectedFile.type)}
+                    <span className="font-mono">{formatBytes(selectedFile.size)}</span> · {documentTypeLabel(selectedFile.type)}
                   </p>
                 </div>
                 <button
                   aria-label="Remover arquivo selecionado"
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[var(--text2)] transition hover:bg-red-500/10 hover:text-red-500"
+                  className="pressable flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[var(--text2)] transition hover:bg-red-500/10 hover:text-red-500"
                   onClick={clearSelectedFile}
                   type="button"
                 >
@@ -406,7 +406,7 @@ export default function DocumentsPage() {
               <div className="mt-4" aria-live="polite">
                 <div className="mb-1 flex items-center justify-between text-[11px] text-[var(--text3)]">
                   <span>{uploadPhaseLabel(uploadProgress.phase)}</span>
-                  <span>{uploadProgress.percent}%</span>
+                  <span className="font-mono">{uploadProgress.percent}%</span>
                 </div>
                 <div
                   aria-label="Progresso do envio do documento"
@@ -508,10 +508,11 @@ export default function DocumentsPage() {
             />
           ) : (
             <div className="space-y-3">
-              {visibleDocuments.map((doc) => (
+              {visibleDocuments.map((doc, index) => (
                 <div
-                  className="cv-list-row flex flex-col gap-4 px-4 py-3 md:flex-row md:items-center"
+                  className="cv-list-row animate-in flex flex-col gap-4 px-4 py-3 md:flex-row md:items-center"
                   key={doc.id}
+                  style={{ animationDelay: `${index * 40}ms` }}
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-3">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--surf3)]">
@@ -522,7 +523,7 @@ export default function DocumentsPage() {
                         {doc.filename}
                       </p>
                       <p className="text-[11px] text-[var(--text3)]">
-                        {doc.sizeLabel} · {documentTypeLabel(doc.contentType)}
+                        <span className="font-mono">{doc.sizeLabel}</span> · {documentTypeLabel(doc.contentType)}
                       </p>
                       <span className="cv-badge cv-badge-muted mt-1">
                         {documentSourceLabel(doc)}
@@ -533,7 +534,7 @@ export default function DocumentsPage() {
                     <div>
                       <p className="text-[11px] text-[var(--text3)]">Caso</p>
                       <Link
-                        className="font-medium text-[var(--teal)] hover:underline"
+                        className="pressable font-mono font-medium text-[var(--teal)] hover:underline"
                         href={`/cases/${doc.caseId}`}
                       >
                         {doc.caseCode}
@@ -541,7 +542,7 @@ export default function DocumentsPage() {
                     </div>
                     <div>
                       <p className="text-[11px] text-[var(--text3)]">Upload</p>
-                      <p className="text-[var(--text2)]">{formatDate(doc.uploadedAt)}</p>
+                      <p className="font-mono text-[var(--text2)]">{formatDate(doc.uploadedAt)}</p>
                     </div>
                     <div className="self-center">
                       <StatusBadge status={doc.status} />
@@ -601,7 +602,7 @@ function IconButton({
   return (
     <button
       aria-label={label}
-      className="flex h-11 w-11 items-center justify-center rounded-lg border border-[var(--bd)] bg-[var(--surf2)] text-[var(--text2)] transition hover:bg-[var(--surf3)] hover:text-[var(--text)] disabled:cursor-not-allowed disabled:opacity-45"
+      className="pressable flex h-11 w-11 items-center justify-center rounded-lg border border-[var(--bd)] bg-[var(--surf2)] text-[var(--text2)] transition hover:bg-[var(--surf3)] hover:text-[var(--text)] disabled:cursor-not-allowed disabled:opacity-45"
       disabled={disabled || loading}
       onClick={onClick}
       title={label}

@@ -158,10 +158,14 @@ export default function ReportsPage() {
               value: metrics.failed,
               tone: "border-red-500/25 bg-red-500/10 text-red-700 dark:text-red-300"
             }
-          ].map((metric) => (
-            <div className={`rounded-lg border p-4 ${metric.tone}`} key={metric.label}>
+          ].map((metric, index) => (
+            <div
+              className={`animate-in rounded-lg border p-4 ${metric.tone}`}
+              key={metric.label}
+              style={{ animationDelay: `${index * 40}ms` }}
+            >
               <p className="text-xs font-medium">{metric.label}</p>
-              <p className="mt-2 text-2xl font-bold">{metric.value}</p>
+              <p className="mt-2 font-mono text-2xl font-bold">{metric.value}</p>
             </div>
           ))}
         </div>
@@ -207,11 +211,15 @@ export default function ReportsPage() {
           />
         ) : (
           <div className="space-y-4">
-            {reports.map(({ caseData, report, sourceMode }) => {
+            {reports.map(({ caseData, report, sourceMode }, index) => {
               const meta = statusMeta[report.status] ?? statusMeta.not_started;
 
               return (
-                <div className="cv-card p-5" key={report.id}>
+                <div
+                  className="cv-card animate-in p-5"
+                  key={report.id}
+                  style={{ animationDelay: `${index * 40}ms` }}
+                >
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="flex min-w-0 items-start gap-4">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--bd)] bg-[var(--surf2)]">
@@ -219,10 +227,10 @@ export default function ReportsPage() {
                       </div>
                       <div className="min-w-0">
                         <div className="mb-1 flex flex-wrap items-center gap-2">
-                          <span className="text-[11px] font-semibold text-[var(--teal)]">
+                          <span className="font-mono text-[11px] font-semibold text-[var(--teal)]">
                             {caseData.code}
                           </span>
-                          <span className="text-[11px] text-[var(--text3)]">
+                          <span className="font-mono text-[11px] text-[var(--text3)]">
                             v{report.version}
                           </span>
                           <StatusBadge status={report.status} />
@@ -244,7 +252,7 @@ export default function ReportsPage() {
 
                     <div className="flex shrink-0 flex-wrap items-center gap-2">
                       <Link
-                        className="cv-btn cv-btn-secondary min-h-11 px-3 text-xs font-semibold"
+                        className="cv-btn cv-btn-secondary pressable min-h-11 px-3 text-xs font-semibold"
                         href={`/cases/${report.caseId}`}
                       >
                         Ver caso
@@ -275,7 +283,7 @@ export default function ReportsPage() {
                     </div>
                     <div>
                       <p className="text-[var(--text3)]">Geração</p>
-                      <p className="mt-0.5 font-medium text-[var(--text2)]">
+                      <p className="mt-0.5 font-mono font-medium text-[var(--text2)]">
                         {formatDate(report.generatedAt)}
                       </p>
                     </div>

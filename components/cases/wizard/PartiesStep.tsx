@@ -47,7 +47,7 @@ export function PartiesStep({ parties, onChange }: PartiesStepProps) {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-lg font-semibold text-[var(--text)]">Dados das partes</h2>
+        <h2 className="text-lg font-semibold tracking-tight text-[var(--text)]">Dados das partes</h2>
         <p className="mt-1 text-sm text-[var(--text2)]">
           Adicione todas as partes envolvidas no contrato. Você pode editar, duplicar
           ou remover a qualquer momento.

@@ -28,7 +28,7 @@ export function EstimateCard({ valorCents, prazoHoras, loading, error }: Estimat
               Valor referencial simulado
             </p>
             <p className={"text-base font-bold text-[var(--text)]" + (loading ? " animate-pulse" : "")}>
-              {loading ? "Calculando..." : formatCurrency(valorCents / 100)}
+              {loading ? "Calculando..." : <span className="font-mono">{formatCurrency(valorCents / 100)}</span>}
               {error && (
                 <span className="ml-2 text-[10px] font-normal text-red-300">
                   (estimativa local)

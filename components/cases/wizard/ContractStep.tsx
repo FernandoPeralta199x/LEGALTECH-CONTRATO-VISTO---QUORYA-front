@@ -19,7 +19,7 @@ export function ContractStep({
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-lg font-semibold text-[var(--text)]">
+        <h2 className="text-lg font-semibold tracking-tight text-[var(--text)]">
           Documento base do pedido
         </h2>
         <p className="mt-1 text-sm text-[var(--text2)]">

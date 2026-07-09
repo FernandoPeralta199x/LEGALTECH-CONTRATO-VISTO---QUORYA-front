@@ -84,7 +84,7 @@ export function ModulesStep({ produto, state, onChange }: ModulesStepProps) {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-lg font-semibold text-[var(--text)]">
+        <h2 className="text-lg font-semibold tracking-tight text-[var(--text)]">
           Ajuste a composição simulada
         </h2>
         <p className="mt-1 text-sm text-[var(--text2)]">

@@ -37,7 +37,7 @@ export function PartyCard({
   onRemove
 }: PartyCardProps) {
   return (
-    <div className="cv-list-row flex items-center gap-4 px-5 py-4">
+    <div className="cv-list-row flex items-center gap-4 px-5 py-4 animate-in">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--teal-dim)] text-xs font-bold text-[var(--teal)]">
         {initials(party.nome)}
       </div>
@@ -48,7 +48,7 @@ export function PartyCard({
         </p>
         <p className="mt-0.5 truncate text-[11px] text-[var(--text2)]">
           <span className="font-medium text-[var(--text2)]">{papelLabel(party.papel)}</span>
-          {party.documento && <> · {party.documento}</>}
+          {party.documento && <> · <span className="font-mono">{party.documento}</span></>}
           {party.email && <> · {party.email}</>}
         </p>
       </div>

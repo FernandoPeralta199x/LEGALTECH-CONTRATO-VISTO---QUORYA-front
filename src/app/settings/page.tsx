@@ -209,7 +209,7 @@ export default function SettingsPage() {
               return (
                 <button
                   className={cn(
-                    "flex items-center gap-2.5 whitespace-nowrap rounded-lg px-3 py-2.5 text-xs font-medium transition",
+                    "pressable flex items-center gap-2.5 whitespace-nowrap rounded-lg px-3 py-2.5 text-xs font-medium transition",
                     active
                       ? "bg-emerald-50 text-brand-teal-dark dark:bg-emerald-950/40 dark:text-emerald-100"
                       : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-100"
@@ -238,7 +238,7 @@ export default function SettingsPage() {
                   </Field>
                   <Field label="CNPJ">
                     <input
-                      className={`${inputClass} cursor-not-allowed opacity-60`}
+                      className={`${inputClass} cursor-not-allowed opacity-60 font-mono`}
                       disabled
                       value="00.000.000/0000-00"
                     />
@@ -384,8 +384,12 @@ export default function SettingsPage() {
                   title="Sessões ativas"
                 >
                   <div className="divide-y divide-slate-200 dark:divide-slate-800">
-                    {sessions.map((s) => (
-                      <div className="flex items-center gap-4 py-4" key={s.email}>
+                    {sessions.map((s, index) => (
+                      <div
+                        className="animate-in flex items-center gap-4 py-4"
+                        key={s.email}
+                        style={{ animationDelay: `${index * 40}ms` }}
+                      >
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-brand text-xs font-bold text-white">
                           {s.name.slice(0, 2).toUpperCase()}
                         </div>
@@ -393,7 +397,7 @@ export default function SettingsPage() {
                           <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
                             {s.name}
                           </p>
-                          <p className="truncate text-[11px] text-slate-600 dark:text-slate-400">
+                          <p className="truncate font-mono text-[11px] text-slate-600 dark:text-slate-400">
                             {s.email}
                           </p>
                         </div>
@@ -418,10 +422,11 @@ export default function SettingsPage() {
                 title="Canais de notificação"
               >
                 <div className="space-y-4">
-                  {notificationItems.map((item) => (
+                  {notificationItems.map((item, index) => (
                     <div
-                      className="flex items-start justify-between gap-4 rounded-lg border border-[var(--border)] bg-[var(--surf2)] p-4"
+                      className="animate-in flex items-start justify-between gap-4 rounded-lg border border-[var(--border)] bg-[var(--surf2)] p-4"
                       key={item.key}
+                      style={{ animationDelay: `${index * 40}ms` }}
                     >
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-[var(--text)]">
@@ -478,7 +483,7 @@ export default function SettingsPage() {
                     return (
                       <button
                         className={cn(
-                          "flex flex-col items-center gap-2 rounded-lg border p-4 transition",
+                          "pressable flex flex-col items-center gap-2 rounded-lg border p-4 transition",
                           active
                             ? "border-brand-teal bg-brand-teal/10 text-brand-teal-dark"
                             : "border-[var(--border)] bg-[var(--surf2)] text-[var(--text2)] hover:border-brand-teal/40"
@@ -534,7 +539,7 @@ function ChannelButton({
   return (
     <button
       className={cn(
-        "flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition",
+        "pressable flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition",
         active
           ? "border-brand-teal bg-brand-teal/10 text-brand-teal-dark"
           : "border-[var(--border)] bg-[var(--surf)] text-[var(--text2)] hover:border-brand-teal/40"

@@ -123,7 +123,7 @@ export function ReviewStep({
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-lg font-semibold text-[var(--text)]">
+        <h2 className="text-lg font-semibold tracking-tight text-[var(--text)]">
           Revisão do Novo Pedido
         </h2>
         <p className="mt-1 text-sm text-[var(--text2)]">
@@ -142,8 +142,8 @@ export function ReviewStep({
 
       <Section label={`Partes / Cliente (${parties.length})`}>
         <ul className="space-y-2">
-          {parties.map((p) => (
-            <li className="flex items-start gap-3 text-xs" key={p.id}>
+          {parties.map((p, index) => (
+            <li className="flex items-start gap-3 text-xs animate-in" key={p.id} style={{ animationDelay: `${index * 40}ms` }}>
               <span className="mt-0.5 inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--teal)]" />
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-[var(--text)]">
@@ -174,7 +174,7 @@ export function ReviewStep({
                 {arquivo.name}
               </p>
               <p className="text-[11px] text-[var(--text3)]">
-                {(arquivo.size / 1024 / 1024).toFixed(2)} MB ·{" "}
+                <span className="font-mono">{(arquivo.size / 1024 / 1024).toFixed(2)}</span> MB ·{" "}
                 {arquivo.status === "done" ? "Pronto para simulação" : "Preparando…"}
               </p>
             </div>
@@ -190,7 +190,7 @@ export function ReviewStep({
         <div className="space-y-3 text-xs">
           <div>
             <p className="font-semibold text-[var(--text)]">
-              Incluídos na simulação ({ativos.length})
+              Incluídos na simulação (<span className="font-mono">{ativos.length}</span>)
             </p>
             <p className="mt-1 text-[var(--text2)]">
               {ativos.length
@@ -201,7 +201,7 @@ export function ReviewStep({
           {inativos.length > 0 && (
             <div>
               <p className="font-semibold text-[var(--text2)]">
-                Fora da simulação ({inativos.length})
+                Fora da simulação (<span className="font-mono">{inativos.length}</span>)
               </p>
               <p className="mt-1 text-[var(--text3)]">
                 {inativos.map((m) => MODULOS[m].titulo).join(", ")}

@@ -10,7 +10,7 @@ export default function NewCasePage() {
           <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--teal)]">
             Novo Pedido - operacional local
           </p>
-          <h1 className="mt-2 text-xl font-bold leading-tight text-[var(--text)]">
+          <h1 className="mt-2 text-xl font-bold leading-tight tracking-tight text-[var(--text)]">
             Inicie o fluxo principal do MVP local
           </h1>
           <p className="mt-2 text-xs leading-5 text-[var(--text2)]">

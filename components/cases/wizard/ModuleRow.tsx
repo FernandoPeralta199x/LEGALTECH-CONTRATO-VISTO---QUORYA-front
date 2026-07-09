@@ -27,7 +27,7 @@ export function ModuleRow({
   const displayPrice = backendPrice ?? meta.precoCents;
 
   return (
-    <div className="cv-form-card flex items-start justify-between gap-4 px-5 py-4">
+    <div className="cv-form-card flex items-start justify-between gap-4 px-5 py-4 animate-in">
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <h3 className="text-sm font-semibold text-[var(--text)]">{meta.titulo}</h3>
@@ -38,9 +38,11 @@ export function ModuleRow({
         </div>
         <p className="mt-1 text-xs leading-5 text-[var(--text2)]">{meta.descricao}</p>
         <p className="mt-1.5 text-[11px] text-[var(--text3)]">
-          {isEstimate
-            ? `Referência estimada (padrão local): R$ ${formatCents(displayPrice)}`
-            : `Referência simulada: R$ ${formatCents(displayPrice)}`}
+          {isEstimate ? (
+            <>Referência estimada (padrão local): <span className="font-mono">R$ {formatCents(displayPrice)}</span></>
+          ) : (
+            <>Referência simulada: <span className="font-mono">R$ {formatCents(displayPrice)}</span></>
+          )}
         </p>
       </div>
 

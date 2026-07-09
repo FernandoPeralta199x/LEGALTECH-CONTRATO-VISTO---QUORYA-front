@@ -46,7 +46,7 @@ export function ProductCard({
     <button
       aria-pressed={selected}
       className={cn(
-        "group relative flex h-full w-full flex-col gap-4 rounded-2xl border p-5 text-left transition-all duration-[200ms] ease-smooth",
+        "group relative flex h-full w-full flex-col gap-4 rounded-2xl border p-5 text-left transition-all duration-[200ms] ease-smooth animate-in pressable",
         selected
           ? "border-[var(--teal)] bg-[var(--teal-dim)] shadow-glow-teal"
           : "border-[var(--bd2)] bg-[var(--surf2)] hover:-translate-y-0.5 hover:border-[rgba(32,201,151,0.34)] hover:bg-[var(--surf3)]"
@@ -92,11 +92,11 @@ export function ProductCard({
       <div className="mt-1 flex items-center justify-between border-t border-[var(--bd)] pt-3 text-[11px] text-[var(--text2)]">
         <span>
           Referência simulada{" "}
-          <span className="font-semibold text-[var(--text)]">
+          <span className="font-mono font-semibold text-[var(--text)]">
             {displayPriceLabel}
           </span>
         </span>
-        <span>Prazo ref.: {meta.slaHoras}h</span>
+        <span>Prazo ref.: <span className="font-mono">{meta.slaHoras}h</span></span>
       </div>
     </button>
   );

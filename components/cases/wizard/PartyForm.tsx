@@ -107,7 +107,7 @@ export function PartyForm({
   }
 
   return (
-    <div className="cv-form-card p-5">
+    <div className="cv-form-card p-5 animate-in">
       <div className="mb-4 flex items-center justify-between">
         <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text2)]">
           Parte {index + 1}

@@ -430,8 +430,15 @@ export default function ClientsPage() {
           </div>
           {!loading && (
             <p className="text-xs text-[var(--text2)]">
-              {total} cliente{total !== 1 ? "s" : ""} no total
-              {totalPages > 1 ? ` · página ${page} de ${totalPages}` : ""}
+              <span className="font-mono">{total}</span> cliente{total !== 1 ? "s" : ""} no total
+              {totalPages > 1 ? (
+                <>
+                  {" · página "}
+                  <span className="font-mono">{page}</span>
+                  {" de "}
+                  <span className="font-mono">{totalPages}</span>
+                </>
+              ) : ""}
             </p>
           )}
         </div>
@@ -479,7 +486,7 @@ export default function ClientsPage() {
           />
         ) : (
           <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-            {clients.map((client) => {
+            {clients.map((client, index) => {
               const risk = riskConfig[client.riskLevel] ?? riskConfig.low;
               const displayName = client.displayName ?? client.name;
               const personTypeLabel = client.personType
@@ -490,8 +497,9 @@ export default function ClientsPage() {
                 : "Papel não informado";
               return (
                 <div
-                  className="cv-card cv-card-hover p-5"
+                  className="cv-card cv-card-hover p-5 animate-in"
                   key={client.id}
+                  style={{ animationDelay: `${index * 40}ms` }}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">
@@ -500,7 +508,7 @@ export default function ClientsPage() {
                       </div>
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-[var(--text)]">{displayName}</p>
-                        <p className="truncate text-[11px] text-[var(--text3)]">{client.documentLabel}</p>
+                        <p className="truncate font-mono text-[11px] text-[var(--text3)]">{client.documentLabel}</p>
                       </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
@@ -530,14 +538,19 @@ export default function ClientsPage() {
                     </div>
                     <div className="flex min-w-0 items-center gap-2 text-[var(--text2)]">
                       <Phone size={12} className="shrink-0 text-[var(--text3)]" />
-                      <span className="truncate">{client.phone || "Telefone não informado"}</span>
+                      <span className="truncate">{client.phone ? <span className="font-mono">{client.phone}</span> : "Telefone não informado"}</span>
                     </div>
                     <div className="flex items-center gap-2 text-[var(--text2)]">
                       <BriefcaseBusiness size={12} className="shrink-0 text-[var(--text3)]" />
                       <span className="truncate">
-                        {client.casesCount > 0
-                          ? `${client.casesCount} referência${client.casesCount !== 1 ? "s" : ""} de caso${client.casesCount !== 1 ? "s" : ""} indicada${client.casesCount !== 1 ? "s" : ""} na base`
-                          : "Acompanhe referências de casos na área de Casos"}
+                        {client.casesCount > 0 ? (
+                          <>
+                            <span className="font-mono">{client.casesCount}</span>
+                            {` referência${client.casesCount !== 1 ? "s" : ""} de caso${client.casesCount !== 1 ? "s" : ""} indicada${client.casesCount !== 1 ? "s" : ""} na base`}
+                          </>
+                        ) : (
+                          "Acompanhe referências de casos na área de Casos"
+                        )}
                       </span>
                     </div>
                   </dl>
@@ -551,7 +564,7 @@ export default function ClientsPage() {
                     </span>
                     <span className="text-[11px] text-[var(--text3)]">
                       {client.sourceMode ? `Origem: ${client.sourceMode} · ` : ""}
-                      Registro desde {formatDate(client.createdAt)}
+                      Registro desde <span className="font-mono">{formatDate(client.createdAt)}</span>
                     </span>
                   </div>
                 </div>
@@ -571,7 +584,7 @@ export default function ClientsPage() {
               Anterior
             </Button>
             <span>
-              Página {page} de {totalPages}
+              Página <span className="font-mono">{page}</span> de <span className="font-mono">{totalPages}</span>
             </span>
             <Button
               disabled={page >= totalPages}

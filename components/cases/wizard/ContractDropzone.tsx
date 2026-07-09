@@ -168,7 +168,7 @@ function FilePreview({
               />
             </div>
             <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-[var(--text2)]">
-              {file.status === "uploading" && `Preparando ${file.progress}%`}
+              {file.status === "uploading" && <>Preparando <span className="font-mono">{file.progress}%</span></>}
               {file.status === "extracting" && "Simulando leitura…"}
               {file.status === "done" && "Pronto para simulação"}
               {file.status === "error" && "Erro"}

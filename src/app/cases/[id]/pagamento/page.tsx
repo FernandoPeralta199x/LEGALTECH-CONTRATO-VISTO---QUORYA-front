@@ -270,7 +270,7 @@ export default function CasePaymentPage({ params }: PageProps) {
         <AppLayout>
           <div className="mx-auto max-w-3xl">
             <Link
-              className="mb-4 flex items-center gap-1.5 text-xs text-[var(--text2)] transition hover:text-[var(--teal)]"
+              className="pressable mb-4 flex items-center gap-1.5 text-xs text-[var(--text2)] transition hover:text-[var(--teal)]"
               href={`/cases/${id}`}
             >
               <ArrowLeft size={14} />
@@ -402,7 +402,7 @@ export default function CasePaymentPage({ params }: PageProps) {
                         <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text2)]">
                           Total do pedido
                         </p>
-                        <p className="text-lg font-bold text-[var(--text)]">
+                        <p className="font-mono text-lg font-bold text-[var(--text)]">
                           {centsToReaisLabel(estimate.total_price_cents)}
                         </p>
                       </div>
@@ -419,33 +419,50 @@ export default function CasePaymentPage({ params }: PageProps) {
                     title="Parcelamento"
                   >
                     <div className="space-y-2">
-                      {options.map((option) => {
+                      {options.map((option, index) => {
                         const active = option.parcelas === selectedParcelas;
                         return (
                           <button
                             aria-pressed={active}
-                            className={`flex w-full flex-wrap items-center justify-between gap-2 rounded-lg border px-4 py-3 text-left transition ${
+                            className={`animate-in pressable flex w-full flex-wrap items-center justify-between gap-2 rounded-lg border px-4 py-3 text-left transition ${
                               active
                                 ? "border-[rgba(32,201,151,0.45)] bg-[var(--teal-dim)]"
                                 : "border-[var(--bd)] bg-[var(--surf2)] hover:border-[var(--bd2)]"
                             }`}
                             key={option.parcelas}
                             onClick={() => handleSelectOption(option)}
+                            style={{ animationDelay: `${index * 40}ms` }}
                             type="button"
                           >
                             <span>
                               <span className="block text-sm font-semibold text-[var(--text)]">
-                                {option.parcelas}x de{" "}
-                                {centsToReaisLabel(option.valor_parcela_cents)}
+                                <span className="font-mono">{option.parcelas}</span>x de{" "}
+                                <span className="font-mono">
+                                  {centsToReaisLabel(option.valor_parcela_cents)}
+                                </span>
                               </span>
                               <span className="mt-0.5 block text-[11px] text-[var(--text2)]">
-                                {option.has_juros
-                                  ? `juros de ${jurosLabel(option.juros_mensal_bps)} · acréscimo ${centsToReaisLabel(option.acrescimo_cents)}`
-                                  : "sem juros"}
+                                {option.has_juros ? (
+                                  <>
+                                    juros de{" "}
+                                    <span className="font-mono">
+                                      {jurosLabel(option.juros_mensal_bps)}
+                                    </span>{" "}
+                                    · acréscimo{" "}
+                                    <span className="font-mono">
+                                      {centsToReaisLabel(option.acrescimo_cents)}
+                                    </span>
+                                  </>
+                                ) : (
+                                  "sem juros"
+                                )}
                               </span>
                             </span>
                             <span className="text-xs font-medium text-[var(--text2)]">
-                              total {centsToReaisLabel(option.valor_total_cents)}
+                              total{" "}
+                              <span className="font-mono">
+                                {centsToReaisLabel(option.valor_total_cents)}
+                              </span>
                             </span>
                           </button>
                         );
@@ -462,12 +479,12 @@ export default function CasePaymentPage({ params }: PageProps) {
                       <div className="flex flex-wrap gap-2">
                         {selectedOption.allowed_methods
                           .filter(isPaymentMethod)
-                          .map((allowedMethod) => {
+                          .map((allowedMethod, index) => {
                             const active = method === allowedMethod;
                             return (
                               <button
                                 aria-pressed={active}
-                                className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition ${
+                                className={`animate-in pressable inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition ${
                                   active
                                     ? "border-[rgba(32,201,151,0.45)] bg-[var(--teal-dim)] text-[var(--teal)]"
                                     : "border-[var(--bd)] bg-[var(--surf2)] text-[var(--text2)] hover:border-[var(--bd2)]"
@@ -477,6 +494,7 @@ export default function CasePaymentPage({ params }: PageProps) {
                                   setMethod(allowedMethod);
                                   setSubmitError("");
                                 }}
+                                style={{ animationDelay: `${index * 40}ms` }}
                                 type="button"
                               >
                                 <CreditCard size={14} />
@@ -500,18 +518,19 @@ export default function CasePaymentPage({ params }: PageProps) {
                       }
                     >
                       <div className="space-y-2">
-                        {selectedOption.schedule.map((item) => (
+                        {selectedOption.schedule.map((item, index) => (
                           <div
-                            className="flex items-center justify-between gap-3 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-3 py-2 text-xs"
+                            className="animate-in flex items-center justify-between gap-3 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-3 py-2 text-xs"
                             key={item.numero}
+                            style={{ animationDelay: `${index * 40}ms` }}
                           >
                             <span className="text-[var(--text2)]">
-                              Parcela {item.numero}
+                              Parcela <span className="font-mono">{item.numero}</span>
                             </span>
-                            <span className="text-[var(--text2)]">
+                            <span className="font-mono text-[var(--text2)]">
                               {formatDueDate(item.vencimento)}
                             </span>
-                            <span className="font-semibold text-[var(--text)]">
+                            <span className="font-mono font-semibold text-[var(--text)]">
                               {centsToReaisLabel(item.valor_cents)}
                             </span>
                           </div>
