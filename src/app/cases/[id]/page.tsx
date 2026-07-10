@@ -9,9 +9,8 @@ import {
   Shield,
   Users
 } from "lucide-react";
-import type { FormEvent } from "react";
 import Link from "next/link";
-import { use, useCallback, useEffect, useRef, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
@@ -33,17 +32,10 @@ import { PriorityBadge } from "@/components/PriorityBadge";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Timeline } from "@/components/Timeline";
 import { caseDisplayTitle, formatDate } from "@/lib/formatters";
-import { errorMessage } from "@/lib/errorMessage";
-import {
-  aggregatePartyFromCaseParty,
-  useCasePartiesEditor
-} from "@/lib/useCasePartiesEditor";
-import { getCaseAggregate } from "@/services/cases";
-import {
-  generateCaseReport,
-  reviewCaseReport,
-  runCaseTriage
-} from "@/services/caseWorkflow";
+import { useCasePartiesEditor } from "@/lib/useCasePartiesEditor";
+import { useCaseDetail } from "@/lib/useCaseDetail";
+import { useCaseWorkflow } from "@/lib/useCaseWorkflow";
+import { useFinalReports } from "@/lib/useFinalReports";
 import { useDevSession } from "@/lib/useDevSession";
 import { usePrintOnChange } from "@/lib/usePrintOnChange";
 import {
@@ -52,21 +44,7 @@ import {
   riskLabel,
   sourceModeLabel
 } from "@/lib/reportLabels";
-import {
-  FINAL_REPORT_ACCEPT_ATTR,
-  FINAL_REPORT_ACCEPTED_MIME,
-  getFinalReportDownloadUrl,
-  listFinalReports,
-  uploadFinalReport,
-  type FinalReportDocument
-} from "@/services/finalReports";
-import type {
-  Case,
-  CaseAggregate,
-  CaseParty,
-  Document,
-  ProviderResult
-} from "@/types";
+import { FINAL_REPORT_ACCEPT_ATTR } from "@/services/finalReports";
 
 const TABS = [
   { id: "overview", label: "Visão geral", icon: ClipboardList },
@@ -91,17 +69,38 @@ export default function CaseDetailPage({ params }: PageProps) {
       setActiveTab(hash);
     }
   }, []);
-  const [caseAggregate, setCaseAggregate] = useState<CaseAggregate | null>(null);
-  const [caseData, setCaseData] = useState<Case | null>(null);
-  const [caseDocuments, setCaseDocuments] = useState<Document[]>([]);
-  const [caseParties, setCaseParties] = useState<CaseParty[]>([]);
-  const [error, setError] = useState("");
-  const [fallbackReason, setFallbackReason] = useState("");
-  const [aggregateSource, setAggregateSource] = useState<"api" | "mock">("api");
-  const [loading, setLoading] = useState(true);
 
-  // Formulário de partes (criar/editar/validar/submeter) extraído para hook
-  // próprio — a página segue dona da lista (syncCaseParties, hoisted abaixo).
+  // Token de carga COMPARTILHADO entre a carga do agregado (useCaseDetail) e a listagem de
+  // relatórios finais (useFinalReports): um novo refresh do caso invalida uma listagem em
+  // voo, evitando exibir dados/relatórios do caso errado numa troca rápida de id.
+  const loadTokenRef = useRef(0);
+
+  const {
+    finalReports,
+    finalReportUploading,
+    finalReportError,
+    finalReportSuccess,
+    refreshFinalReports,
+    handleFinalReportUpload,
+    handleFinalReportDownload
+  } = useFinalReports({ caseId: id, loadTokenRef });
+
+  const {
+    caseAggregate,
+    caseData,
+    caseDocuments,
+    caseParties,
+    error,
+    fallbackReason,
+    aggregateSource,
+    loading,
+    refreshCase,
+    syncCaseParties,
+    setFallbackReason
+  } = useCaseDetail({ id, loadTokenRef, onAggregateLoaded: refreshFinalReports });
+
+  // Formulário de partes (criar/editar/validar/submeter) extraído para hook próprio —
+  // a lista continua em useCaseDetail (syncCaseParties = applyParties).
   const {
     editingParty,
     partyError,
@@ -122,230 +121,25 @@ export default function CaseDetailPage({ params }: PageProps) {
     applyParties: (updater) => syncCaseParties(updater),
     onFallbackReason: setFallbackReason
   });
-  const [finalReports, setFinalReports] = useState<FinalReportDocument[]>([]);
-  const [finalReportUploading, setFinalReportUploading] = useState(false);
-  const [finalReportError, setFinalReportError] = useState("");
-  const [finalReportSuccess, setFinalReportSuccess] = useState("");
 
   const session = useDevSession();
   const canWrite = session ? ["admin", "analyst"].includes(session.role) : false;
-  const [triageRunning, setTriageRunning] = useState(false);
-  const [reportBusy, setReportBusy] = useState(false);
-  const [approveOpen, setApproveOpen] = useState(false);
-  const [approving, setApproving] = useState(false);
+
+  const {
+    triageRunning,
+    reportBusy,
+    approveOpen,
+    approving,
+    workflowNotice,
+    setApproveOpen,
+    setWorkflowNotice,
+    handleRunTriage,
+    handleGenerateReport,
+    handleApproveReport
+  } = useCaseWorkflow({ caseId: id, refreshCase });
+
   const [printTarget, setPrintTarget] = useState<string | null>(null);
   const [printReceipt, setPrintReceipt] = useState(false);
-  const [workflowNotice, setWorkflowNotice] = useState<{
-    tone: "success" | "error";
-    title: string;
-    description: string;
-  } | null>(null);
-
-  // Token de carga: invalida o setState de um refresh anterior quando o id troca
-  // (ou um novo refresh começa), evitando exibir dados do caso errado numa corrida.
-  const latestLoad = useRef(0);
-
-  const refreshFinalReports = useCallback(async () => {
-    const token = latestLoad.current;
-    try {
-      const reports = await listFinalReports(id);
-      if (token !== latestLoad.current) return;
-      setFinalReports(reports);
-    } catch (err) {
-      if (token !== latestLoad.current) return;
-      setFinalReportError(errorMessage(err, "Não foi possível carregar relatórios finais."));
-      setFinalReports([]);
-    }
-  }, [id]);
-
-  async function handleFinalReportUpload(event: FormEvent<HTMLInputElement>) {
-    const input = event.currentTarget;
-    const file = input.files?.[0];
-    if (!file) return;
-
-    // Validate MIME / extension
-    const ext = file.name.toLowerCase().split(".").pop() ?? "";
-    const allowedExt = ["pdf", "docx", "doc", "txt"];
-    if (
-      !FINAL_REPORT_ACCEPTED_MIME.includes(file.type) &&
-      !allowedExt.includes(ext)
-    ) {
-      setFinalReportError(
-        "Tipo de arquivo não suportado. Envie PDF, DOCX ou TXT."
-      );
-      input.value = "";
-      return;
-    }
-
-    // Size limit: 25 MB (a generous cap for legal reports)
-    const maxBytes = 25 * 1024 * 1024;
-    if (file.size > maxBytes) {
-      setFinalReportError("Arquivo excede o limite de 25 MB.");
-      input.value = "";
-      return;
-    }
-
-    setFinalReportUploading(true);
-    setFinalReportError("");
-    setFinalReportSuccess("");
-    try {
-      const doc = await uploadFinalReport(id, file);
-      setFinalReports((current) => [doc, ...current]);
-      setFinalReportSuccess(`"${doc.filename}" enviado com sucesso.`);
-    } catch (err) {
-      setFinalReportError(errorMessage(err, "Falha ao enviar o relatório."));
-    } finally {
-      setFinalReportUploading(false);
-      input.value = "";
-    }
-  }
-
-  async function handleFinalReportDownload(documentId: string) {
-    try {
-      const url = await getFinalReportDownloadUrl(documentId);
-      window.open(url, "_blank", "noopener,noreferrer");
-    } catch (err) {
-      setFinalReportError(
-        errorMessage(err, "Não foi possível gerar o link de download.")
-      );
-    }
-  }
-
-  const refreshCase = useCallback(async () => {
-    const token = ++latestLoad.current;
-    setLoading(true);
-    setError("");
-
-    try {
-      const aggregateResult = await getCaseAggregate(id);
-      if (token !== latestLoad.current) return; // id trocou / novo refresh — descarta
-      setCaseAggregate(aggregateResult.data);
-      setCaseData(aggregateResult.data.case);
-      setCaseDocuments(aggregateResult.data.documents);
-      setCaseParties(aggregateResult.data.parties);
-      setAggregateSource(aggregateResult.source);
-      setFallbackReason(
-        aggregateResult.source === "mock" ? aggregateResult.fallbackReason ?? "" : ""
-      );
-      void refreshFinalReports();
-    } catch (err) {
-      if (token !== latestLoad.current) return;
-      setError(errorMessage(err));
-      setFallbackReason("");
-      setCaseAggregate(null);
-      setCaseData(null);
-      setCaseDocuments([]);
-      setCaseParties([]);
-    } finally {
-      if (token === latestLoad.current) setLoading(false);
-    }
-  }, [id, refreshFinalReports]);
-
-  async function handleRunTriage() {
-    if (triageRunning) return;
-    setTriageRunning(true);
-    setWorkflowNotice(null);
-    try {
-      const result = await runCaseTriage(id);
-      await refreshCase();
-      setWorkflowNotice({
-        tone: "success",
-        title: "Triagem executada",
-        description: `${result.modules_executed} módulos processados. Risco estimado: ${result.risk_level}.`
-      });
-    } catch (err) {
-      setWorkflowNotice({
-        tone: "error",
-        title: "Falha na triagem",
-        description: errorMessage(err, "Não foi possível executar a triagem.")
-      });
-    } finally {
-      setTriageRunning(false);
-    }
-  }
-
-  async function handleGenerateReport() {
-    if (reportBusy) return;
-    setReportBusy(true);
-    setWorkflowNotice(null);
-    try {
-      await generateCaseReport(id);
-      await refreshCase();
-      setWorkflowNotice({
-        tone: "success",
-        title: "Relatório gerado",
-        description: "Parecer consolidado a partir das evidências da triagem."
-      });
-    } catch (err) {
-      setWorkflowNotice({
-        tone: "error",
-        title: "Falha ao gerar relatório",
-        description: errorMessage(err, "Não foi possível gerar o relatório.")
-      });
-    } finally {
-      setReportBusy(false);
-    }
-  }
-
-  async function handleApproveReport() {
-    if (approving) return;
-    setApproving(true);
-    setWorkflowNotice(null);
-    try {
-      await reviewCaseReport(id, { status: "approved" });
-      await refreshCase();
-      setApproveOpen(false);
-      setWorkflowNotice({
-        tone: "success",
-        title: "Relatório aprovado",
-        description: "Revisão humana registrada; o caso foi concluído."
-      });
-    } catch (err) {
-      setWorkflowNotice({
-        tone: "error",
-        title: "Falha ao aprovar",
-        description: errorMessage(err, "Não foi possível aprovar o relatório.")
-      });
-    } finally {
-      setApproving(false);
-    }
-  }
-
-  function syncCaseParties(updater: (current: CaseParty[]) => CaseParty[]) {
-    setCaseParties((current) => {
-      const next = updater(current);
-      setCaseData((currentCase) =>
-        currentCase ? { ...currentCase, parties: next } : currentCase
-      );
-      setCaseAggregate((currentAggregate) =>
-        currentAggregate
-          ? {
-              ...currentAggregate,
-              case: { ...currentAggregate.case, parties: next },
-              parties: next.map((party) =>
-                aggregatePartyFromCaseParty(
-                  party,
-                  currentAggregate.case.organizationId ?? ""
-                )
-              ),
-              summary: {
-                ...currentAggregate.summary,
-                partiesCount: next.length
-              }
-            }
-          : currentAggregate
-      );
-      return next;
-    });
-  }
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void refreshCase();
-    }, 0);
-
-    return () => window.clearTimeout(timer);
-  }, [refreshCase]);
 
   // Impressão/PDF: dispara o print e limpa o estado da folha no afterprint (usePrintOnChange).
   usePrintOnChange(printTarget, () => setPrintTarget(null)); // evidências (TriagePrintSheet)

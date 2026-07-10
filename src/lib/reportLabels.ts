@@ -116,7 +116,8 @@ export function reportStatusLabel(report: { status: string } | null): string {
 }
 
 /** Modo de origem dos dados exibidos (api/local/mock/real/...); vazio ou não-string
- *  → "api". Consolidado das cópias idênticas de cases/page e cases/[id] (fe-struct-02).
+ *  → "api". Consolidado das cópias equivalentes de cases/page e cases/[id] (fe-struct-02;
+ *  o fallback de metadata da cópia de cases/page foi hoisted para o call-site).
  *  NÃO confundir com o mapa de TriageModuleCard (3 chaves, default "—"): aquele é
  *  intencionalmente distinto e permanece separado. */
 export function sourceModeLabel(value: unknown): string {
