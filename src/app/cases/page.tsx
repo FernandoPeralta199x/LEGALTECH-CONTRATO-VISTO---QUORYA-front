@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import type { FormEvent } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
@@ -36,8 +36,8 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { formatDate, caseDisplayTitle } from "@/lib/formatters";
 import { errorMessage } from "@/lib/errorMessage";
 import { productLabel } from "@/lib/reportLabels";
-import { createCase, deleteCase, listCasesPaged, updateCase } from "@/services/cases";
-import { listClients } from "@/services/clients";
+import { createCase, deleteCase, updateCase } from "@/services/cases";
+import { useCasesList } from "@/lib/useCasesList";
 import { validateCaseForm, type ValidationErrors } from "@/lib/validation";
 import type { Case, CaseCreate, CaseStatus, CaseUpdate, Client, Priority, ProductType } from "@/types";
 import {
@@ -88,28 +88,47 @@ function sourceModeLabel(legalCase: Case): string {
 }
 
 export default function CasesPage() {
-  const [cases, setCases] = useState<Case[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
-  const [error, setError] = useState("");
-  const [fallbackReason, setFallbackReason] = useState("");
-  const [filter, setFilter] = useState("");
+  // form + modal (page-owned); lista/busca/paginação no hook useCasesList (fe-struct-02)
   const [form, setForm] = useState<CaseForm>(emptyCaseForm);
   const [formErrors, setFormErrors] = useState<ValidationErrors>({});
-  const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
   const [editing, setEditing] = useState<Case | null>(null);
   const [editPriority, setEditPriority] = useState<Priority>("normal");
   const [editStatus, setEditStatus] = useState<CaseStatus>("draft");
   const [editSaving, setEditSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteCandidate, setDeleteCandidate] = useState<Case | null>(null);
+
+  const {
+    cases,
+    setCases,
+    clients,
+    error,
+    setError,
+    fallbackReason,
+    setFallbackReason,
+    filter,
+    setFilter,
+    loading,
+    query,
+    setQuery,
+    page,
+    setPage,
+    total,
+    setTotal,
+    totalPages,
+    successMessage,
+    setSuccessMessage,
+    refreshCases,
+    clearListFilters
+  } = useCasesList({
+    onClientsLoaded: (loadedClients) =>
+      setForm((current) => ({
+        ...current,
+        clientId: current.clientId || loadedClients[0]?.id || ""
+      }))
+  });
 
   function openEdit(legalCase: Case, event: React.MouseEvent) {
     event.preventDefault();
@@ -199,76 +218,11 @@ export default function CasesPage() {
     setDeleteCandidate(null);
   }
 
-  // Sequenciador de requisições: guarda contra respostas obsoletas — fe-ts-01.
-  const latestLoad = useRef(0);
-
-  const refreshCases = useCallback(async () => {
-    const token = ++latestLoad.current;
-    setLoading(true);
-    setError("");
-    setSuccessMessage("");
-
-    try {
-      const clientsResult = await listClients();
-      const casesResult = await listCasesPaged(
-        {
-          q: debouncedQuery || undefined,
-          status: (filter || undefined) as CaseStatus | undefined,
-          page,
-          pageSize: CASES_PAGE_SIZE
-        },
-        clientsResult.data
-      );
-      if (token !== latestLoad.current) return; // uma busca mais nova já saiu
-      setClients(clientsResult.data);
-      setCases(casesResult.data);
-      setTotal(casesResult.total);
-      setTotalPages(casesResult.totalPages);
-      setForm((current) => ({
-        ...current,
-        clientId: current.clientId || clientsResult.data[0]?.id || ""
-      }));
-      setFallbackReason(
-        clientsResult.source === "mock" || casesResult.source === "mock"
-          ? clientsResult.fallbackReason ?? casesResult.fallbackReason ?? ""
-          : ""
-      );
-    } catch (err) {
-      if (token !== latestLoad.current) return;
-      setError(errorMessage(err, "Não foi possível carregar casos."));
-      setFallbackReason("");
-    } finally {
-      if (token === latestLoad.current) setLoading(false);
-    }
-  }, [debouncedQuery, filter, page]);
-
-  useEffect(() => {
-    // defer (setTimeout 0) evita cascade render sincrono dentro do efeito
-    const t = window.setTimeout(() => void refreshCases(), 0);
-    return () => window.clearTimeout(t);
-  }, [refreshCases]);
-
-  // busca server-side com debounce (acha em toda a base, não só na página). Reseta a
-  // página JUNTO com o debounce: assim uma nova busca dispara UM único fetch (page=1),
-  // sem a requisição intermediária com a página antiga (o filtro reseta no próprio onChange).
-  useEffect(() => {
-    const t = window.setTimeout(() => {
-      setDebouncedQuery(query.trim());
-      setPage(1);
-    }, 350);
-    return () => window.clearTimeout(t);
-  }, [query]);
-
   function updateForm<K extends keyof CaseForm>(field: K, value: CaseForm[K]) {
     setForm((current) => ({ ...current, [field]: value }));
     setFormErrors((current) => ({ ...current, [field]: "" }));
     setError("");
     setSuccessMessage("");
-  }
-
-  function clearListFilters() {
-    setFilter("");
-    setQuery("");
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
