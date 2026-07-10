@@ -45,6 +45,7 @@ import {
   runCaseTriage
 } from "@/services/caseWorkflow";
 import { useDevSession } from "@/lib/useDevSession";
+import { usePrintOnChange } from "@/lib/usePrintOnChange";
 import {
   productLabel,
   recommendationLabel,
@@ -361,27 +362,9 @@ export default function CaseDetailPage({ params }: PageProps) {
     return () => window.clearTimeout(timer);
   }, [refreshCase]);
 
-  // Impressão/PDF das evidências: renderiza a folha, dispara o print e limpa no afterprint.
-  useEffect(() => {
-    if (!printTarget) {
-      return;
-    }
-    const done = () => setPrintTarget(null);
-    window.addEventListener("afterprint", done);
-    window.print();
-    return () => window.removeEventListener("afterprint", done);
-  }, [printTarget]);
-
-  // Impressão/PDF do comprovante de pagamento (folha PaymentReceiptSheet).
-  useEffect(() => {
-    if (!printReceipt) {
-      return;
-    }
-    const done = () => setPrintReceipt(false);
-    window.addEventListener("afterprint", done);
-    window.print();
-    return () => window.removeEventListener("afterprint", done);
-  }, [printReceipt]);
+  // Impressão/PDF: dispara o print e limpa o estado da folha no afterprint (usePrintOnChange).
+  usePrintOnChange(printTarget, () => setPrintTarget(null)); // evidências (TriagePrintSheet)
+  usePrintOnChange(printReceipt, () => setPrintReceipt(false)); // comprovante (PaymentReceiptSheet)
 
   if (loading) {
     return (
