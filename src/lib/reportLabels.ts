@@ -114,3 +114,23 @@ export function reportStatusLabel(report: { status: string } | null): string {
 
   return labels[report.status] ?? report.status;
 }
+
+/** Modo de origem dos dados exibidos (api/local/mock/real/...); vazio ou não-string
+ *  → "api". Consolidado das cópias idênticas de cases/page e cases/[id] (fe-struct-02).
+ *  NÃO confundir com o mapa de TriageModuleCard (3 chaves, default "—"): aquele é
+ *  intencionalmente distinto e permanece separado. */
+export function sourceModeLabel(value: unknown): string {
+  if (typeof value !== "string" || !value) {
+    return "api";
+  }
+
+  const labels: Record<string, string> = {
+    hybrid: "híbrido",
+    local: "local",
+    mock: "mock",
+    real: "real",
+    simulated: "simulado"
+  };
+
+  return labels[value] ?? value;
+}

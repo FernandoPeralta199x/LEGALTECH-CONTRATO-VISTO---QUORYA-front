@@ -35,7 +35,7 @@ import { PriorityBadge } from "@/components/PriorityBadge";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatDate, caseDisplayTitle } from "@/lib/formatters";
 import { errorMessage } from "@/lib/errorMessage";
-import { productLabel } from "@/lib/reportLabels";
+import { productLabel, sourceModeLabel } from "@/lib/reportLabels";
 import { createCase, deleteCase, updateCase } from "@/services/cases";
 import { useCasesList } from "@/lib/useCasesList";
 import { validateCaseForm, type ValidationErrors } from "@/lib/validation";
@@ -68,23 +68,6 @@ function reportStatusLabel(legalCase: Case): string {
   };
 
   return labels[reportStatus] ?? reportStatus;
-}
-
-function sourceModeLabel(legalCase: Case): string {
-  const sourceMode = legalCase.sourceMode ?? legalCase.metadata?.sourceMode;
-  if (typeof sourceMode !== "string" || !sourceMode) {
-    return "api";
-  }
-
-  const labels: Record<string, string> = {
-    hybrid: "híbrido",
-    local: "local",
-    mock: "mock",
-    real: "real",
-    simulated: "simulado"
-  };
-
-  return labels[sourceMode] ?? sourceMode;
 }
 
 export default function CasesPage() {
@@ -569,7 +552,7 @@ export default function CasesPage() {
                   {c.code}
                 </p>
                 <p className="mt-1 text-[10px] font-semibold uppercase tracking-normal text-[var(--text3)]">
-                  Origem: {sourceModeLabel(c)}
+                  Origem: {sourceModeLabel(c.sourceMode ?? c.metadata?.sourceMode)}
                 </p>
                 <h2 className="mt-1 line-clamp-2 min-h-10 text-sm font-semibold leading-5 text-[var(--text)]">
                   {caseDisplayTitle(c)}

@@ -49,7 +49,8 @@ import { usePrintOnChange } from "@/lib/usePrintOnChange";
 import {
   productLabel,
   recommendationLabel,
-  riskLabel
+  riskLabel,
+  sourceModeLabel
 } from "@/lib/reportLabels";
 import {
   FINAL_REPORT_ACCEPT_ATTR,
@@ -77,22 +78,6 @@ const TABS = [
 ];
 
 type PageProps = { params: Promise<{ id: string }> };
-
-function sourceModeLabel(value: unknown): string {
-  if (typeof value !== "string" || !value) {
-    return "api";
-  }
-
-  const labels: Record<string, string> = {
-    hybrid: "híbrido",
-    local: "local",
-    mock: "mock",
-    real: "real",
-    simulated: "simulado"
-  };
-
-  return labels[value] ?? value;
-}
 
 export default function CaseDetailPage({ params }: PageProps) {
   const { id } = use(params);
