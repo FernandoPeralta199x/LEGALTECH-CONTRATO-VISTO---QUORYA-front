@@ -280,6 +280,20 @@ export default function ClientsPage() {
                   ? "Edite apenas dados cadastrais. Organização e permissões continuam vindo do JWT/contexto da API local."
                   : "Cadastre um cliente local para organizar partes e iniciar pedidos no MVP local. Organização e permissões continuam vindo do JWT/contexto da API local."}
               </p>
+              {editingClient && (
+                <p className="mt-1 inline-flex items-center gap-1.5 text-[11px] text-[var(--text2)]">
+                  <BriefcaseBusiness aria-hidden="true" size={12} className="shrink-0 text-[var(--text3)]" />
+                  {editingClient.casesCount > 0 ? (
+                    <>
+                      Vinculado a{" "}
+                      <span className="font-mono">{editingClient.casesCount}</span>{" "}
+                      caso{editingClient.casesCount !== 1 ? "s" : ""} na base
+                    </>
+                  ) : (
+                    "Nenhum caso vinculado a este cliente ainda"
+                  )}
+                </p>
+              )}
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <FormField error={formErrors.personType} label="Tipo de pessoa" required>

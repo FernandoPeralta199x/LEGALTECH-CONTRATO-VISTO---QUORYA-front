@@ -412,6 +412,9 @@ export default function CasesPage() {
                     clients.map((client) => (
                       <option key={client.id} value={client.id}>
                         {client.name}
+                        {client.casesCount > 0
+                          ? ` · ${client.casesCount} caso${client.casesCount !== 1 ? "s" : ""}`
+                          : ""}
                       </option>
                     ))
                   )}
