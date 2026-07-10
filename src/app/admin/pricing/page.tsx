@@ -37,8 +37,7 @@ import {
 } from "@/services/pricing";
 import { errorMessage } from "@/lib/errorMessage";
 import { METHOD_ORDER } from "@/lib/paymentMethods";
-
-const TOAST_MS = 4000;
+import { useToast } from "@/lib/useToast";
 
 type Status = "idle" | "loading" | "saving" | "success" | "error";
 
@@ -55,20 +54,6 @@ const SECTIONS = [
 // Altura do header fixo do app (h-16 = 64px). A linha do scroll-spy e o alvo do
 // goToSection somam a altura REAL da barra fixa (barRef) a esta base — fonte única.
 const HEADER_OFFSET = 64;
-
-function useToast() {
-  const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(
-    null
-  );
-
-  useEffect(() => {
-    if (!message) return;
-    const t = setTimeout(() => setMessage(null), TOAST_MS);
-    return () => clearTimeout(t);
-  }, [message]);
-
-  return { message, setMessage };
-}
 
 export default function AdminPricingPage() {
   const router = useRouter();
