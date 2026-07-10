@@ -1,3 +1,5 @@
+import { productLabel } from "@/lib/reportLabels";
+
 export function formatCurrency(value: number): string {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -32,17 +34,6 @@ export function formatBytes(bytes: number): string {
   return formatSizeUnit(bytes / (1024 * 1024), "MB");
 }
 
-const caseTypeLabel: Record<string, string> = {
-  compra_venda: "Compra e Venda",
-  confidencialidade: "Confidencialidade (NDA)",
-  contract_analysis: "Análise Contratual",
-  due_diligence: "Due Diligence",
-  locacao: "Locação",
-  outro: "Outro",
-  parceria: "Parceria",
-  prestacao_servicos: "Prestação de Serviços"
-};
-
 export function caseDisplayTitle(legalCase: { title?: string | null; metadata?: { title?: unknown }; caseType: string }): string {
   if (legalCase.title?.trim()) {
     return legalCase.title.trim();
@@ -51,5 +42,5 @@ export function caseDisplayTitle(legalCase: { title?: string | null; metadata?: 
   const title = legalCase.metadata?.title;
   return typeof title === "string" && title.trim()
     ? title.trim()
-    : caseTypeLabel[legalCase.caseType] ?? legalCase.caseType;
+    : productLabel(legalCase.caseType);
 }

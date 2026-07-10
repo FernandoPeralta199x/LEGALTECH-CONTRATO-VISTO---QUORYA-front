@@ -1,3 +1,6 @@
+import type { ContractType } from "@/types";
+import { PRODUTOS, type Produto } from "@/lib/produtoConfig";
+
 /** Rótulos humanos para os enums exibidos na UI (recomendação, risco, triagem,
  *  produto). Centralizado para não vazar valor bruto (ex.: "unknown", "pending",
  *  "dados_partes") nas telas de Casos, Analista e Relatórios. */
@@ -54,28 +57,42 @@ export function triageStatusLabel(value: unknown): string {
   return labels[value] ?? value;
 }
 
-/** Rótulo do produto jurídico (código do wizard/backend → nome legível). */
+/** Rótulos dos tipos de contrato (ContractType) que NÃO são produtos do catálogo.
+ *  Fonte canônica TIPADA dos labels de contrato (fe-struct-04). */
+export const CONTRACT_TYPE_LABELS: Record<ContractType, string> = {
+  compra_venda: "Compra e Venda",
+  prestacao_servicos: "Prestação de Serviços",
+  locacao: "Locação",
+  parceria: "Parceria",
+  confidencialidade: "Confidencialidade (NDA)",
+  due_diligence: "Due Diligence",
+  outro: "Outro"
+};
+
+// Aliases legados do backend → chave canônica de PRODUTO (ex.: contract_analysis é o
+// mesmo produto que analise_contratual). Mapeamento SÓ de exibição — não altera nenhum
+// valor técnico/enviado ao backend.
+const PRODUCT_ALIASES: Record<string, Produto> = {
+  contract_analysis: "analise_contratual"
+};
+
+/** Rótulo do produto jurídico / tipo de contrato (código → nome legível). Resolver
+ *  ÚNICO e canônico (fe-struct-04): normaliza alias → PRODUTOS (mesma fonte que o
+ *  backend PRODUCTS.title) → CONTRACT_TYPE_LABELS → valor bruto. Consolida os antigos
+ *  mapas divergentes de produtoConfig/formatters/reportLabels/caseFormOptions. */
 export function productLabel(value: unknown): string {
   if (typeof value !== "string" || !value) {
     return "Não informado";
   }
 
-  const labels: Record<string, string> = {
-    analise_contratual: "Análise Contratual",
-    compra_venda: "Compra e Venda",
-    confidencialidade: "Confidencialidade (NDA)",
-    consulta_objeto: "Consulta do Objeto",
-    contract_analysis: "Análise Contratual",
-    dados_partes: "Dados das Partes",
-    due_diligence: "Due Diligence",
-    locacao: "Locação",
-    outro: "Outro",
-    parceria: "Parceria",
-    prestacao_servicos: "Prestação de Serviços",
-    reuniao_equipe: "Reunião com Equipe"
-  };
-
-  return labels[value] ?? value;
+  const produtoKey = PRODUCT_ALIASES[value] ?? value;
+  if (produtoKey in PRODUTOS) {
+    return PRODUTOS[produtoKey as Produto].titulo;
+  }
+  if (value in CONTRACT_TYPE_LABELS) {
+    return CONTRACT_TYPE_LABELS[value as ContractType];
+  }
+  return value;
 }
 
 /** Status do relatório do caso; null → "Não gerado". Assinatura estrutural para
