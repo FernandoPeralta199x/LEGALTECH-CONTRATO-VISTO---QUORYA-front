@@ -27,6 +27,14 @@ import { caseDisplayTitle } from "@/lib/formatters";
 import { errorMessage } from "@/lib/errorMessage";
 import { ApiClientError } from "@/services/apiClient";
 import { createCasePayment, getCaseAggregate } from "@/services/cases";
+import {
+  createPixCharge,
+  getPixStatus,
+  simulatePixPaid,
+  type PixCharge,
+  type PixChargeStatus
+} from "@/services/pix";
+import { PixChargePanel } from "@/components/cases/payment/PixChargePanel";
 import { tokenizeCard, type RawCard } from "@/services/payment/tokenize";
 import {
   type InstallmentOption,
@@ -96,6 +104,9 @@ export default function CasePaymentPage({ params }: PageProps) {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [conflict, setConflict] = useState(false);
+  const [pixCharge, setPixCharge] = useState<PixCharge | null>(null);
+  const [pixStatus, setPixStatus] = useState<PixChargeStatus | null>(null);
+  const [pixSimulating, setPixSimulating] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -142,6 +153,27 @@ export default function CasePaymentPage({ params }: PageProps) {
     return () => window.clearTimeout(timer);
   }, [load]);
 
+  // Polling do status da cobrança Pix (backend-autoritativo): enquanto PENDING_PAYMENT,
+  // consulta a cada 4s. A confirmação NUNCA parte do cliente — só reflete o que o backend
+  // gravou (via webhook). Para quando sai de PENDING (PAID/expirado/etc.).
+  useEffect(() => {
+    if (!pixCharge || pixStatus !== "PENDING_PAYMENT") return;
+    let cancelled = false;
+    const interval = window.setInterval(() => {
+      void getPixStatus(id)
+        .then((st) => {
+          if (!cancelled && st.status) setPixStatus(st.status);
+        })
+        .catch(() => {
+          // silencioso: a próxima tentativa pega; polling não deve piscar erro na tela
+        });
+    }, 4000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [id, pixCharge, pixStatus]);
+
   const options = estimate?.installment_options ?? [];
   const selectedOption =
     options.find((option) => option.parcelas === selectedParcelas) ?? null;
@@ -176,6 +208,44 @@ export default function CasePaymentPage({ params }: PageProps) {
         );
       }
       setSubmitting(false);
+    }
+  }
+
+  async function handleGeneratePix() {
+    if (submitting || pixCharge) return;
+    setSubmitting(true);
+    setSubmitError("");
+    setConflict(false);
+    try {
+      const charge = await createPixCharge(id, idempotencyKey);
+      setPixCharge(charge);
+      setPixStatus(charge.status);
+    } catch (err) {
+      if (err instanceof ApiClientError && err.status === 409) {
+        setConflict(true);
+      } else {
+        setSubmitError(
+          errorMessage(err, "Não foi possível gerar a cobrança Pix.")
+        );
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  // Dev-only (mock): dispara o webhook assinado do mock. A confirmação ainda vem do
+  // backend — o polling reflete o PAID que o webhook gravou (o cliente não confirma).
+  async function handleSimulatePix() {
+    if (pixSimulating) return;
+    setPixSimulating(true);
+    try {
+      await simulatePixPaid(id);
+      const st = await getPixStatus(id);
+      setPixStatus(st.status);
+    } catch (err) {
+      setSubmitError(errorMessage(err, "Não foi possível simular o pagamento."));
+    } finally {
+      setPixSimulating(false);
     }
   }
 
@@ -391,7 +461,22 @@ export default function CasePaymentPage({ params }: PageProps) {
                 </Notification>
               )}
 
-              {!estimate || options.length === 0 ? (
+              {pixCharge ? (
+                <PixChargePanel
+                  amountCents={estimate?.total_price_cents ?? 0}
+                  charge={pixCharge}
+                  isMock={estimate?.payment_mode === "mock"}
+                  onBack={() => router.push(`/cases/${id}`)}
+                  onSimulate={
+                    estimate?.payment_mode === "mock"
+                      ? () => void handleSimulatePix()
+                      : undefined
+                  }
+                  orderCode={caseData.code}
+                  simulating={pixSimulating}
+                  status={pixStatus ?? pixCharge.status}
+                />
+              ) : !estimate || options.length === 0 ? (
                 <ErrorState
                   action={
                     <Button onClick={() => void load()} variant="secondary">
@@ -575,9 +660,19 @@ export default function CasePaymentPage({ params }: PageProps) {
                         disabled={!selectedOption || !method || submitting}
                         icon={<CheckCircle2 aria-hidden="true" size={16} />}
                         loading={submitting}
-                        onClick={() => void handleConfirm()}
+                        onClick={() =>
+                          method === "pix"
+                            ? void handleGeneratePix()
+                            : void handleConfirm()
+                        }
                       >
-                        {submitting ? "Registrando..." : "Confirmar pagamento"}
+                        {submitting
+                          ? method === "pix"
+                            ? "Gerando cobrança..."
+                            : "Registrando..."
+                          : method === "pix"
+                            ? "Gerar cobrança Pix"
+                            : "Confirmar pagamento"}
                       </Button>
                       {estimate.payment_mode === "mock" && (
                         <p className="text-[11px] text-[var(--text3)]">
