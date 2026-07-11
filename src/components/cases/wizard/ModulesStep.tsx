@@ -3,6 +3,7 @@
 import { useCallback, useMemo } from "react";
 
 import {
+  usePricingCatalog,
   usePricingLookup,
   usePricingMatrix,
 } from "@/components/pricing/PricingCatalogContext";
@@ -30,6 +31,7 @@ export function ModulesStep({ produto, state, onChange }: ModulesStepProps) {
   const modulos = useMemo(() => Object.keys(matriz) as Modulo[], [matriz]);
   const { products, modules } = usePricingLookup();
   const matrix = usePricingMatrix();
+  const { isLoading: catalogLoading, error: catalogError } = usePricingCatalog();
 
   const isRequired = useCallback(
     (modulo: Modulo): boolean => {
@@ -77,6 +79,15 @@ export function ModulesStep({ produto, state, onChange }: ModulesStepProps) {
 
   const prazo = useMemo(() => estimarPrazoHoras(produto, ativos), [produto, ativos]);
 
+  // Distingue "carregando" de "falhou": durante o load NÃO alarma (evita "indisponível" no
+  // carregamento normal); sinaliza só quando o catálogo realmente falhou (estimativa pode
+  // divergir do cobrado) ou quando parte dos itens caiu no fallback local após o load concluir.
+  const estimateNotice = catalogError
+    ? "Catálogo de preços indisponível — os valores são estimativas locais e podem divergir do que será cobrado."
+    : !catalogLoading && usesLocalFallback
+      ? "Catálogo do servidor indisponível para parte dos itens."
+      : null;
+
   function toggle(modulo: Modulo, value: boolean) {
     onChange({ ...state, [modulo]: value });
   }
@@ -107,7 +118,7 @@ export function ModulesStep({ produto, state, onChange }: ModulesStepProps) {
       </div>
 
       <EstimateCard
-        error={usesLocalFallback ? "Catálogo do servidor indisponível para parte dos itens." : null}
+        error={estimateNotice}
         prazoHoras={prazo}
         valorCents={valor}
       />

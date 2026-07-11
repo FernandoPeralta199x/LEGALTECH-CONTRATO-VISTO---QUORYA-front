@@ -262,6 +262,12 @@ export default function AdminPricingPage() {
     !!installmentConfig?.enabled &&
     !installmentConfig.allowed_methods.cartao?.enabled;
 
+  // "Definir nº" exige um inteiro >= 1. Campo vazio/inválido NÃO pode salvar
+  // silenciosamente como ilimitado (bug: o cases_limit sumia sem o admin perceber).
+  const casesLimitInvalid =
+    !unlimitedCases &&
+    (casesLimit === null || !Number.isInteger(casesLimit) || casesLimit < 1);
+
   const handleReset = () => {
     if (!config) return;
     setEditingModule(null);
@@ -278,6 +284,13 @@ export default function AdminPricingPage() {
   };
 
   const handleSave = async () => {
+    if (casesLimitInvalid) {
+      setMessage({
+        text: 'Defina um limite de casos válido (inteiro ≥ 1) ou selecione "Ilimitado".',
+        type: "error",
+      });
+      return;
+    }
     setStatus("saving");
     setMessage(null);
     try {
@@ -308,8 +321,14 @@ export default function AdminPricingPage() {
       });
       setStatus("idle");
 
-      const lim = await checkCasesLimit();
-      setLimitCheck(lim);
+      // Atualização do limite pós-save é best-effort: uma falha AQUI não pode rebaixar o
+      // sucesso do save (senão o admin acha que falhou, repete o PUT e bumpa a versão de novo).
+      try {
+        const lim = await checkCasesLimit();
+        setLimitCheck(lim);
+      } catch {
+        // silencioso: o save já foi confirmado acima (mensagem de sucesso + status idle).
+      }
     } catch (err) {
       setMessage({
         text: errorMessage(err, "Erro ao salvar."),
@@ -332,7 +351,7 @@ export default function AdminPricingPage() {
 
   const isLoading = status === "loading";
   const isSaving = status === "saving";
-  const canSave = hasChanges && !noMethodEnabled;
+  const canSave = hasChanges && !noMethodEnabled && !casesLimitInvalid;
 
   return (
     <AuthGuard>
@@ -400,6 +419,13 @@ export default function AdminPricingPage() {
                     onUnlimitedChange={setUnlimitedCases}
                     onCasesLimitChange={setCasesLimit}
                   />
+                  {casesLimitInvalid && (
+                    <Notification tone="error" title="Defina o limite de casos">
+                      Você escolheu “Definir nº”, mas o campo está vazio ou inválido. Informe um
+                      número inteiro maior ou igual a 1 — ou volte para “Ilimitado”. Não é
+                      possível salvar nesta condição.
+                    </Notification>
+                  )}
 
                   {/* Preços de Módulos */}
                   {catalog && (
