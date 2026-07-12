@@ -99,7 +99,6 @@ fallback mock é desligado e a sessão não persiste PII (fail-closed).
 /admin           Governança (atalhos + referência de papéis)
 /admin/pricing   Configuração de pricing
 /settings        Configurações locais (organização, segurança, tema)
-/verify-email    Confirmação de e-mail (simulada localmente)
 ```
 
 Rotas internas usam uma guarda local (`AuthGuard`): sem sessão salva, redireciona para `/login`.
@@ -117,7 +116,7 @@ notificações deriva de casos (triagem concluída, relatório gerado) e documen
 components/            componentes de UI (AppLayout, Header, Card, Button, AuthGuard, ...)
   cases/wizard/        wizard do Novo Pedido (PartyForm, ContractStep, ModulesStep, ...)
 src/app/               rotas (App Router): dashboard, cases, documents, clients, reports,
-                       analyst, admin, settings, login, verify-email
+                       analyst, admin, settings, login
 src/services/          camada de API (apiClient, cases, clients, documents, reports, authApi, ...)
 src/lib/               authStorage, useDevSession, validation, cpfCnpj, clientForm, runtimeEnv
 types/                 contratos compartilhados (api.ts, domain.ts, index.ts)
