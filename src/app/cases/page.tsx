@@ -38,6 +38,7 @@ import { errorMessage } from "@/lib/errorMessage";
 import { productLabel } from "@/lib/reportLabels";
 import { createCase, deleteCase, updateCase } from "@/services/cases";
 import { useCasesList } from "@/lib/useCasesList";
+import { useModalA11y } from "@/lib/useModalA11y";
 import { validateCaseForm, type ValidationErrors } from "@/lib/validation";
 import type { Case, CaseCreate, CaseStatus, CaseUpdate, Client, Priority, ProductType } from "@/types";
 import {
@@ -144,6 +145,9 @@ export default function CasesPage() {
     setEditing(null);
     setEditSaving(false);
   }
+
+  // Foco/ESC/trap do modal "Editar caso" (A11Y-02) — mesmo padrão do ConfirmDialog.
+  const editDialogRef = useModalA11y<HTMLDivElement>(Boolean(editing), closeEdit);
 
   async function handleEditSave() {
     if (!editing || editSaving) return;
@@ -662,6 +666,7 @@ export default function CasesPage() {
             aria-labelledby="edit-case-title"
             aria-modal="true"
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            ref={editDialogRef}
             role="dialog"
           >
             <div className="cv-card w-full max-w-md p-6">

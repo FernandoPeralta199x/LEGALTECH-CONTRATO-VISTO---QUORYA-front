@@ -48,13 +48,31 @@ export function FormField({
   // ex.: input + botão). Para um único filho-elemento sem id, injeta o id gerado.
   const onlyChild =
     Children.count(children) === 1 ? (Children.toArray(children)[0] as ReactNode) : null;
-  const childElement = isValidElement(onlyChild) ? (onlyChild as ReactElement<{ id?: string }>) : null;
+  const childElement = isValidElement(onlyChild)
+    ? (onlyChild as ReactElement<{ id?: string; "aria-describedby"?: string }>)
+    : null;
   const controlId = htmlFor ?? childElement?.props.id ?? generatedId;
-  const content =
-    childElement && !childElement.props.id && !htmlFor
-      ? cloneElement(childElement, { id: controlId })
-      : children;
   const describedById = error || hint ? `${controlId}-desc` : undefined;
+
+  // Clona o filho para (a) injetar o id gerado quando ele não tem um e não há
+  // htmlFor e (b) ligar aria-describedby ao parágrafo de erro/dica, para que
+  // leitores de tela anunciem a mensagem junto do controle (A11Y-01). Preserva
+  // um aria-describedby já existente no filho.
+  const content = childElement
+    ? cloneElement(childElement, {
+        ...(childElement.props.id || htmlFor ? {} : { id: controlId }),
+        ...(describedById
+          ? {
+              "aria-describedby": [
+                childElement.props["aria-describedby"],
+                describedById
+              ]
+                .filter(Boolean)
+                .join(" ")
+            }
+          : {})
+      })
+    : children;
 
   return (
     <div className="block">

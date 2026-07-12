@@ -144,6 +144,60 @@ function normalizeApiError(error: ApiError | undefined, status: number): ApiErro
   };
 }
 
+/** Detecta o envelope de erro DO APP: `{error:"..."}` do `error_response` ou o
+ *  envelope estruturado `{success:false, error:{...}}`. O authorizer do API
+ *  Gateway, ao negar um token, responde 403 com corpo PRÓPRIO (`{message:"..."}`)
+ *  — que não é o envelope do app. Essa distinção separa falha de AUTENTICAÇÃO
+ *  (token ruim → limpar sessão) de falha de AUTORIZAÇÃO (papel insuficiente →
+ *  manter sessão). */
+function isAppErrorEnvelope(payload: unknown): boolean {
+  if (typeof payload !== "object" || payload === null) {
+    return false;
+  }
+  const record = payload as Record<string, unknown>;
+  if (record.success === false) {
+    return true;
+  }
+  if (typeof record.error === "string") {
+    return true;
+  }
+  return typeof record.error === "object" && record.error !== null;
+}
+
+/** Extrai o `ApiError` preservando a mensagem real do backend (C3-01). O backend
+ *  serverless devolve `{error:"<mensagem>"}` — antes descartada em favor de um
+ *  genérico "Erro HTTP {status}". Retorna `undefined` quando não há mensagem
+ *  utilizável, deixando `normalizeApiError` aplicar o fallback genérico. */
+function extractApiError(
+  payload: unknown,
+  hasSuccessField: boolean
+): ApiError | undefined {
+  const record = (payload ?? {}) as Record<string, unknown>;
+  if (hasSuccessField) {
+    const structured = (payload as ApiErrorResponse).error;
+    if (structured && typeof structured === "object") {
+      return structured;
+    }
+  }
+  if (typeof record.error === "string" && record.error.trim().length > 0) {
+    return { code: "HTTP_ERROR", message: record.error, details: {} };
+  }
+  return undefined;
+}
+
+/** Falha que invalida a sessão do usuário: 401 sempre; 403 apenas quando NÃO é
+ *  o envelope do app (i.e., o authorizer do API Gateway negou o token). Um 403
+ *  de negócio (papel insuficiente) chega no envelope do app e mantém a sessão. */
+function isAuthenticationFailure(status: number, payload: unknown): boolean {
+  if (status === 401) {
+    return true;
+  }
+  if (status === 403) {
+    return !isAppErrorEnvelope(payload);
+  }
+  return false;
+}
+
 function isSourceMode(value: unknown): value is SourceMode {
   return (
     typeof value === "string" &&
@@ -270,18 +324,15 @@ export async function apiRequest<T>(
   const rawData = (payload as { data?: T }).data;
 
   if (!response.ok || (hasSuccessField && !(payload as ApiResponse<T>).success)) {
-    const error = hasSuccessField
-      ? (payload as ApiErrorResponse).error
-      : {
-          code: "HTTP_ERROR",
-          message: `Erro HTTP ${response.status}.`,
-          details: {}
-        };
+    const error = extractApiError(payload, hasSuccessField);
 
-    // Sessão expirada/revogada no servidor: limpa a sessão local para o AuthGuard
-    // redirecionar ao login (fe-err-01). Só quando havia token (não em falha de
-    // login). clearStoredSession é no-op fora do browser (SSR/testes).
-    if (response.status === 401 && bearerToken) {
+    // Sessão inválida no servidor: limpa a sessão local para o AuthGuard
+    // redirecionar ao login. Dispara em 401 (com token) e em 403 de
+    // AUTENTICAÇÃO — em produção o authorizer do API Gateway nega token ruim/
+    // expirado com 403 e corpo próprio, sem o envelope do app (C3-02). NÃO
+    // dispara em 403 de AUTORIZAÇÃO (papel insuficiente), preservando a sessão
+    // de um usuário válido. clearStoredSession é no-op fora do browser (SSR/testes).
+    if (bearerToken && isAuthenticationFailure(response.status, payload)) {
       clearStoredSession();
     }
 

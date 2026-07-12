@@ -32,16 +32,10 @@ import {
   type InstallmentOption,
   type PricingEstimate
 } from "@/services/pricing";
+import { isCardMethod, isPaymentMethod, METHOD_LABELS } from "@/lib/paymentMethods";
 import type { CaseAggregate, PaymentMethod } from "@/types";
 
 type PageProps = { params: Promise<{ id: string }> };
-
-const METHOD_LABELS: Record<PaymentMethod, string> = {
-  pix: "Pix",
-  boleto: "Boleto",
-  cartao: "Cartão de crédito",
-  debito: "Cartão de débito"
-};
 
 const PAYMENT_STATUS_LABELS: Record<string, string> = {
   pending: "Pendente",
@@ -52,20 +46,6 @@ const PAYMENT_STATUS_LABELS: Record<string, string> = {
   expired: "Expirado",
   refunded: "Reembolsado"
 };
-
-function isPaymentMethod(value: string): value is PaymentMethod {
-  return (
-    value === "pix" ||
-    value === "boleto" ||
-    value === "cartao" ||
-    value === "debito"
-  );
-}
-
-/** Débito é um cartão: reusa o formulário de cartão e a mesma tokenização. */
-function isCardMethod(value: PaymentMethod | null): value is "cartao" | "debito" {
-  return value === "cartao" || value === "debito";
-}
 
 /** Formata "AAAA-MM-DD" como dd/mm/aaaa sem passar por Date (evita shift de fuso). */
 function formatDueDate(isoDate: string): string {

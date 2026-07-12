@@ -1,7 +1,7 @@
 "use client";
 
 import { FileText, Lock, Sparkles, Upload, X } from "lucide-react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/cn";
 
@@ -23,11 +23,23 @@ type ContractDropzoneProps = {
 
 export function ContractDropzone({ file, onChange }: ContractDropzoneProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const cleanupRef = useRef<(() => void) | null>(null);
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Cancela os timers da simulação em voo — na troca de arquivo e no unmount —
+  // evitando setState após desmontar (ex.: fechar o Wizard no meio) e que timers
+  // antigos sobrescrevam o estado de um novo arquivo (PERF-01).
+  const cancelPipeline = useCallback(() => {
+    cleanupRef.current?.();
+    cleanupRef.current = null;
+  }, []);
+
+  useEffect(() => cancelPipeline, [cancelPipeline]);
+
   const startMockPipeline = useCallback(
     (next: WizardFile) => {
+      cancelPipeline();
       onChange({ ...next, status: "uploading", progress: 25 });
       const step1 = setTimeout(() => {
         onChange({ ...next, status: "uploading", progress: 70 });
@@ -38,13 +50,13 @@ export function ContractDropzone({ file, onChange }: ContractDropzoneProps) {
       const step3 = setTimeout(() => {
         onChange({ ...next, status: "done", progress: 100 });
       }, 1700);
-      return () => {
+      cleanupRef.current = () => {
         clearTimeout(step1);
         clearTimeout(step2);
         clearTimeout(step3);
       };
     },
-    [onChange]
+    [cancelPipeline, onChange]
   );
 
   function handleFile(picked: File | null) {
@@ -69,6 +81,7 @@ export function ContractDropzone({ file, onChange }: ContractDropzoneProps) {
       <FilePreview
         file={file}
         onRemove={() => {
+          cancelPipeline();
           onChange(null);
           if (inputRef.current) inputRef.current.value = "";
         }}

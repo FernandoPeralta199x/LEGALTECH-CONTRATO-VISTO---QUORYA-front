@@ -6,14 +6,8 @@ import { useState } from "react";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { centsToReaisLabel } from "@/components/CurrencyInput";
+import { isCardMethod, methodLabel } from "@/lib/paymentMethods";
 import type { InstallmentPlan } from "@/types";
-
-const paymentMethodLabel: Record<string, string> = {
-  boleto: "Boleto",
-  cartao: "Cartão de crédito",
-  debito: "Cartão de débito",
-  pix: "Pix"
-};
 
 const paymentStatusLabel: Record<string, string> = {
   canceled: "Cancelado",
@@ -86,9 +80,7 @@ export function CasePaymentCard({
               },
               {
                 label: "Método",
-                value:
-                  paymentMethodLabel[installmentPlan.method] ??
-                  installmentPlan.method
+                value: methodLabel(installmentPlan.method)
               },
               {
                 label: "Status",
@@ -175,10 +167,8 @@ export function CasePaymentCard({
                 <div className="flex justify-between gap-4">
                   <dt className="text-[var(--text3)]">Método</dt>
                   <dd className="text-right font-medium text-[var(--text)]">
-                    {paymentMethodLabel[installmentPlan.method] ??
-                      installmentPlan.method}
-                    {(installmentPlan.method === "cartao" ||
-                      installmentPlan.method === "debito") &&
+                    {methodLabel(installmentPlan.method)}
+                    {isCardMethod(installmentPlan.method) &&
                     installmentPlan.payment?.last4
                       ? ` · ${
                           installmentPlan.payment.brand
