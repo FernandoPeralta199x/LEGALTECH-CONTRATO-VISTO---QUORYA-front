@@ -29,6 +29,10 @@ type NavItem = {
   icon: LucideIcon;
   /** Visível apenas para o papel admin. */
   adminOnly?: boolean;
+  /** Se informado, visível apenas para estes papéis — deve espelhar o
+   *  allowedRoles do AuthGuard da rota, para não exibir link que leva a "Sem
+   *  permissão" (INV-01). */
+  roles?: readonly string[];
 };
 type NavGroup = { label: string; items: NavItem[] };
 
@@ -45,7 +49,7 @@ const navGroups: NavGroup[] = [
       { href: "/cases/new", label: "Novo Pedido", icon: Plus },
       { href: "/cases",     label: "Casos",       icon: BriefcaseBusiness },
       { href: "/documents", label: "Documentos",  icon: Upload },
-      { href: "/analyst",   label: "Analista",    icon: ClipboardCheck },
+      { href: "/analyst",   label: "Analista",    icon: ClipboardCheck, roles: ["admin", "analyst"] },
       { href: "/reports",   label: "Relatórios",  icon: FileText }
     ]
   },
@@ -64,13 +68,18 @@ const navGroups: NavGroup[] = [
   }
 ];
 
-/** Grupos visíveis para o papel: itens adminOnly só aparecem para admin.
+/** Grupos visíveis para o papel: itens adminOnly só aparecem para admin e itens
+ *  com `roles` só para os papéis listados (espelham o gate da rota).
  *  (Filtro de UX — a segurança real é o backend, via require_role/require_writer.) */
 function visibleNavGroups(role: string | undefined): NavGroup[] {
   return navGroups
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => !item.adminOnly || role === "admin")
+      items: group.items.filter(
+        (item) =>
+          (!item.adminOnly || role === "admin") &&
+          (!item.roles || (role !== undefined && item.roles.includes(role)))
+      )
     }))
     .filter((group) => group.items.length > 0);
 }
