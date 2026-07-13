@@ -327,31 +327,34 @@ export default function CaseDetailPage({ params }: PageProps) {
   }
 
   function syncCaseParties(updater: (current: CaseParty[]) => CaseParty[]) {
-    setCaseParties((current) => {
-      const next = updater(current);
-      setCaseData((currentCase) =>
-        currentCase ? { ...currentCase, parties: next } : currentCase
-      );
-      setCaseAggregate((currentAggregate) =>
-        currentAggregate
-          ? {
-              ...currentAggregate,
-              case: { ...currentAggregate.case, parties: next },
-              parties: next.map((party) =>
-                aggregatePartyFromCaseParty(
-                  party,
-                  currentAggregate.case.organizationId ?? ""
-                )
-              ),
-              summary: {
-                ...currentAggregate.summary,
-                partiesCount: next.length
-              }
+    // M16: updater PURO. Antes, setCaseData/setCaseAggregate eram chamados DENTRO do
+    // updater de setCaseParties — em React StrictMode o updater é invocado 2x (para
+    // detectar impureza), disparando os setState aninhados em duplicidade. Agora
+    // calculamos `next` do valor atual e disparamos os três setState no nível do
+    // handler; cada um continua com um updater próprio e puro.
+    const next = updater(caseParties);
+    setCaseParties(next);
+    setCaseData((currentCase) =>
+      currentCase ? { ...currentCase, parties: next } : currentCase
+    );
+    setCaseAggregate((currentAggregate) =>
+      currentAggregate
+        ? {
+            ...currentAggregate,
+            case: { ...currentAggregate.case, parties: next },
+            parties: next.map((party) =>
+              aggregatePartyFromCaseParty(
+                party,
+                currentAggregate.case.organizationId ?? ""
+              )
+            ),
+            summary: {
+              ...currentAggregate.summary,
+              partiesCount: next.length
             }
-          : currentAggregate
-      );
-      return next;
-    });
+          }
+        : currentAggregate
+    );
   }
 
   useEffect(() => {
@@ -540,29 +543,58 @@ export default function CaseDetailPage({ params }: PageProps) {
           </dl>
         </div>
 
-        {/* Tabs */}
-        <div className="mb-6 flex overflow-x-auto border-b border-[var(--bd)]">
+        {/* Tabs (padrão ARIA Tabs — A11Y-05) */}
+        <div
+          aria-label="Seções do caso"
+          className="mb-6 flex overflow-x-auto border-b border-[var(--bd)]"
+          onKeyDown={(event) => {
+            const i = TABS.findIndex((t) => t.id === activeTab);
+            let nextIndex: number;
+            if (event.key === "ArrowRight") nextIndex = (i + 1) % TABS.length;
+            else if (event.key === "ArrowLeft")
+              nextIndex = (i - 1 + TABS.length) % TABS.length;
+            else if (event.key === "Home") nextIndex = 0;
+            else if (event.key === "End") nextIndex = TABS.length - 1;
+            else return;
+            event.preventDefault();
+            const next = TABS[nextIndex];
+            setActiveTab(next.id);
+            document.getElementById(`tab-${next.id}`)?.focus();
+          }}
+          role="tablist"
+        >
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;
             return (
               <button
-                className={`flex items-center gap-2 whitespace-nowrap border-b-2 px-4 py-3 text-xs font-medium transition ${
+                aria-controls={active ? `panel-${tab.id}` : undefined}
+                aria-selected={active}
+                className={`flex items-center gap-2 whitespace-nowrap border-b-2 px-4 py-3 text-xs transition ${
                   active
-                    ? "border-[var(--teal)] text-[var(--teal)]"
-                    : "border-transparent text-[var(--text2)] hover:text-[var(--text)]"
+                    ? "border-[var(--teal)] font-semibold text-[var(--teal)]"
+                    : "border-transparent font-medium text-[var(--text2)] hover:text-[var(--text)]"
                 }`}
+                id={`tab-${tab.id}`}
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
+                role="tab"
+                tabIndex={active ? 0 : -1}
                 type="button"
               >
-                <Icon size={14} />
+                <Icon aria-hidden="true" size={14} />
                 {tab.label}
               </button>
             );
           })}
         </div>
 
+        <div
+          aria-labelledby={`tab-${activeTab}`}
+          id={`panel-${activeTab}`}
+          role="tabpanel"
+          tabIndex={0}
+        >
         {/* Tab: Overview */}
         {activeTab === "overview" && (
           <CaseOverviewTab
@@ -696,6 +728,7 @@ export default function CaseDetailPage({ params }: PageProps) {
             }}
           />
         )}
+        </div>
         <TriagePrintSheet
           caseCode={caseData.code}
           caseTitle={caseDisplayTitle(caseData)}
