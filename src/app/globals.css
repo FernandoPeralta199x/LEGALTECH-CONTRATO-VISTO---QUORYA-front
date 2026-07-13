@@ -531,6 +531,27 @@ textarea:-webkit-autofill:focus {
     color: var(--text2);
   }
 
+  /* Skip link (A11Y-07): fora da tela até receber foco por teclado. */
+  .cv-skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 100;
+    border-radius: var(--r-sm);
+  }
+  .cv-skip-link:focus {
+    left: 1rem;
+    top: 1rem;
+    padding: 0.5rem 1rem;
+    background: var(--surf);
+    color: var(--text);
+    font-size: 0.875rem;
+    font-weight: 600;
+    box-shadow: var(--sh-card);
+    outline: 2px solid var(--teal);
+    outline-offset: 2px;
+  }
+
   .cv-login-shell {
     min-height: 100dvh;
     padding:
