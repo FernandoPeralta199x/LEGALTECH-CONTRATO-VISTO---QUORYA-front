@@ -130,6 +130,7 @@ export function Header({ onMenuClick }: HeaderProps) {
             size={15}
           />
           <input
+            aria-label="Buscar casos e clientes"
             autoFocus={searchOpen}
             className={cn(
               "cv-input min-h-11 w-full pl-9 pr-3 text-sm",

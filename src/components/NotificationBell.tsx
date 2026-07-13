@@ -98,6 +98,7 @@ export function NotificationBell() {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
   const ref = useRef<HTMLDivElement>(null);
+  const loadedRef = useRef(false);
 
   const unreadCount = notices.filter((n) => !n.read).length;
 
@@ -105,6 +106,7 @@ export function NotificationBell() {
     setLoading(true);
     setNotices(await fetchNotices());
     setLoading(false);
+    loadedRef.current = true;
   }
 
   useEffect(() => {
@@ -113,6 +115,7 @@ export function NotificationBell() {
       if (cancelled) return;
       setNotices(items);
       setLoading(false);
+      loadedRef.current = true;
     });
     return () => {
       cancelled = true;
@@ -125,15 +128,26 @@ export function NotificationBell() {
         setOpen(false);
       }
     }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    }
     if (open) {
       document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleKeyDown);
     }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, [open]);
 
+  // Não refetcha ao abrir se a carga inicial já rodou (mesmo que tenha vindo
+  // vazia) — evita fetch duplicado no clique/hover (PERF-03).
   function handleOpen() {
     setOpen(true);
-    if (notices.length === 0) {
+    if (!loadedRef.current) {
       loadNotices();
     }
   }
