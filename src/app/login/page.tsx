@@ -190,6 +190,7 @@ function LoginContent() {
                 ? "bg-brand-teal text-white shadow"
                 : "text-[var(--text2)] hover:text-[var(--text)]"
             )}
+            aria-pressed={tab === "login"}
             onClick={() => switchTab("login")}
             type="button"
           >
@@ -202,6 +203,7 @@ function LoginContent() {
                 ? "bg-brand-teal text-white shadow"
                 : "text-[var(--text2)] hover:text-[var(--text)]"
             )}
+            aria-pressed={tab === "register"}
             onClick={() => switchTab("register")}
             type="button"
           >
@@ -242,11 +244,12 @@ function LoginContent() {
               />
             </Field>
 
-            <Field label="Senha" icon={<Lock size={15} />}>
+            <Field htmlFor="login-password" label="Senha" icon={<Lock size={15} />}>
               <div className="relative">
                 <input
                   autoComplete="current-password"
                   className={`${inputClass} pr-10`}
+                  id="login-password"
                   onChange={(event) => setLoginPassword(event.target.value)}
                   placeholder="Sua senha forte"
                   required
@@ -257,7 +260,6 @@ function LoginContent() {
                   aria-label={showLoginPassword ? "Ocultar senha" : "Mostrar senha"}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text3)] hover:text-[var(--text)]"
                   onClick={() => setShowLoginPassword((current) => !current)}
-                  tabIndex={-1}
                   type="button"
                 >
                   {showLoginPassword ? <EyeOff aria-hidden="true" size={16} /> : <Eye aria-hidden="true" size={16} />}
@@ -301,11 +303,12 @@ function LoginContent() {
               />
             </Field>
 
-            <Field label="Senha" icon={<Lock size={15} />}>
+            <Field htmlFor="register-password" label="Senha" icon={<Lock size={15} />}>
               <div className="relative">
                 <input
                   autoComplete="new-password"
                   className={`${inputClass} pr-10`}
+                  id="register-password"
                   onChange={(event) => setRegisterPassword(event.target.value)}
                   placeholder="Mínimo 12 caracteres"
                   required
@@ -316,7 +319,6 @@ function LoginContent() {
                   aria-label={showRegisterPassword ? "Ocultar senha" : "Mostrar senha"}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text3)] hover:text-[var(--text)]"
                   onClick={() => setShowRegisterPassword((current) => !current)}
-                  tabIndex={-1}
                   type="button"
                 >
                   {showRegisterPassword ? <EyeOff aria-hidden="true" size={16} /> : <Eye aria-hidden="true" size={16} />}
@@ -405,19 +407,37 @@ function LoginContent() {
 
 function Field({
   children,
+  htmlFor,
   icon,
   label
 }: {
   children: React.ReactNode;
+  htmlFor?: string;
   icon: React.ReactNode;
   label: string;
 }) {
+  const labelText = (
+    <span className="flex items-center gap-1.5 text-xs font-medium text-[var(--text)]">
+      {icon}
+      {label}
+    </span>
+  );
+  // Com htmlFor: associação EXPLÍCITA (o <label> aponta só ao input; controles
+  // extras como o toggle de senha ficam fora do label — A11Y-10). Sem htmlFor:
+  // label envolvente, adequado a campos de controle único.
+  if (htmlFor) {
+    return (
+      <div className="block space-y-1.5">
+        <label className="block" htmlFor={htmlFor}>
+          {labelText}
+        </label>
+        {children}
+      </div>
+    );
+  }
   return (
     <label className="block space-y-1.5">
-      <span className="flex items-center gap-1.5 text-xs font-medium text-[var(--text)]">
-        {icon}
-        {label}
-      </span>
+      {labelText}
       {children}
     </label>
   );
