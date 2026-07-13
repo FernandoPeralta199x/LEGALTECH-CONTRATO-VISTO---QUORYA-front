@@ -266,6 +266,7 @@ export function Header({ onMenuClick }: HeaderProps) {
 
               {/* Avatar — acts as logout button */}
               <button
+                aria-label="Sair da sessão"
                 className={cn(
                   "flex h-8 w-8 items-center justify-center rounded-full",
                   "bg-gradient-brand text-[11px] font-bold text-white",
@@ -275,6 +276,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                 )}
                 onClick={handleLogout}
                 title="Sair da sessão"
+                type="button"
               >
                 {initials}
               </button>
