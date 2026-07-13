@@ -17,7 +17,7 @@ const triageMap: Record<string, Cfg> = {
   /* ── Dados recebidos (verde) ────────────────────────────────────── */
   completed:               { label: "Dados recebidos",         dot: "bg-emerald-500",            tone: "cv-badge-teal" },
   /* ── Erro (vermelho) ────────────────────────────────────────────── */
-  failed:                  { label: "Erro na consulta",        dot: "bg-red-500",                tone: "border-red-500/25 bg-red-500/10 text-red-300" },
+  failed:                  { label: "Erro na consulta",        dot: "bg-red-500",                tone: "cv-badge-red" },
 };
 
 const otherMap: Record<string, Cfg> = {
@@ -59,7 +59,7 @@ const otherMap: Record<string, Cfg> = {
   /* ── Risk ───────────────────────────────────────────────────────── */
   low:                      { label: "Risco baixo",             dot: "bg-green-500",              tone: "cv-badge-teal" },
   medium:                   { label: "Risco médio",             dot: "bg-amber-500",              tone: "cv-badge-orange" },
-  high:                     { label: "Risco alto",              dot: "bg-red-500",                tone: "border-red-500/25 bg-red-500/10 text-red-300" }
+  high:                     { label: "Risco alto",              dot: "bg-red-500",                tone: "cv-badge-red" }
 };
 
 const map: Record<string, Cfg> = { ...otherMap, ...triageMap };

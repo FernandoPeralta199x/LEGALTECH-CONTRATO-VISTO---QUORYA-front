@@ -44,10 +44,12 @@ import {
 } from "@/lib/clientForm";
 import type { Client } from "@/types";
 
+// Cores via tokens do design system (theme-aware); o wrapper preserva o formato
+// pill não-uppercase (rounded-full + border 1px), diferente do cv-badge base.
 const riskConfig: Record<string, { label: string; className: string }> = {
-  high: { label: "Indicador local alto", className: "text-red-700 bg-red-50 border-red-200" },
-  low: { label: "Indicador local baixo", className: "text-green-700 bg-green-50 border-green-200" },
-  medium: { label: "Indicador local médio", className: "text-amber-700 bg-amber-50 border-amber-200" }
+  high: { label: "Indicador local alto", className: "cv-badge-red" },
+  low: { label: "Indicador local baixo", className: "cv-badge-teal" },
+  medium: { label: "Indicador local médio", className: "cv-badge-orange" }
 };
 
 const contractRoleOptions = Object.entries(clientContractRoleLabels);
