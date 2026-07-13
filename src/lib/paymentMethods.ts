@@ -34,3 +34,20 @@ export function isCardMethod(
 export function methodLabel(method: string): string {
   return METHOD_LABELS[method as PaymentMethod] ?? method;
 }
+
+/** Rótulos dos status de pagamento — fonte única (Card do caso + tela de pagamento);
+ *  evita mapas duplicados que podem divergir (DS-04). */
+export const PAYMENT_STATUS_LABELS: Record<string, string> = {
+  pending: "Pendente",
+  simulated: "Simulado",
+  paid: "Pago",
+  failed: "Falhou",
+  canceled: "Cancelado",
+  expired: "Expirado",
+  refunded: "Reembolsado"
+};
+
+/** Rótulo do status de pagamento, com fallback para valores fora do catálogo. */
+export function paymentStatusLabel(status: string): string {
+  return PAYMENT_STATUS_LABELS[status] ?? status;
+}

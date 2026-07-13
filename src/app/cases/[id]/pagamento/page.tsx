@@ -32,20 +32,10 @@ import {
   type InstallmentOption,
   type PricingEstimate
 } from "@/services/pricing";
-import { isCardMethod, isPaymentMethod, METHOD_LABELS } from "@/lib/paymentMethods";
+import { isCardMethod, isPaymentMethod, METHOD_LABELS, PAYMENT_STATUS_LABELS } from "@/lib/paymentMethods";
 import type { CaseAggregate, PaymentMethod } from "@/types";
 
 type PageProps = { params: Promise<{ id: string }> };
-
-const PAYMENT_STATUS_LABELS: Record<string, string> = {
-  pending: "Pendente",
-  simulated: "Simulado",
-  paid: "Pago",
-  failed: "Falhou",
-  canceled: "Cancelado",
-  expired: "Expirado",
-  refunded: "Reembolsado"
-};
 
 /** Formata "AAAA-MM-DD" como dd/mm/aaaa sem passar por Date (evita shift de fuso). */
 function formatDueDate(isoDate: string): string {

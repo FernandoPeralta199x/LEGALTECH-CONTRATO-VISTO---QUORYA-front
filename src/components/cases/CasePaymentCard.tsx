@@ -6,18 +6,8 @@ import { useState } from "react";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { centsToReaisLabel } from "@/components/CurrencyInput";
-import { isCardMethod, methodLabel } from "@/lib/paymentMethods";
+import { isCardMethod, methodLabel, paymentStatusLabel } from "@/lib/paymentMethods";
 import type { InstallmentPlan } from "@/types";
-
-const paymentStatusLabel: Record<string, string> = {
-  canceled: "Cancelado",
-  expired: "Expirado",
-  failed: "Falhou",
-  paid: "Pago",
-  pending: "Pendente",
-  refunded: "Reembolsado",
-  simulated: "Simulado"
-};
 
 /** Formata "AAAA-MM-DD" como dd/mm/aaaa sem passar por Date (evita shift de fuso). */
 function formatDueDate(isoDate: string): string {
@@ -84,7 +74,7 @@ export function CasePaymentCard({
               },
               {
                 label: "Status",
-                value: paymentStatusLabel[paymentStatus] ?? paymentStatus
+                value: paymentStatusLabel(paymentStatus)
               }
             ].map((item) => (
               <div key={item.label}>
@@ -245,7 +235,7 @@ export function CasePaymentCard({
       ) : (
         <p className="text-sm text-[var(--text2)]">
           Status do pagamento:{" "}
-          {paymentStatusLabel[paymentStatus] ?? paymentStatus}.
+          {paymentStatusLabel(paymentStatus)}.
         </p>
       )}
     </Card>
