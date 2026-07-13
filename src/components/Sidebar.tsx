@@ -22,6 +22,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/cn";
 import { clearStoredSession } from "@/lib/authStorage";
 import { useDevSession } from "@/lib/useDevSession";
+import { useModalA11y } from "@/lib/useModalA11y";
 
 type NavItem = {
   href: string;
@@ -227,6 +228,8 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
   const router = useRouter();
   const session = useDevSession();
   const groups = visibleNavGroups(session?.role);
+  // Foco inicial + restauração, ESC fecha e trap de Tab enquanto aberto (A11Y-04).
+  const drawerRef = useModalA11y<HTMLElement>(open, onClose);
 
   const isActive = (href: string) => isNavItemActive(pathname, href);
 
@@ -251,11 +254,16 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
 
       {/* Drawer */}
       <aside
+        aria-label="Menu de navegação"
+        aria-modal="true"
         className={cn(
           "cv-mobile-menu fixed inset-y-0 left-0 z-50 flex w-72 max-w-[88vw] flex-col backdrop-blur-lg backdrop-saturate-150 lg:hidden",
           "transition-transform duration-slow ease-smooth",
           open ? "translate-x-0" : "-translate-x-full"
         )}
+        inert={!open}
+        ref={drawerRef}
+        role="dialog"
       >
         <div className="flex items-center justify-between px-5 py-5">
           <Link
