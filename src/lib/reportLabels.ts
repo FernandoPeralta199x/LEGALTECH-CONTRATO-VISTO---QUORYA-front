@@ -97,8 +97,18 @@ export function productLabel(value: unknown): string {
 
 /** Status do relatório do caso; null → "Não gerado". Assinatura estrutural para
  *  não acoplar este módulo de rótulos ao tipo Report. */
-export function reportStatusLabel(report: { status: string } | null): string {
-  if (!report) return "Não gerado";
+/** Fonte única do rótulo de status de relatório (lista de casos + detalhe).
+ *  Aceita um objeto `{ status }`, uma string de status crua, ou null/undefined. */
+export function reportStatusLabel(report: unknown): string {
+  const status =
+    typeof report === "string"
+      ? report
+      : report && typeof report === "object" && "status" in report
+        ? (report as { status?: unknown }).status
+        : undefined;
+  if (typeof status !== "string" || !status) {
+    return "Não gerado";
+  }
 
   const labels: Record<string, string> = {
     failed: "Falhou",
@@ -112,5 +122,22 @@ export function reportStatusLabel(report: { status: string } | null): string {
     draft: "Rascunho"
   };
 
-  return labels[report.status] ?? report.status;
+  return labels[status] ?? status;
+}
+
+/** Fonte única do rótulo do modo de origem dos dados (lista + detalhe do caso). */
+export function sourceModeLabel(value: unknown): string {
+  if (typeof value !== "string" || !value) {
+    return "api";
+  }
+
+  const labels: Record<string, string> = {
+    hybrid: "híbrido",
+    local: "local",
+    mock: "mock",
+    real: "real",
+    simulated: "simulado"
+  };
+
+  return labels[value] ?? value;
 }
