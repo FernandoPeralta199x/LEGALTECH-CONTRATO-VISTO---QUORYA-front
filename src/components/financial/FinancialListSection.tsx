@@ -33,6 +33,8 @@ type SectionData<Item, Summary> = { summary: Summary; items: Item[]; total: numb
  *  espinha do ApiCostsPanel para evitar duplicação entre as duas seções. */
 export function FinancialListSection<Item, Summary, Payload>({
   period,
+  from,
+  to,
   eyebrow,
   fetcher,
   creator,
@@ -50,8 +52,10 @@ export function FinancialListSection<Item, Summary, Payload>({
   renderModal
 }: {
   period: string;
+  from?: string;
+  to?: string;
   eyebrow: string;
-  fetcher: (period: string) => Promise<SectionData<Item, Summary>>;
+  fetcher: (period: string, from?: string, to?: string) => Promise<SectionData<Item, Summary>>;
   creator: (payload: Payload) => Promise<unknown>;
   buildKpis: (summary: Summary | undefined) => SectionKpi[];
   buildDonut: (summary: Summary | undefined) => DonutConfig | null;
@@ -86,7 +90,7 @@ export function FinancialListSection<Item, Summary, Payload>({
     setLoading(true);
     setError(null);
     /* eslint-enable react-hooks/set-state-in-effect */
-    fetcher(period)
+    fetcher(period, from, to)
       .then((res) => {
         if (cancelled) return;
         setData(res);
@@ -101,7 +105,7 @@ export function FinancialListSection<Item, Summary, Payload>({
     return () => {
       cancelled = true;
     };
-  }, [period, reload, fetcher]);
+  }, [period, from, to, reload, fetcher]);
 
   useEffect(() => {
     if (!toast) return;

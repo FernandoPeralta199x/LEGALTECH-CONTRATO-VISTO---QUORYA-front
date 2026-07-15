@@ -55,7 +55,15 @@ type Kpi = {
   value: number | null | undefined;
 };
 
-export function ApiCostsPanel({ period }: { period: PeriodKey }) {
+export function ApiCostsPanel({
+  period,
+  from,
+  to
+}: {
+  period: PeriodKey;
+  from?: string;
+  to?: string;
+}) {
   const [data, setData] = useState<ApiCostsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +79,7 @@ export function ApiCostsPanel({ period }: { period: PeriodKey }) {
     setLoading(true);
     setError(null);
     /* eslint-enable react-hooks/set-state-in-effect */
-    listApiCosts(period)
+    listApiCosts(period, from, to)
       .then((res) => {
         if (cancelled) return;
         setData(res);
@@ -86,7 +94,7 @@ export function ApiCostsPanel({ period }: { period: PeriodKey }) {
     return () => {
       cancelled = true;
     };
-  }, [period, reload]);
+  }, [period, from, to, reload]);
 
   useEffect(() => {
     if (!toast) return;

@@ -1,4 +1,5 @@
 import { apiClient } from "./apiClient";
+import { financialQuery } from "./financialRange";
 
 export type FiscalNoteStatus =
   | "not_required"
@@ -69,9 +70,13 @@ export type CreateNotePayload = {
 };
 
 /** GET /financial/fiscal-documents — SEM fallback mock (dado fiscal é real ou erro). */
-export async function listNotes(period: string): Promise<NotesResponse> {
+export async function listNotes(
+  period: string,
+  from?: string,
+  to?: string
+): Promise<NotesResponse> {
   const res = await apiClient.get<NotesResponse>(
-    `/api/v1/financial/fiscal-documents?period=${encodeURIComponent(period)}`
+    `/api/v1/financial/fiscal-documents?${financialQuery(period, from, to)}`
   );
   return res.data as NotesResponse;
 }

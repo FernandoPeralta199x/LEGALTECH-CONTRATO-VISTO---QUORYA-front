@@ -1,4 +1,5 @@
 import { apiClient } from "./apiClient";
+import { financialQuery } from "./financialRange";
 
 /** KPIs da visão geral financeira (backend calcula; frontend só exibe).
  *  Campos em centavos. `null` = sem fonte de dados hoje → exibir "R$ —". */
@@ -28,10 +29,12 @@ export type FinancialOverview = {
 /** GET /financial/overview — SEM fallback mock: dado financeiro é real ou erro
  *  (a tela mostra estado de erro honesto; nunca número forjado). */
 export async function getFinancialOverview(
-  period: string
+  period: string,
+  from?: string,
+  to?: string
 ): Promise<FinancialOverview> {
   const res = await apiClient.get<FinancialOverview>(
-    `/api/v1/financial/overview?period=${encodeURIComponent(period)}`
+    `/api/v1/financial/overview?${financialQuery(period, from, to)}`
   );
   return res.data as FinancialOverview;
 }

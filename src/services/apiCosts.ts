@@ -1,4 +1,5 @@
 import { apiClient } from "./apiClient";
+import { financialQuery } from "./financialRange";
 
 export type ApiCostStatus = "previsto" | "processado";
 
@@ -48,9 +49,13 @@ export type CreateApiCostPayload = {
 };
 
 /** GET /financial/api-costs — SEM fallback mock (dado financeiro é real ou erro). */
-export async function listApiCosts(period: string): Promise<ApiCostsResponse> {
+export async function listApiCosts(
+  period: string,
+  from?: string,
+  to?: string
+): Promise<ApiCostsResponse> {
   const res = await apiClient.get<ApiCostsResponse>(
-    `/api/v1/financial/api-costs?period=${encodeURIComponent(period)}`
+    `/api/v1/financial/api-costs?${financialQuery(period, from, to)}`
   );
   return res.data as ApiCostsResponse;
 }

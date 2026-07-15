@@ -1,4 +1,5 @@
 import { apiClient } from "./apiClient";
+import { financialQuery } from "./financialRange";
 
 /** Overview cru do backend (compute_overview) — superset dos KPIs da Visão Geral. */
 export type ReportOverview = {
@@ -71,9 +72,13 @@ export type ExecutiveReport = {
 };
 
 /** GET /financial/reports/executive — DTO consolidado (backend calcula; FE só exibe). */
-export async function getExecutiveReport(period: string): Promise<ExecutiveReport> {
+export async function getExecutiveReport(
+  period: string,
+  from?: string,
+  to?: string
+): Promise<ExecutiveReport> {
   const res = await apiClient.get<ExecutiveReport>(
-    `/api/v1/financial/reports/executive?period=${encodeURIComponent(period)}`
+    `/api/v1/financial/reports/executive?${financialQuery(period, from, to)}`
   );
   return res.data as ExecutiveReport;
 }

@@ -35,13 +35,16 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { EmptyState } from "@/components/EmptyState";
 import { PageTitle } from "@/components/PageTitle";
 import { ApiCostsPanel } from "@/components/financial/ApiCostsPanel";
+import { ClientsPanel } from "@/components/financial/ClientsPanel";
 import { ReportsPanel } from "@/components/financial/ReportsPanel";
+import { ServicesPanel } from "@/components/financial/ServicesPanel";
 import { TaxesNotesPanel } from "@/components/financial/TaxesNotesPanel";
 import { FinancialStatusPill, type FinancialStatus } from "@/components/financial/FinancialStatusPill";
 import { FinancialTable, type Column } from "@/components/financial/FinancialTable";
 import { KpiCard, type KpiState, type KpiTone } from "@/components/financial/KpiCard";
 import { ChartCard, StackedBar } from "@/components/financial/MiniChart";
 import { MoneyText } from "@/components/financial/MoneyText";
+import { PeriodCustomRange } from "@/components/financial/PeriodCustomRange";
 import { PeriodFilter, periodLabel, type PeriodKey } from "@/components/financial/PeriodFilter";
 import {
   getFinancialOverview,
@@ -446,12 +449,43 @@ function EmptyTabPanel({ tab }: { tab: EmptyTab }) {
   );
 }
 
+/** Placeholder honesto quando o período é "Personalizado" mas as datas ainda não
+ *  foram escolhidas (ou são inválidas). Cobre todas as abas de uma vez. */
+function CustomDatesPrompt({ invalid }: { invalid: boolean }) {
+  return (
+    <div className="rounded-[var(--r)] border border-dashed border-[var(--bd2)] bg-[var(--surf2)] p-10 text-center">
+      <CalendarClock aria-hidden="true" className="mx-auto text-[var(--text3)]" size={22} />
+      <p className="mt-3 text-sm font-semibold text-[var(--text)]">
+        {invalid ? "Intervalo inválido" : "Escolha as datas do período"}
+      </p>
+      <p className="mx-auto mt-1.5 max-w-md text-xs leading-5 text-[var(--text2)]">
+        {invalid
+          ? "A data inicial (‘De’) deve ser anterior ou igual à data final (‘até’)."
+          : "Selecione ‘De’ e ‘até’ na barra acima para filtrar todo o Financeiro pelo intervalo personalizado."}
+      </p>
+    </div>
+  );
+}
+
 export default function FinancialPage() {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   const [period, setPeriod] = useState<PeriodKey>("month");
   const [overview, setOverview] = useState<FinancialOverview | null>(null);
   const [overviewLoading, setOverviewLoading] = useState(true);
   const [overviewError, setOverviewError] = useState<string | null>(null);
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
+
+  // Período personalizado: só busca quando 'de' e 'até' existem e de ≤ até
+  // (comparação lexicográfica de 'YYYY-MM-DD' == cronológica). O backend rejeita
+  // custom sem datas (400); os painéis mostram um prompt até estarem válidas.
+  const isCustom = period === "custom";
+  const bothDates = isCustom && customFrom !== "" && customTo !== "";
+  const customReady = bothDates && customFrom <= customTo;
+  const customInvalid = bothDates && customFrom > customTo;
+  // from/to repassados aos serviços só quando o custom está completo e válido.
+  const rangeFrom = customReady ? customFrom : undefined;
+  const rangeTo = customReady ? customTo : undefined;
 
   // Deep-link de aba via hash (ex.: /financial#sales). Sync única no mount.
   useEffect(() => {
@@ -462,16 +496,26 @@ export default function FinancialPage() {
     }
   }, []);
 
-  // Carrega os KPIs reais do backend ao montar e quando o período muda.
+  // Carrega os KPIs reais do backend ao montar e quando o período (ou o intervalo
+  // personalizado válido) muda.
   useEffect(() => {
     let cancelled = false;
-    // Sinaliza carregamento e limpa erro antes do fetch assíncrono (padrão de
-    // data-fetching; não causa render em cascata — dispara um único fetch).
+    // Custom sem datas válidas: não busca (o backend exige from/to). Limpa dados/
+    // erro (nunca exibe período antigo); os painéis mostram o prompt de datas.
+    // Sinaliza carregamento/limpeza antes do fetch (padrão de data-fetching; não
+    // causa render em cascata — dispara um único fetch). O bloco cobre também o
+    // gate do custom incompleto (não busca; o backend exige from/to).
     /* eslint-disable react-hooks/set-state-in-effect */
+    if (isCustom && !customReady) {
+      setOverview(null);
+      setOverviewError(null);
+      setOverviewLoading(false);
+      return;
+    }
     setOverviewLoading(true);
     setOverviewError(null);
     /* eslint-enable react-hooks/set-state-in-effect */
-    getFinancialOverview(period)
+    getFinancialOverview(period, rangeFrom, rangeTo)
       .then((data) => {
         if (cancelled) return;
         setOverview(data);
@@ -489,10 +533,14 @@ export default function FinancialPage() {
     return () => {
       cancelled = true;
     };
-  }, [period]);
+  }, [period, rangeFrom, rangeTo, isCustom, customReady]);
 
   let panel: ReactNode;
-  if (activeTab === "overview") {
+  if (isCustom && !customReady) {
+    // Custom sem datas válidas: um prompt único cobre TODAS as abas (evita que
+    // cada painel bata 400 no backend por falta de from/to).
+    panel = <CustomDatesPrompt invalid={customInvalid} />;
+  } else if (activeTab === "overview") {
     panel = <OverviewPanel error={overviewError} loading={overviewLoading} overview={overview} />;
   } else if (activeTab === "sales") {
     panel = (
@@ -528,11 +576,15 @@ export default function FinancialPage() {
       />
     );
   } else if (activeTab === "api-costs") {
-    panel = <ApiCostsPanel period={period} />;
+    panel = <ApiCostsPanel from={rangeFrom} period={period} to={rangeTo} />;
   } else if (activeTab === "taxes") {
-    panel = <TaxesNotesPanel period={period} />;
+    panel = <TaxesNotesPanel from={rangeFrom} period={period} to={rangeTo} />;
   } else if (activeTab === "reports") {
-    panel = <ReportsPanel period={period} />;
+    panel = <ReportsPanel from={rangeFrom} period={period} to={rangeTo} />;
+  } else if (activeTab === "services") {
+    panel = <ServicesPanel from={rangeFrom} period={period} to={rangeTo} />;
+  } else if (activeTab === "clients") {
+    panel = <ClientsPanel from={rangeFrom} period={period} to={rangeTo} />;
   } else {
     panel = <EmptyTabPanel tab={TAB_EMPTY[activeTab]} />;
   }
@@ -555,18 +607,29 @@ export default function FinancialPage() {
                 Módulo Financeiro — dados reais (Fases 3–6)
               </p>
               <p className="mt-1 text-xs leading-5 text-[var(--text2)]">
-                Visão Geral, Gastos com APIs, Tributos e Notas e Relatórios são{" "}
+                Visão Geral, Serviços, Clientes, Gastos com APIs, Tributos e Notas e Relatórios são{" "}
                 <strong className="font-semibold text-[var(--text)]">calculados pelo backend</strong>{" "}
                 a partir dos dados reais da organização. Indicadores ainda sem fonte (receita
-                líquida, margem, atraso) e as tabelas de Vendas/Pagamentos/Recebíveis aparecem
-                vazios até serem integrados nas próximas fases.
+                líquida, margem, atraso) e as abas de Vendas/Pagamentos/Recebíveis/Reembolsos
+                aparecem vazias até serem integradas nas próximas fases.
               </p>
             </div>
           </div>
 
           {/* Filtro de período (controle transversal). */}
           <div className="cv-glass-bar mb-6 flex flex-wrap items-center justify-between gap-3 rounded-[var(--r)] px-4 py-3">
-            <PeriodFilter onChange={setPeriod} value={period} />
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <PeriodFilter onChange={setPeriod} value={period} />
+              {isCustom && (
+                <PeriodCustomRange
+                  from={customFrom}
+                  invalid={customInvalid}
+                  onFromChange={setCustomFrom}
+                  onToChange={setCustomTo}
+                  to={customTo}
+                />
+              )}
+            </div>
             <span className="text-[11px] text-[var(--text3)]">
               Mostrando: <span className="font-medium text-[var(--text2)]">{periodLabel(period)}</span>
             </span>

@@ -1,4 +1,5 @@
 import { apiClient } from "./apiClient";
+import { financialQuery } from "./financialRange";
 
 export type TaxStatus =
   | "estimado"
@@ -60,9 +61,13 @@ export type CreateTaxPayload = {
 };
 
 /** GET /financial/taxes — SEM fallback mock (dado fiscal é real ou erro). */
-export async function listTaxes(period: string): Promise<TaxesResponse> {
+export async function listTaxes(
+  period: string,
+  from?: string,
+  to?: string
+): Promise<TaxesResponse> {
   const res = await apiClient.get<TaxesResponse>(
-    `/api/v1/financial/taxes?period=${encodeURIComponent(period)}`
+    `/api/v1/financial/taxes?${financialQuery(period, from, to)}`
   );
   return res.data as TaxesResponse;
 }

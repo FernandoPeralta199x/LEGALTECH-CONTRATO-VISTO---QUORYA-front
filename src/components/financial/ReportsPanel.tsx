@@ -9,32 +9,32 @@ import type { PeriodKey } from "@/components/financial/PeriodFilter";
 import { usePrintOnChange } from "@/lib/usePrintOnChange";
 import { getExecutiveReport, type ExecutiveReport } from "@/services/financialReport";
 
-export function ReportsPanel({ period }: { period: PeriodKey }) {
+export function ReportsPanel({
+  period,
+  from,
+  to
+}: {
+  period: PeriodKey;
+  from?: string;
+  to?: string;
+}) {
   const [report, setReport] = useState<ExecutiveReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [printing, setPrinting] = useState(false);
   const [reload, setReload] = useState(0);
 
-  // Intervalo personalizado ainda não tem inputs de data aqui (o backend exige
-  // from/to). Bloqueia o relatório com uma dica honesta até existirem.
-  const isCustom = period === "custom";
-
   usePrintOnChange(printing, () => setPrinting(false));
 
+  // O período personalizado (com datas) é resolvido pelo pai: este painel só é
+  // montado com um preset OU um custom já com from/to válidos.
   useEffect(() => {
-    if (isCustom) {
-      /* eslint-disable react-hooks/set-state-in-effect */
-      setReport(null);
-      setError(null);
-      setLoading(false);
-      /* eslint-enable react-hooks/set-state-in-effect */
-      return;
-    }
     let cancelled = false;
+    /* eslint-disable react-hooks/set-state-in-effect */
     setLoading(true);
     setError(null);
-    getExecutiveReport(period)
+    /* eslint-enable react-hooks/set-state-in-effect */
+    getExecutiveReport(period, from, to)
       .then((data) => {
         if (cancelled) return;
         setReport(data);
@@ -49,9 +49,9 @@ export function ReportsPanel({ period }: { period: PeriodKey }) {
     return () => {
       cancelled = true;
     };
-  }, [period, reload, isCustom]);
+  }, [period, from, to, reload]);
 
-  const canPrint = Boolean(report) && !loading && !error && !isCustom;
+  const canPrint = Boolean(report) && !loading && !error;
 
   return (
     <div className="space-y-6">
@@ -82,17 +82,7 @@ export function ReportsPanel({ period }: { period: PeriodKey }) {
         </Button>
       </div>
 
-      {isCustom && (
-        <div className="rounded-[var(--r)] border border-dashed border-[var(--bd2)] bg-[var(--surf2)] p-8 text-center">
-          <p className="text-sm font-semibold text-[var(--text)]">Escolha um período pré-definido</p>
-          <p className="mt-2 text-xs leading-5 text-[var(--text2)]">
-            O relatório usa Hoje / 7 dias / Este mês / Mês passado / Este ano. O intervalo
-            personalizado (com datas) chega numa próxima fase.
-          </p>
-        </div>
-      )}
-
-      {!isCustom && error && (
+      {error && (
         <div
           className="flex items-start gap-3 rounded-[var(--r)] border border-[rgba(239,68,68,0.28)] bg-[var(--danger-dim)] p-4"
           role="alert"
@@ -108,14 +98,14 @@ export function ReportsPanel({ period }: { period: PeriodKey }) {
         </div>
       )}
 
-      {!isCustom && loading && (
+      {loading && (
         <div className="mx-auto h-96 w-full max-w-[820px] animate-pulse rounded-lg bg-[var(--surf2)]" />
       )}
 
       {/* Pré-visualização WYSIWYG — "folha de papel" branca (mesmo no dark).
           `print:hidden` a tira do fluxo de impressão (só a .cv-print-sheet sai no PDF;
           sem isso a preview invisível inflaria a paginação com páginas em branco). */}
-      {!isCustom && !loading && !error && report && (
+      {!loading && !error && report && (
         <div className="overflow-x-auto print:hidden">
           <div
             className="mx-auto w-full max-w-[820px] rounded-lg shadow-[0_8px_40px_rgba(0,0,0,0.5)]"

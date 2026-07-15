@@ -151,13 +151,14 @@ export function MiniDonut({
     <div className="flex items-center gap-5">
       <svg aria-label={ariaLabel} className="h-28 w-28 shrink-0" role="img" viewBox="0 0 40 40">
         <circle cx="20" cy="20" fill="none" r={r} stroke="var(--surf3)" strokeWidth="5" />
-        {arcs.map(({ seg, pct, offset }) => (
+        {arcs.map(({ seg, pct, offset }, i) => (
           // offset = 25 - before já posiciona o início no topo (12h); sem rotação extra.
+          // key inclui o índice: rótulos podem repetir (ex.: clientes homônimos).
           <circle
             cx="20"
             cy="20"
             fill="none"
-            key={seg.label}
+            key={`${seg.label}-${i}`}
             r={r}
             stroke={TONE_STROKE[seg.tone]}
             strokeDasharray={`${pct} ${100 - pct}`}
@@ -181,8 +182,8 @@ export function MiniDonut({
         )}
       </svg>
       <ul className="min-w-0 space-y-1.5">
-        {segments.map((s) => (
-          <li className="flex items-center gap-2 text-xs text-[var(--text2)]" key={s.label}>
+        {segments.map((s, i) => (
+          <li className="flex items-center gap-2 text-xs text-[var(--text2)]" key={`${s.label}-${i}`}>
             <span
               className="h-2 w-2 shrink-0 rounded-full"
               style={{ background: TONE_STROKE[s.tone] }}
@@ -222,8 +223,8 @@ export function StackedBar({
         ))}
       </div>
       <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
-        {segments.map((s) => (
-          <li className="flex items-center gap-2 text-xs text-[var(--text2)]" key={s.label}>
+        {segments.map((s, i) => (
+          <li className="flex items-center gap-2 text-xs text-[var(--text2)]" key={`${s.label}-${i}`}>
             <span
               className="h-2 w-2 shrink-0 rounded-full"
               style={{ background: TONE_STROKE[s.tone] }}

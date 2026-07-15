@@ -134,7 +134,15 @@ function noteDonut(s?: NotesSummary): DonutConfig {
   };
 }
 
-export function TaxesNotesPanel({ period }: { period: PeriodKey }) {
+export function TaxesNotesPanel({
+  period,
+  from,
+  to
+}: {
+  period: PeriodKey;
+  from?: string;
+  to?: string;
+}) {
   const [section, setSection] = useState<"taxes" | "notes">("taxes");
 
   return (
@@ -175,9 +183,11 @@ export function TaxesNotesPanel({ period }: { period: PeriodKey }) {
           emptyTitle="Nenhum tributo no período"
           eyebrow="Tributos"
           fetcher={listTaxes}
+          from={from}
           newLabel="Novo tributo"
           period={period}
           renderModal={(p) => <TaxFormModal {...p} />}
+          to={to}
           rowKey={(r) => r.id}
           searchPlaceholder="Buscar tipo ou status..."
           searchText={(r) => `${r.tax_type} ${r.status}`}
@@ -195,9 +205,11 @@ export function TaxesNotesPanel({ period }: { period: PeriodKey }) {
           emptyTitle="Nenhuma nota no período"
           eyebrow="Notas fiscais"
           fetcher={listNotes}
+          from={from}
           newLabel="Nova nota"
           period={period}
           renderModal={(p) => <FiscalNoteFormModal {...p} />}
+          to={to}
           rowKey={(r) => r.id}
           searchPlaceholder="Buscar tipo, número ou status..."
           searchText={(r) => `${r.doc_type} ${r.numero ?? ""} ${r.status}`}
