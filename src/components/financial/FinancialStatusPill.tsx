@@ -71,7 +71,10 @@ const TONE_CLASS: Record<Tone, string> = {
 };
 
 export function financialStatusLabel(status: FinancialStatus): string {
-  return STATUS_META[status].label;
+  // Fallback defensivo: se um status novo entrar via cast (ex.: CHECK do banco
+  // ganhar um valor) e ainda não estiver em STATUS_META, mostra a chave crua em
+  // vez de estourar em runtime.
+  return STATUS_META[status]?.label ?? String(status);
 }
 
 /** Badge de status financeiro, reusando o vocabulário visual .cv-badge-*. */
