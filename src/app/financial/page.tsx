@@ -35,6 +35,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { EmptyState } from "@/components/EmptyState";
 import { PageTitle } from "@/components/PageTitle";
 import { ApiCostsPanel } from "@/components/financial/ApiCostsPanel";
+import { AuditPanel } from "@/components/financial/AuditPanel";
 import { ClientsPanel } from "@/components/financial/ClientsPanel";
 import { ReportsPanel } from "@/components/financial/ReportsPanel";
 import { ServicesPanel } from "@/components/financial/ServicesPanel";
@@ -585,6 +586,8 @@ export default function FinancialPage() {
     panel = <ServicesPanel from={rangeFrom} period={period} to={rangeTo} />;
   } else if (activeTab === "clients") {
     panel = <ClientsPanel from={rangeFrom} period={period} to={rangeTo} />;
+  } else if (activeTab === "audit") {
+    panel = <AuditPanel from={rangeFrom} period={period} to={rangeTo} />;
   } else {
     panel = <EmptyTabPanel tab={TAB_EMPTY[activeTab]} />;
   }
