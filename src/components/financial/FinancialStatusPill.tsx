@@ -17,6 +17,7 @@ export type FinancialStatus =
   | "chargeback"
   | "failed"
   | "expired"
+  | "simulated"
   // nota fiscal
   | "authorized"
   | "note_pending"
@@ -48,6 +49,7 @@ const STATUS_META: Record<FinancialStatus, { label: string; tone: Tone }> = {
   chargeback: { label: "Chargeback", tone: "red" },
   failed: { label: "Falhou", tone: "red" },
   expired: { label: "Expirado", tone: "muted" },
+  simulated: { label: "Simulado", tone: "muted" },
   authorized: { label: "Nota emitida", tone: "teal" },
   note_pending: { label: "Nota pendente", tone: "orange" },
   rejected: { label: "Nota rejeitada", tone: "red" },

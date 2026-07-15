@@ -55,7 +55,7 @@ export function ReportsPanel({ period }: { period: PeriodKey }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start gap-3 rounded-[var(--r)] border border-[rgba(96,165,250,0.22)] bg-[var(--blue-dim)] p-4">
+      <div className="flex items-start gap-3 rounded-[var(--r)] border border-[rgba(96,165,250,0.22)] bg-[var(--blue-dim)] p-4 print:hidden">
         <Info aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--blue)]" size={16} />
         <div className="min-w-0">
           <p className="text-sm font-semibold text-[var(--text)]">Relatório executivo — gerado no navegador</p>
@@ -67,7 +67,7 @@ export function ReportsPanel({ period }: { period: PeriodKey }) {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text3)]">
           Relatório executivo
         </p>

@@ -24,6 +24,18 @@ function fmtDateTime(iso: string | null): string {
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleString("pt-BR");
 }
 
+/* O backend usa intervalo semiaberto [from, to): `range.to` é EXCLUSIVO (ex.: mês
+ * de julho => to = 01/ago). Para a leitura humana do período mostramos o último dia
+ * INCLUÍDO (to − 1 dia), evitando que "julho" apareça como "01/07 a 01/08". Aritmética
+ * em UTC sobre a parte de data (YYYY-MM-DD) — imune ao fuso do navegador. */
+function inclusiveEndLabel(isoExclusiveEnd: string): string {
+  const day = isoExclusiveEnd.slice(0, 10);
+  const d = new Date(`${day}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return day;
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section style={{ pageBreakInside: "avoid", marginTop: 18 }}>
@@ -139,7 +151,7 @@ export function FinancialReportSheet({ report }: { report: ExecutiveReport }) {
         <div style={{ fontSize: 19, fontWeight: 700 }}>Contrato Visto — {m.title}</div>
         <div style={{ fontSize: 11, color: MUTED, marginTop: 6 }}>
           Período: <strong>{report.metadata.period}</strong> ({m.range.from.slice(0, 10)} a{" "}
-          {m.range.to.slice(0, 10)}) · Moeda: {m.currency}
+          {inclusiveEndLabel(m.range.to)}) · Moeda: {m.currency}
         </div>
         <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>
           Gerado em {fmtDateTime(m.generated_at)} por {m.generated_by.email ?? "—"} (
