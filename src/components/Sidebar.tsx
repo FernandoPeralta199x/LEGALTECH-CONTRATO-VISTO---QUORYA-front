@@ -11,6 +11,7 @@ import {
   Shield,
   Upload,
   UsersRound,
+  Wallet,
   X,
   type LucideIcon
 } from "lucide-react";
@@ -57,8 +58,9 @@ const navGroups: NavGroup[] = [
   {
     label: "Gestão",
     items: [
-      { href: "/clients", label: "Clientes",      icon: UsersRound },
-      { href: "/admin",   label: "Administração", icon: Shield, adminOnly: true }
+      { href: "/clients",   label: "Clientes",      icon: UsersRound },
+      { href: "/admin",     label: "Administração", icon: Shield, adminOnly: true },
+      { href: "/financial", label: "Financeiro",    icon: Wallet, adminOnly: true }
     ]
   },
   {
