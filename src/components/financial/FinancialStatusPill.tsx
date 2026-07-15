@@ -25,7 +25,13 @@ export type FinancialStatus =
   | "not_required"
   // custo de API (Fase 4) — espelham os valores do backend
   | "previsto"
-  | "processado";
+  | "processado"
+  // tributo (Fase 5) — espelham os valores do backend
+  | "estimado"
+  | "confirmado"
+  | "divergente"
+  | "cancelado"
+  | "nao_aplicavel";
 
 type Tone = "teal" | "orange" | "red" | "blue" | "muted";
 
@@ -48,7 +54,12 @@ const STATUS_META: Record<FinancialStatus, { label: string; tone: Tone }> = {
   note_canceled: { label: "Nota cancelada", tone: "muted" },
   not_required: { label: "Sem nota", tone: "muted" },
   previsto: { label: "Previsto", tone: "orange" },
-  processado: { label: "Processado", tone: "teal" }
+  processado: { label: "Processado", tone: "teal" },
+  estimado: { label: "Estimado", tone: "orange" },
+  confirmado: { label: "Confirmado", tone: "teal" },
+  divergente: { label: "Divergente", tone: "red" },
+  cancelado: { label: "Cancelado", tone: "muted" },
+  nao_aplicavel: { label: "Não aplicável", tone: "muted" }
 };
 
 const TONE_CLASS: Record<Tone, string> = {
@@ -71,7 +82,9 @@ export function FinancialStatusPill({
   status: FinancialStatus;
   className?: string;
 }) {
-  const meta = STATUS_META[status];
+  // Fallback defensivo: um status fora do mapa (ex.: novo valor do backend) não
+  // deve quebrar a renderização da linha/tabela.
+  const meta = STATUS_META[status] ?? { label: String(status), tone: "muted" as const };
   return (
     <span className={cn("cv-badge", TONE_CLASS[meta.tone], className)}>
       {meta.label}

@@ -35,6 +35,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { EmptyState } from "@/components/EmptyState";
 import { PageTitle } from "@/components/PageTitle";
 import { ApiCostsPanel } from "@/components/financial/ApiCostsPanel";
+import { TaxesNotesPanel } from "@/components/financial/TaxesNotesPanel";
 import { FinancialStatusPill, type FinancialStatus } from "@/components/financial/FinancialStatusPill";
 import { FinancialTable, type Column } from "@/components/financial/FinancialTable";
 import { KpiCard, type KpiState, type KpiTone } from "@/components/financial/KpiCard";
@@ -527,6 +528,8 @@ export default function FinancialPage() {
     );
   } else if (activeTab === "api-costs") {
     panel = <ApiCostsPanel period={period} />;
+  } else if (activeTab === "taxes") {
+    panel = <TaxesNotesPanel period={period} />;
   } else {
     panel = <EmptyTabPanel tab={TAB_EMPTY[activeTab]} />;
   }
@@ -546,14 +549,14 @@ export default function FinancialPage() {
             <Info aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--blue)]" size={16} />
             <div className="min-w-0">
               <p className="text-sm font-semibold text-[var(--text)]">
-                Módulo Financeiro — dados reais (Fases 3–4)
+                Módulo Financeiro — dados reais (Fases 3–5)
               </p>
               <p className="mt-1 text-xs leading-5 text-[var(--text2)]">
-                A Visão Geral e a aba Gastos com APIs são{" "}
+                A Visão Geral, Gastos com APIs e Tributos e Notas são{" "}
                 <strong className="font-semibold text-[var(--text)]">calculadas pelo backend</strong>{" "}
                 a partir dos dados reais da organização. Indicadores ainda sem fonte (receita
-                líquida, margem, tributos, notas, atraso) e as tabelas de Vendas/Pagamentos/
-                Recebíveis aparecem vazios até serem integrados nas próximas fases.
+                líquida, margem, atraso) e as tabelas de Vendas/Pagamentos/Recebíveis aparecem
+                vazios até serem integrados nas próximas fases.
               </p>
             </div>
           </div>
