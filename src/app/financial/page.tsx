@@ -34,6 +34,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { EmptyState } from "@/components/EmptyState";
 import { PageTitle } from "@/components/PageTitle";
+import { ApiCostsPanel } from "@/components/financial/ApiCostsPanel";
 import { FinancialStatusPill, type FinancialStatus } from "@/components/financial/FinancialStatusPill";
 import { FinancialTable, type Column } from "@/components/financial/FinancialTable";
 import { KpiCard, type KpiState, type KpiTone } from "@/components/financial/KpiCard";
@@ -524,6 +525,8 @@ export default function FinancialPage() {
         searchPlaceholder="Buscar cliente..."
       />
     );
+  } else if (activeTab === "api-costs") {
+    panel = <ApiCostsPanel period={period} />;
   } else {
     panel = <EmptyTabPanel tab={TAB_EMPTY[activeTab]} />;
   }
@@ -543,14 +546,14 @@ export default function FinancialPage() {
             <Info aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--blue)]" size={16} />
             <div className="min-w-0">
               <p className="text-sm font-semibold text-[var(--text)]">
-                Módulo Financeiro — Visão Geral com dados reais (Fase 3)
+                Módulo Financeiro — dados reais (Fases 3–4)
               </p>
               <p className="mt-1 text-xs leading-5 text-[var(--text2)]">
-                Os indicadores da Visão Geral são{" "}
-                <strong className="font-semibold text-[var(--text)]">calculados pelo backend</strong>{" "}
-                a partir dos pedidos reais da organização. Indicadores ainda sem fonte de dados
-                (receita líquida, margem, custos de API, tributos, notas, atraso) e as tabelas de
-                Vendas/Pagamentos/Recebíveis aparecem vazios até serem integrados nas próximas fases.
+                A Visão Geral e a aba Gastos com APIs são{" "}
+                <strong className="font-semibold text-[var(--text)]">calculadas pelo backend</strong>{" "}
+                a partir dos dados reais da organização. Indicadores ainda sem fonte (receita
+                líquida, margem, tributos, notas, atraso) e as tabelas de Vendas/Pagamentos/
+                Recebíveis aparecem vazios até serem integrados nas próximas fases.
               </p>
             </div>
           </div>

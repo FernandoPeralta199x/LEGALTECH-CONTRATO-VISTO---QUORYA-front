@@ -22,7 +22,10 @@ export type FinancialStatus =
   | "note_pending"
   | "rejected"
   | "note_canceled"
-  | "not_required";
+  | "not_required"
+  // custo de API (Fase 4) — espelham os valores do backend
+  | "previsto"
+  | "processado";
 
 type Tone = "teal" | "orange" | "red" | "blue" | "muted";
 
@@ -43,7 +46,9 @@ const STATUS_META: Record<FinancialStatus, { label: string; tone: Tone }> = {
   note_pending: { label: "Nota pendente", tone: "orange" },
   rejected: { label: "Nota rejeitada", tone: "red" },
   note_canceled: { label: "Nota cancelada", tone: "muted" },
-  not_required: { label: "Sem nota", tone: "muted" }
+  not_required: { label: "Sem nota", tone: "muted" },
+  previsto: { label: "Previsto", tone: "orange" },
+  processado: { label: "Processado", tone: "teal" }
 };
 
 const TONE_CLASS: Record<Tone, string> = {
