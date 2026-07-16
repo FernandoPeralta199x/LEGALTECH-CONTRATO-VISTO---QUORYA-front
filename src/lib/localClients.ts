@@ -29,7 +29,8 @@ function isStoredClient(value: unknown): value is Client {
     typeof value.email === "string" &&
     typeof value.phone === "string" &&
     typeof value.status === "string" &&
-    typeof value.riskLevel === "string" &&
+    // UI-01: riskLevel é opcional (o backend não avalia risco de cliente) — aceita ausente/string.
+    (value.riskLevel === undefined || typeof value.riskLevel === "string") &&
     typeof value.casesCount === "number" &&
     typeof value.createdAt === "string"
   );
@@ -100,7 +101,7 @@ function localClientFromPayload(
     personType: payload.person_type,
     phone: payload.phone ?? "",
     rg: payload.rg,
-    riskLevel: "low",
+    // UI-01: sem risco fabricado — cliente local também cai em "Risco não avaliado" (riskLevel ausente).
     sourceMode: "local",
     status: "active",
     tradeName: payload.trade_name,

@@ -501,6 +501,10 @@ test("getCaseAggregate maps operational aggregate scoped to a case id", async ()
   assert.equal(result.data.providerResults[0].caseId, result.data.case.id);
   assert.equal(result.data.report?.summary, "Relatório do caso A.");
   assert.equal(result.data.summary.partiesCount, 1);
+  // UI-03: o backend não envia severidade por risco — o mapper NÃO pode fabricar "medium".
+  const legalRisk = result.data.report?.risks.find((r) => r.title === "Risco jurídico");
+  assert.equal(legalRisk?.description, "Risco jurídico A");
+  assert.equal(legalRisk?.level, undefined); // antes vinha "medium" hardcoded
 });
 
 test("getCaseAggregate local fallback keeps the requested case id", async () => {

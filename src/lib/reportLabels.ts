@@ -125,10 +125,12 @@ export function reportStatusLabel(report: unknown): string {
   return labels[status] ?? status;
 }
 
-/** Fonte única do rótulo do modo de origem dos dados (lista + detalhe do caso). */
+/** Fonte única do rótulo do modo de origem dos dados (lista + detalhe do caso).
+ *  Origem ausente/desconhecida NÃO é "api" (seria mentir sobre a procedência do
+ *  dado); devolve um rótulo neutro e honesto. */
 export function sourceModeLabel(value: unknown): string {
   if (typeof value !== "string" || !value) {
-    return "api";
+    return "—";
   }
 
   const labels: Record<string, string> = {

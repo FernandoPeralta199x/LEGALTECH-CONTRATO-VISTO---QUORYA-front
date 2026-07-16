@@ -133,7 +133,7 @@ export function ApiCostsPanel({
   const kpiState: KpiState = error ? "empty" : loading ? "loading" : "ready";
 
   const kpis: Kpi[] = [
-    { key: "total", label: "Custo total de APIs", icon: Plug, tone: "orange", format: "currency", hint: "Custos processados no período", value: summary?.api_cost_cents },
+    { key: "total", label: "Custo lançado manualmente", icon: Plug, tone: "orange", format: "currency", hint: "Soma dos lançamentos manuais processados — não inclui a estimativa do uso real (bloco acima).", value: summary?.api_cost_cents },
     { key: "forecast", label: "Custo previsto", icon: TrendingUp, tone: "orange", format: "currency", hint: "Estimativas ainda não processadas", value: summary?.api_cost_forecast_cents },
     { key: "count", label: "Registros de custo", icon: Hash, tone: "blue", format: "integer", hint: "Lançamentos no período", value: summary?.api_cost_count },
     { key: "avg", label: "Custo médio / registro", icon: Calculator, tone: "blue", format: "currency", hint: "Custo total dividido pelos registros", value: summary && summary.api_cost_count > 0 ? Math.round(summary.api_cost_cents / summary.api_cost_count) : null }

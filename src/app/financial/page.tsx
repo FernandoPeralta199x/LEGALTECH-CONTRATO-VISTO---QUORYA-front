@@ -17,9 +17,9 @@ import {
   Plug,
   Receipt,
   RotateCcw,
-  Search,
   Settings,
   ShoppingCart,
+  TestTube,
   TrendingUp,
   TriangleAlert,
   UsersRound,
@@ -122,6 +122,7 @@ const KPI_GROUPS: { label: string; kpis: OverviewKpi[] }[] = [
     label: "Recebimentos",
     kpis: [
       { key: "received", field: "received_cents", label: "Total recebido", icon: Banknote, tone: "teal", format: "currency", hint: "Dinheiro que entrou de fato" },
+      { key: "simulated", field: "simulated_cents", label: "Simulado", icon: TestTube, tone: "blue", format: "currency", hint: "Pagamentos simulados (mock) — sem cobrança real" },
       { key: "pending", field: "pending_cents", label: "Total pendente", icon: Clock, tone: "orange", format: "currency", hint: "Vendas ainda não pagas" },
       { key: "overdue", field: "overdue_cents", label: "Total em atraso", icon: TriangleAlert, tone: "danger", format: "currency", hint: "Pendente com vencimento vencido" },
       { key: "canceled", field: "canceled_cents", label: "Total cancelado", icon: Ban, tone: "danger", format: "currency", hint: "Vendas canceladas no período" },
@@ -132,7 +133,7 @@ const KPI_GROUPS: { label: string; kpis: OverviewKpi[] }[] = [
     label: "Operação e fiscal",
     kpis: [
       { key: "count", field: "count", label: "Quantidade de vendas", icon: ShoppingCart, tone: "blue", format: "integer", hint: "Vendas registradas no período" },
-      { key: "api-cost", field: "api_cost_cents", label: "Gastos com APIs", icon: Plug, tone: "orange", format: "currency", hint: "Custos de integrações externas" },
+      { key: "api-cost", field: "api_cost_cents", label: "APIs (lançamentos manuais)", icon: Plug, tone: "orange", format: "currency", hint: "Somente custos lançados à mão. O custo estimado do uso real das APIs está na aba Gastos com APIs." },
       { key: "tax", field: "tax_cents", label: "Tributos provisionados", icon: Landmark, tone: "orange", format: "currency", hint: "Estimativa de tributos incidentes" },
       { key: "invoices", field: "invoices_count", label: "Notas emitidas", icon: Receipt, tone: "blue", format: "integer", hint: "Documentos fiscais autorizados" }
     ]
@@ -334,7 +335,15 @@ function OverviewPanel({
             {group.label}
           </p>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {group.kpis.map((kpi, index) => {
+            {group.kpis
+              // PRC-01: o card "Simulado" (mock) só aparece quando há valor — em produção,
+              // onde o provedor real nunca emite 'simulated', fica oculto (não polui com R$ 0,00).
+              .filter((kpi) => {
+                if (kpi.key !== "simulated") return true;
+                const v = kpis ? kpis[kpi.field] : null;
+                return typeof v === "number" && v > 0;
+              })
+              .map((kpi, index) => {
               const raw = kpis ? kpis[kpi.field] : null;
               const state: KpiState = loading
                 ? "loading"
@@ -388,38 +397,19 @@ function TablePanel<Row>({
   emptyIcon,
   emptyTitle,
   emptyDescription,
-  searchPlaceholder,
   phase
 }: {
   columns: Column<Row>[];
   emptyIcon: LucideIcon;
   emptyTitle: string;
   emptyDescription: string;
-  searchPlaceholder: string;
   phase: string;
 }) {
-  const [query, setQuery] = useState("");
   const rows: Row[] = [];
   const Icon = emptyIcon;
 
-  const toolbar = (
-    <div className="relative w-full max-w-sm">
-      <Search
-        aria-hidden="true"
-        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text3)]"
-        size={14}
-      />
-      <input
-        aria-label={searchPlaceholder}
-        className="cv-input w-full pl-9"
-        onChange={(event) => setQuery(event.target.value)}
-        placeholder={searchPlaceholder}
-        type="search"
-        value={query}
-      />
-    </div>
-  );
-
+  // FIN-05: sem busca aqui. A aba ainda não é alimentada por endpoint, então a tabela é
+  // sempre vazia — um campo de busca que nunca filtra nada seria um controle fantasma.
   return (
     <div className="space-y-3">
       <FinancialTable
@@ -430,7 +420,6 @@ function TablePanel<Row>({
         rowKey={(_, index) => String(index)}
         rows={rows}
         state="empty"
-        toolbar={toolbar}
       />
       <div className="flex justify-end">
         <PhasePill>{phase}</PhasePill>
@@ -548,33 +537,30 @@ export default function FinancialPage() {
     panel = (
       <TablePanel<SaleRow>
         columns={SALE_COLUMNS}
-        emptyDescription="Cada venda (valor bruto, desconto, valor final, status, pagamento, nota fiscal e margem) aparecerá aqui quando o ledger financeiro do backend existir."
+        emptyDescription="Esta aba ainda não é alimentada por endpoint próprio. As vendas existem e aparecem nos KPIs da Visão Geral e nas abas Serviços e Clientes; o detalhamento venda a venda (valor bruto, desconto, valor final, status, nota) chega quando o ledger financeiro do backend existir."
         emptyIcon={ShoppingCart}
-        emptyTitle="Nenhuma venda no período"
+        emptyTitle="Vendas ainda não conectadas"
         phase="Fase 3 — backend núcleo"
-        searchPlaceholder="Buscar venda ou cliente..."
       />
     );
   } else if (activeTab === "payments") {
     panel = (
       <TablePanel<PaymentRow>
         columns={PAYMENT_COLUMNS}
-        emptyDescription="Pagamentos recebidos, pendentes e falhas, com gateway, taxa e valor líquido, virão do ledger de eventos financeiros."
+        emptyDescription="Esta aba ainda não é alimentada por endpoint próprio. Os totais recebido/pendente aparecem nos KPIs da Visão Geral; o detalhamento pagamento a pagamento (gateway, taxa, valor líquido) chega com o ledger de eventos financeiros."
         emptyIcon={CreditCard}
-        emptyTitle="Nenhum pagamento no período"
+        emptyTitle="Pagamentos ainda não conectados"
         phase="Fase 3 — backend núcleo"
-        searchPlaceholder="Buscar pagamento ou cliente..."
       />
     );
   } else if (activeTab === "receivables") {
     panel = (
       <TablePanel<ReceivableRow>
         columns={RECEIVABLE_COLUMNS}
-        emptyDescription="Valores a receber, vencimentos e atrasos serão materializados a partir do cronograma de parcelas."
+        emptyDescription="Esta aba ainda não é alimentada por endpoint próprio. O total pendente aparece nos KPIs da Visão Geral; o detalhamento com vencimentos e atrasos será materializado a partir do cronograma de parcelas."
         emptyIcon={CalendarClock}
-        emptyTitle="Nenhum recebível no período"
+        emptyTitle="Recebíveis ainda não conectados"
         phase="Fase 2 — controle avançado"
-        searchPlaceholder="Buscar cliente..."
       />
     );
   } else if (activeTab === "api-costs") {

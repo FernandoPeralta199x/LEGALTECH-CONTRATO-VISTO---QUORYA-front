@@ -49,7 +49,10 @@ import type { Client } from "@/types";
 const riskConfig: Record<string, { label: string; className: string }> = {
   high: { label: "Indicador local alto", className: "cv-badge-red" },
   low: { label: "Indicador local baixo", className: "cv-badge-teal" },
-  medium: { label: "Indicador local médio", className: "cv-badge-orange" }
+  medium: { label: "Indicador local médio", className: "cv-badge-orange" },
+  // UI-01: estado honesto para quando o backend não avaliou risco (a maioria dos clientes).
+  // Antes, a ausência caía num "baixo" verde fabricado para todos.
+  unknown: { label: "Risco não avaliado", className: "cv-badge-muted" }
 };
 
 const contractRoleOptions = Object.entries(clientContractRoleLabels);
@@ -509,7 +512,7 @@ export default function ClientsPage() {
         ) : (
           <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
             {clients.map((client, index) => {
-              const risk = riskConfig[client.riskLevel] ?? riskConfig.low;
+              const risk = riskConfig[client.riskLevel ?? "unknown"] ?? riskConfig.unknown;
               const displayName = client.displayName ?? client.name;
               const personTypeLabel = client.personType
                 ? clientPersonTypeLabels[client.personType]

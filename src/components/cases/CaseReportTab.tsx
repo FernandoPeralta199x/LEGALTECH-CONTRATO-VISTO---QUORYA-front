@@ -250,13 +250,17 @@ export function CaseReportTab({ finalReport, report }: CaseReportTabProps) {
                         ? "border-red-500/20 bg-red-500/5"
                         : risk.level === "medium"
                           ? "border-[rgba(249,115,22,0.2)] bg-[var(--orange-dim)]"
-                          : "border-[rgba(32,201,151,0.2)] bg-[var(--teal-dim)]"
+                          : risk.level === "low"
+                            ? "border-[rgba(32,201,151,0.2)] bg-[var(--teal-dim)]"
+                            // UI-03: sem severidade (o backend não a envia) → moldura neutra,
+                            // nunca o verde de "baixo". O título já categoriza o risco.
+                            : "border-[var(--bd)] bg-[var(--surf2)]"
                     }`}
                     key={risk.id}
                     style={{ animationDelay: `${index * 40}ms` }}
                   >
                     <div className="flex items-center gap-2 mb-2">
-                      <StatusBadge status={risk.level} />
+                      {risk.level && <StatusBadge status={risk.level} />}
                       <p className="text-sm font-semibold text-[var(--text)]">
                         {risk.title}
                       </p>

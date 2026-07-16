@@ -133,13 +133,19 @@ export function FinancialReportSheet({ report }: { report: ExecutiveReport }) {
   const kpiRows: [string, string][] = [
     ["Receita bruta", money(o.gross_cents)],
     ["Total recebido", money(o.received_cents)],
+    // PRC-01: pagamentos mock aparecem à parte (só quando existem), nunca embutidos no recebido.
+    ...(o.simulated_cents > 0
+      ? ([["Simulado (sem cobrança real)", money(o.simulated_cents)]] as [string, string][])
+      : []),
     ["Total pendente", money(o.pending_cents)],
     ["Total em atraso", money(o.overdue_cents)],
     ["Total cancelado", money(o.canceled_cents)],
     ["Total reembolsado", money(o.refunded_cents)],
     ["Ticket médio", money(o.ticket_cents)],
     ["Quantidade de vendas", intOr(o.count)],
-    ["Gastos com APIs", money(o.api_cost_cents)],
+    // B2/FIN-03: este agregado é só dos lançamentos MANUAIS (não inclui a estimativa do uso
+    // real das APIs) — o rótulo diz isso para o número não se passar por custo total.
+    ["APIs (lançamentos manuais)", money(o.api_cost_cents)],
     ["Tributos provisionados", money(o.tax_cents)],
     ["Notas emitidas", intOr(o.invoices_count)]
   ];
@@ -183,9 +189,10 @@ export function FinancialReportSheet({ report }: { report: ExecutiveReport }) {
         <KeyVal rows={kpiRows} />
       </Section>
 
-      {/* 5 — Gastos com APIs */}
-      <Section title="Gastos com APIs">
+      {/* 5 — Gastos com APIs (lançamentos manuais) */}
+      <Section title="Gastos com APIs — lançamentos manuais">
         <div style={{ fontSize: 11, color: MUTED, marginBottom: 6 }}>
+          Somente custos lançados à mão (não inclui a estimativa do uso real das APIs).
           Processado: <strong style={{ fontFamily: mono }}>{money(report.api_costs.summary.api_cost_cents)}</strong> ·
           Previsto: <span style={{ fontFamily: mono }}>{money(report.api_costs.summary.api_cost_forecast_cents)}</span> ·
           Registros: {intOr(report.api_costs.summary.api_cost_count)}

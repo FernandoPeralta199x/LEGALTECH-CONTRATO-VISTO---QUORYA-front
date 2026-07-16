@@ -9,6 +9,8 @@ export type FinancialOverviewKpis = {
   received_cents: number;
   pending_cents: number;
   canceled_cents: number;
+  // PRC-01: pagamentos mock (simulated) — em produção NÃO entram no recebido; exibidos à parte.
+  simulated_cents: number;
   refunded_cents: number;
   ticket_cents: number | null;
   overdue_cents: number | null;
