@@ -108,7 +108,9 @@ export async function listFinalReports(
 
 interface BackendDownloadUrl {
   url: string;
-  expires_at: string;
+  // M10: o backend retorna `expires_in_seconds` (segundos), não `expires_at`.
+  // Alinhado ao contrato real (documents.py:294-298); só `url` é consumido aqui.
+  expires_in_seconds: number;
 }
 
 /**
