@@ -29,10 +29,28 @@ export type ApiCostsSummary = {
   by_provider: { provider: string; total_cents: number }[];
 };
 
+/** Uma linha do gasto AUTOMÁTICO: uso real (consultas executadas na triagem) ×
+ *  tarifa de custo configurada por provedor. Centavos. */
+export type AutoApiProvider = {
+  provider: string;
+  provider_label: string;
+  quantity: number;
+  unit_cost_cents: number;
+  total_cents: number;
+};
+
+export type AutomaticApiCosts = {
+  by_provider: AutoApiProvider[];
+  total_cents: number;
+  calls: number;
+  disclaimer: string;
+};
+
 export type ApiCostsResponse = {
   period: string;
   range: { from: string; to: string };
   currency: string;
+  automatic: AutomaticApiCosts;
   summary: ApiCostsSummary;
   items: ApiCostItem[];
   total: number;

@@ -3,6 +3,7 @@
 import {
   Calculator,
   Hash,
+  Info,
   Plug,
   Plus,
   Search,
@@ -30,6 +31,7 @@ import {
   listApiCosts,
   type ApiCostItem,
   type ApiCostsResponse,
+  type AutoApiProvider,
   type CreateApiCostPayload
 } from "@/services/apiCosts";
 
@@ -43,6 +45,13 @@ const COLUMNS: Column<ApiCostItem>[] = [
   { key: "total", label: "Custo total", align: "right", render: (r) => <MoneyText cents={r.total_cost_cents} /> },
   { key: "status", label: "Status", render: (r) => <FinancialStatusPill status={r.status as FinancialStatus} /> },
   { key: "date", label: "Data", render: (r) => <span className="font-mono text-[11px] text-[var(--text2)]">{(r.incurred_at ?? "").slice(0, 10) || "—"}</span> }
+];
+
+const AUTO_COLUMNS: Column<AutoApiProvider>[] = [
+  { key: "prov", label: "Provedor", render: (r) => <span className="font-medium text-[var(--text)]">{r.provider_label}</span> },
+  { key: "qty", label: "Consultas", align: "right", render: (r) => <span className="font-mono tabular-nums">{r.quantity}</span> },
+  { key: "unit", label: "Custo/consulta", align: "right", render: (r) => <MoneyText cents={r.unit_cost_cents} /> },
+  { key: "total", label: "Total", align: "right", render: (r) => <MoneyText cents={r.total_cents} muted={r.total_cents === 0} /> }
 ];
 
 type Kpi = {
@@ -120,6 +129,7 @@ export function ApiCostsPanel({
   }
 
   const summary = data?.summary;
+  const auto = data?.automatic;
   const kpiState: KpiState = error ? "empty" : loading ? "loading" : "ready";
 
   const kpis: Kpi[] = [
@@ -199,9 +209,39 @@ export function ApiCostsPanel({
         </div>
       )}
 
+      {auto && !loading && !error && (
+        <div className="space-y-3">
+          <div className="flex items-start gap-3 rounded-[var(--r)] border border-[rgba(96,165,250,0.22)] bg-[var(--blue-dim)] p-4">
+            <Info aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--blue)]" size={16} />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-[var(--text)]">Gastos com APIs — automático (do uso real)</p>
+              <p className="mt-1 text-xs leading-5 text-[var(--text2)]">{auto.disclaimer}</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-baseline justify-between gap-2 px-1">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text3)]">
+              Estimativa do período
+            </p>
+            <p className="text-sm text-[var(--text2)]">
+              <span className="text-lg font-semibold text-[var(--text)]">{centsToReaisLabel(auto.total_cents)}</span>{" "}
+              <span className="text-[var(--text3)]">· {auto.calls} consulta(s)</span>
+            </p>
+          </div>
+          <FinancialTable
+            columns={AUTO_COLUMNS}
+            emptyDescription="Quando a triagem executar consultas (Escavador, TargetData, Serasa, Procon), o custo estimado aparece aqui automaticamente."
+            emptyIcon={<Plug aria-hidden="true" size={20} />}
+            emptyTitle="Nenhuma consulta de API no período"
+            rowKey={(r) => r.provider}
+            rows={auto.by_provider}
+            state="ready"
+          />
+        </div>
+      )}
+
       <div>
         <p className="mb-3 px-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--text3)]">
-          Custos de API
+          Lançamentos manuais
         </p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {kpis.map((kpi, index) => {
