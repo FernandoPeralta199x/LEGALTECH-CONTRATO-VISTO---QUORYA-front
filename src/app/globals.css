@@ -203,6 +203,17 @@ a[role="button"] {
   background: rgba(32, 201, 151, 0.45);
 }
 
+/* Esconde a scrollbar SÓ onde a classe é aplicada (ex.: faixa de abas do
+   Financeiro, que sinaliza overflow com fade + setas). Não afeta a scrollbar
+   global acima. Firefox: scrollbar-width; WebKit: display:none. */
+.cv-hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.cv-hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 input:-webkit-autofill,
 input:-webkit-autofill:focus,
 textarea:-webkit-autofill,

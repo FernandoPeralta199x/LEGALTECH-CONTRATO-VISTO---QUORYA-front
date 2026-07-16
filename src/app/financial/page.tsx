@@ -42,6 +42,7 @@ import { ServicesPanel } from "@/components/financial/ServicesPanel";
 import { TaxesNotesPanel } from "@/components/financial/TaxesNotesPanel";
 import { FinancialStatusPill, type FinancialStatus } from "@/components/financial/FinancialStatusPill";
 import { FinancialTable, type Column } from "@/components/financial/FinancialTable";
+import { FinancialTabs } from "@/components/financial/FinancialTabs";
 import { KpiCard, type KpiState, type KpiTone } from "@/components/financial/KpiCard";
 import { ChartCard, StackedBar } from "@/components/financial/MiniChart";
 import { MoneyText } from "@/components/financial/MoneyText";
@@ -638,57 +639,9 @@ export default function FinancialPage() {
             </span>
           </div>
 
-          {/* Tabs (padrão ARIA Tabs — espelha cases/[id], A11Y-05) */}
-          <div className="relative mb-6">
-          <div
-            aria-label="Áreas do Financeiro"
-            className="flex overflow-x-auto border-b border-[var(--bd)]"
-            onKeyDown={(event) => {
-              const i = TABS.findIndex((t) => t.id === activeTab);
-              let nextIndex: number;
-              if (event.key === "ArrowRight") nextIndex = (i + 1) % TABS.length;
-              else if (event.key === "ArrowLeft") nextIndex = (i - 1 + TABS.length) % TABS.length;
-              else if (event.key === "Home") nextIndex = 0;
-              else if (event.key === "End") nextIndex = TABS.length - 1;
-              else return;
-              event.preventDefault();
-              const next = TABS[nextIndex];
-              setActiveTab(next.id);
-              document.getElementById(`tab-${next.id}`)?.focus();
-            }}
-            role="tablist"
-          >
-            {TABS.map((tab) => {
-              const Icon = tab.icon;
-              const active = activeTab === tab.id;
-              return (
-                <button
-                  aria-controls={active ? `panel-${tab.id}` : undefined}
-                  aria-selected={active}
-                  className={
-                    active
-                      ? "flex items-center gap-2 whitespace-nowrap border-b-2 border-[var(--teal)] px-4 py-3 text-xs font-semibold text-[var(--teal)] transition"
-                      : "flex items-center gap-2 whitespace-nowrap border-b-2 border-transparent px-4 py-3 text-xs font-medium text-[var(--text2)] transition hover:text-[var(--text)]"
-                  }
-                  id={`tab-${tab.id}`}
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  role="tab"
-                  tabIndex={active ? 0 : -1}
-                  type="button"
-                >
-                  <Icon aria-hidden="true" size={14} />
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
-            {/* Afordância de overflow: sinaliza que há mais abas à direita. */}
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute bottom-px right-0 top-0 w-10 bg-gradient-to-l from-[var(--bg)] to-transparent"
-            />
-          </div>
+          {/* Tabs (padrão ARIA Tabs — espelha cases/[id], A11Y-05). Overflow
+              sinalizado por fade + setas com a scrollbar oculta (FinancialTabs). */}
+          <FinancialTabs activeTab={activeTab} onChange={setActiveTab} tabs={TABS} />
 
           <div
             aria-labelledby={`tab-${activeTab}`}
