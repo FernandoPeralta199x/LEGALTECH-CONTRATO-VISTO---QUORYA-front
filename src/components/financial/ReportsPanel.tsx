@@ -1,6 +1,6 @@
 "use client";
 
-import { Info, Printer, TriangleAlert } from "lucide-react";
+import { Info, Printer, RefreshCw, TriangleAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/Button";
@@ -71,15 +71,26 @@ export function ReportsPanel({
         <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text3)]">
           Relatório executivo
         </p>
-        <Button
-          disabled={!canPrint}
-          icon={<Printer size={15} />}
-          onClick={() => setPrinting(true)}
-          size="sm"
-          variant="primary"
-        >
-          Baixar PDF
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            disabled={loading}
+            icon={<RefreshCw className={loading ? "animate-spin" : undefined} size={15} />}
+            onClick={() => setReload((r) => r + 1)}
+            size="sm"
+            variant="primary"
+          >
+            Atualizar documento
+          </Button>
+          <Button
+            disabled={!canPrint}
+            icon={<Printer size={15} />}
+            onClick={() => setPrinting(true)}
+            size="sm"
+            variant="primary"
+          >
+            Baixar PDF
+          </Button>
+        </div>
       </div>
 
       {error && (
