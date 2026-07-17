@@ -5,24 +5,28 @@ import { listDocuments, uploadDocument } from "./documents";
 
 test("listDocuments maps backend documents and reports api source", async () => {
   globalThis.fetch = (async () =>
+    // C3-04: /documents devolve envelope paginado {items,total,...}.
     Response.json({
       success: true,
-      data: [
-        {
-          id: "doc-api-1",
-          case_id: "case-api-1",
-          filename: "contrato.pdf",
-          content_type: "application/pdf",
-          size_bytes: 2048,
-          file_hash: null,
-          status: "uploaded",
-          uploaded_by: null,
-          uploaded_at: "2026-05-25T10:00:00.000Z",
-          metadata: {},
-          created_at: "2026-05-25T10:00:00.000Z",
-          updated_at: "2026-05-25T10:00:00.000Z"
-        }
-      ]
+      data: {
+        items: [
+          {
+            id: "doc-api-1",
+            case_id: "case-api-1",
+            filename: "contrato.pdf",
+            content_type: "application/pdf",
+            size_bytes: 2048,
+            file_hash: null,
+            status: "uploaded",
+            uploaded_by: null,
+            uploaded_at: "2026-05-25T10:00:00.000Z",
+            metadata: {},
+            created_at: "2026-05-25T10:00:00.000Z",
+            updated_at: "2026-05-25T10:00:00.000Z"
+          }
+        ],
+        page: 1, page_size: 50, total: 1, total_pages: 1
+      }
     })) as typeof fetch;
 
   const result = await listDocuments();

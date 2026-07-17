@@ -109,12 +109,13 @@ export async function listDocuments(
     }
 
     const query = search.toString();
-    const response = await apiClient.get<BackendDocument[]>(
+    // C3-04: /documents agora é paginado (envelope {items,total,...}), como /clients.
+    const response = await apiClient.get<{ items: BackendDocument[] }>(
       `/api/v1/documents${query ? `?${query}` : ""}`
     );
 
     return {
-      data: response.data.map(mapBackendDocument),
+      data: response.data.items.map(mapBackendDocument),
       source: "api"
     };
   } catch (error) {

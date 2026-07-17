@@ -158,8 +158,18 @@ export default function CasePaymentPage({ params }: PageProps) {
     setSubmitting(true);
     setSubmitError("");
     setConflict(false);
+    // C3-06: tokenização (cartão) e registro (backend) em try SEPARADOS. Assim "confira o
+    // cartão" só aparece quando o erro é REALMENTE da validação do cartão; um 500/400/402 do
+    // backend mostra a mensagem real do backend (como o Pix), não uma culpa falsa ao cartão.
+    let tok;
     try {
-      const tok = await tokenizeCard(card);
+      tok = await tokenizeCard(card);
+    } catch {
+      setSubmitError("Não foi possível validar o cartão. Confira os dados e tente novamente.");
+      setSubmitting(false);
+      return false;
+    }
+    try {
       await createCasePayment(id, {
         parcelas: selectedOption.parcelas,
         method,
@@ -176,9 +186,7 @@ export default function CasePaymentPage({ params }: PageProps) {
       if (err instanceof ApiClientError && err.status === 409) {
         setConflict(true);
       } else {
-        setSubmitError(
-          "Não foi possível validar o cartão. Confira os dados e tente novamente."
-        );
+        setSubmitError(errorMessage(err, "Não foi possível registrar o pagamento."));
       }
       setSubmitting(false);
       return false;

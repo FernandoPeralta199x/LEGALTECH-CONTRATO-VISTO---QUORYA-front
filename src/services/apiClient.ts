@@ -94,9 +94,13 @@ type ApiClientOptions = RequestInit & {
   timeoutMs?: number;
 };
 
-function createTimeoutSignal(timeoutMs: number): AbortSignal {
+// C3-05: retorna `clear` (limpa o timer) além do signal. Antes, o timer era limpo
+// disparando "abort" no signal no finally — mas esse abort se propagava pelo mergeSignals
+// e cancelava o BODY da resposta quando o caller passava seu próprio `signal`. Agora
+// limpamos o timer sem sinalizar abort algum.
+function createTimeoutSignal(timeoutMs: number): { signal: AbortSignal; clear: () => void } {
   if (typeof AbortController === "undefined") {
-    return undefined as unknown as AbortSignal;
+    return { signal: undefined as unknown as AbortSignal, clear: () => {} };
   }
   const controller = new AbortController();
   const setTimeoutFn =
@@ -106,7 +110,7 @@ function createTimeoutSignal(timeoutMs: number): AbortSignal {
   const id = setTimeoutFn(() => controller.abort(), timeoutMs) as ReturnType<typeof setTimeout>;
   const signal = controller.signal;
   signal.addEventListener("abort", () => clearTimeoutFn(id), { once: true });
-  return signal;
+  return { signal, clear: () => clearTimeoutFn(id) };
 }
 
 function mergeSignals(
@@ -286,7 +290,7 @@ export async function apiRequest<T>(
 
   const effectiveTimeoutMs =
     typeof timeoutMs === "number" && timeoutMs > 0 ? timeoutMs : DEFAULT_API_TIMEOUT_MS;
-  const timeoutSignal = createTimeoutSignal(effectiveTimeoutMs);
+  const { signal: timeoutSignal, clear: clearTimeout } = createTimeoutSignal(effectiveTimeoutMs);
   const signal = mergeSignals(userSignal ?? undefined, timeoutSignal);
 
   let response: Response;
@@ -303,7 +307,9 @@ export async function apiRequest<T>(
     }
     throw new ApiNetworkError();
   } finally {
-    timeoutSignal.dispatchEvent(new Event("abort"));
+    // C3-05: só limpa o timer — NÃO sinaliza abort (isso cancelaria o body da resposta
+    // quando o caller passou seu próprio signal).
+    clearTimeout();
   }
 
   let payload: ApiResponse<T> | { data: T };
