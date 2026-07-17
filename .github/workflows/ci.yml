@@ -1,0 +1,25 @@
+# DEP-07: pipeline versionado do frontend (lint, typecheck, testes, audit, build).
+# O runner é externo (GitHub Actions), mas o pipeline passa a ser versionado por commit/PR.
+name: CI
+
+on:
+  push:
+    branches: [main, "feat/**"]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      # Falha só em vulnerabilidades altas/críticas (ruído baixo não bloqueia).
+      - run: npm audit --audit-level=high
+      - run: npm run build
