@@ -1,10 +1,12 @@
 "use client";
 
 import { Coins, HelpCircle, Search, TrendingUp, Users } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { centsToReaisLabel } from "@/components/CurrencyInput";
 import { ErrorState } from "@/components/ErrorState";
+import { Notification } from "@/components/Notification";
 import { FinancialTable, type Column } from "@/components/financial/FinancialTable";
 import { KpiCard, type KpiState } from "@/components/financial/KpiCard";
 import { ChartCard, MiniDonut, type ChartTone } from "@/components/financial/MiniChart";
@@ -107,6 +109,14 @@ export function ClientsPanel({
   const donutTotal = grossTotal;
   const hasDonut = !loading && !error && donutTotal > 0;
 
+  // FIN-04: o Financeiro está correto (o LEFT JOIN preserva a receita não-atribuível),
+  // mas quando a maior parte da receita cai no bucket 'Sem cliente' a aba entrega pouco
+  // do que promete (receita POR cliente). A lacuna é a montante — casos criados sem
+  // client_id — então o aviso aponta para /cases, onde o vínculo é feito.
+  const unassignedCents = s?.unassigned_gross_cents ?? 0;
+  const unassignedShare = grossTotal > 0 ? unassignedCents / grossTotal : 0;
+  const showUnassignedWarning = !loading && !error && unassignedShare > 0.5;
+
   const q = query.trim().toLowerCase();
   const filtered = q ? items.filter((it) => clientLabel(it).toLowerCase().includes(q)) : items;
   const tableState = loading ? "loading" : error ? "error" : filtered.length === 0 ? "empty" : "ready";
@@ -162,6 +172,23 @@ export function ClientsPanel({
           })}
         </div>
       </div>
+
+      {showUnassignedWarning && s && (
+        <Notification
+          actions={
+            <Link className="font-semibold underline underline-offset-2" href="/cases">
+              Ver casos
+            </Link>
+          }
+          title="Boa parte da receita não está vinculada a um cliente"
+          tone="warning"
+        >
+          {Math.round(unassignedShare * 100)}% da receita do período (
+          {centsToReaisLabel(unassignedCents)} em {s.unassigned_count}{" "}
+          {s.unassigned_count === 1 ? "venda" : "vendas"}) ainda não tem cliente vinculado.
+          Vincule o cliente no cadastro do caso para ver a receita por cliente.
+        </Notification>
+      )}
 
       <ChartCard
         description="Participação de cada cliente na receita bruta do período"
