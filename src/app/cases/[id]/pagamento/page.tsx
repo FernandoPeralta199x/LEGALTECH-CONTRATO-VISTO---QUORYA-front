@@ -23,7 +23,7 @@ import { ErrorState } from "@/components/ErrorState";
 import { LoadingState } from "@/components/LoadingState";
 import { Notification } from "@/components/Notification";
 import { PageTitle } from "@/components/PageTitle";
-import { caseDisplayTitle } from "@/lib/formatters";
+import { caseDisplayTitle, formatBpsMensal } from "@/lib/formatters";
 import { errorMessage } from "@/lib/errorMessage";
 import { ApiClientError } from "@/services/apiClient";
 import { createCasePayment, getCaseAggregate } from "@/services/cases";
@@ -32,40 +32,10 @@ import {
   type InstallmentOption,
   type PricingEstimate
 } from "@/services/pricing";
+import { isCardMethod, isPaymentMethod, METHOD_LABELS, PAYMENT_STATUS_LABELS } from "@/lib/paymentMethods";
 import type { CaseAggregate, PaymentMethod } from "@/types";
 
 type PageProps = { params: Promise<{ id: string }> };
-
-const METHOD_LABELS: Record<PaymentMethod, string> = {
-  pix: "Pix",
-  boleto: "Boleto",
-  cartao: "Cartão de crédito",
-  debito: "Cartão de débito"
-};
-
-const PAYMENT_STATUS_LABELS: Record<string, string> = {
-  pending: "Pendente",
-  simulated: "Simulado",
-  paid: "Pago",
-  failed: "Falhou",
-  canceled: "Cancelado",
-  expired: "Expirado",
-  refunded: "Reembolsado"
-};
-
-function isPaymentMethod(value: string): value is PaymentMethod {
-  return (
-    value === "pix" ||
-    value === "boleto" ||
-    value === "cartao" ||
-    value === "debito"
-  );
-}
-
-/** Débito é um cartão: reusa o formulário de cartão e a mesma tokenização. */
-function isCardMethod(value: PaymentMethod | null): value is "cartao" | "debito" {
-  return value === "cartao" || value === "debito";
-}
 
 /** Formata "AAAA-MM-DD" como dd/mm/aaaa sem passar por Date (evita shift de fuso). */
 function formatDueDate(isoDate: string): string {
@@ -75,7 +45,7 @@ function formatDueDate(isoDate: string): string {
 }
 
 function jurosLabel(bps: number): string {
-  return `${(bps / 100).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}% a.m.`;
+  return formatBpsMensal(bps); // ARQ-05: fonte única do formato de juros
 }
 
 export default function CasePaymentPage({ params }: PageProps) {
@@ -95,12 +65,15 @@ export default function CasePaymentPage({ params }: PageProps) {
   const [method, setMethod] = useState<PaymentMethod | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
-  const [conflict, setConflict] = useState(false);
+  // PRC-02: guarda a MENSAGEM do 409, não um booleano — assim o conflito de "já
+  // registrado / em processamento" e o de divergência de preço ("Os valores foram
+  // atualizados...") mostram cada um seu texto real, em vez de um rótulo fixo enganoso.
+  const [conflictMessage, setConflictMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setLoadError("");
-    setConflict(false);
+    setConflictMessage(null);
     try {
       const result = await getCaseAggregate(id);
       setAggregate(result.data);
@@ -158,18 +131,19 @@ export default function CasePaymentPage({ params }: PageProps) {
     if (submitting || !selectedOption || !method) return;
     setSubmitting(true);
     setSubmitError("");
-    setConflict(false);
+    setConflictMessage(null);
     try {
       await createCasePayment(id, {
         parcelas: selectedOption.parcelas,
         method,
         pricing_config_version: estimate?.pricing_config_version,
+        expected_total_cents: selectedOption.valor_total_cents, // PRC-02
         idempotency_key: idempotencyKey
       });
       router.push(`/cases/${id}`);
     } catch (err) {
       if (err instanceof ApiClientError && err.status === 409) {
-        setConflict(true);
+        setConflictMessage(errorMessage(err, "Este caso já tem um pagamento registrado, ou outra confirmação aconteceu ao mesmo tempo."));
       } else {
         setSubmitError(
           errorMessage(err, "Não foi possível registrar o pagamento.")
@@ -187,13 +161,24 @@ export default function CasePaymentPage({ params }: PageProps) {
     if (submitting || !selectedOption || !isCardMethod(method)) return false;
     setSubmitting(true);
     setSubmitError("");
-    setConflict(false);
+    setConflictMessage(null);
+    // C3-06: tokenização (cartão) e registro (backend) em try SEPARADOS. Assim "confira o
+    // cartão" só aparece quando o erro é REALMENTE da validação do cartão; um 500/400/402 do
+    // backend mostra a mensagem real do backend (como o Pix), não uma culpa falsa ao cartão.
+    let tok;
     try {
-      const tok = await tokenizeCard(card);
+      tok = await tokenizeCard(card);
+    } catch {
+      setSubmitError("Não foi possível validar o cartão. Confira os dados e tente novamente.");
+      setSubmitting(false);
+      return false;
+    }
+    try {
       await createCasePayment(id, {
         parcelas: selectedOption.parcelas,
         method,
         pricing_config_version: estimate?.pricing_config_version,
+        expected_total_cents: selectedOption.valor_total_cents, // PRC-02
         idempotency_key: idempotencyKey,
         card_token: tok.token,
         card_last4: tok.last4,
@@ -204,11 +189,9 @@ export default function CasePaymentPage({ params }: PageProps) {
       return true;
     } catch (err) {
       if (err instanceof ApiClientError && err.status === 409) {
-        setConflict(true);
+        setConflictMessage(errorMessage(err, "Este caso já tem um pagamento registrado, ou outra confirmação aconteceu ao mesmo tempo."));
       } else {
-        setSubmitError(
-          "Não foi possível validar o cartão. Confira os dados e tente novamente."
-        );
+        setSubmitError(errorMessage(err, "Não foi possível registrar o pagamento."));
       }
       setSubmitting(false);
       return false;
@@ -361,7 +344,7 @@ export default function CasePaymentPage({ params }: PageProps) {
                 </Notification>
               )}
 
-              {conflict && (
+              {conflictMessage && (
                 <Notification
                   actions={
                     <>
@@ -373,11 +356,12 @@ export default function CasePaymentPage({ params }: PageProps) {
                       </Button>
                     </>
                   }
-                  title="Pagamento já registrado"
+                  title="Confirmação não concluída"
                   tone="warning"
                 >
-                  Este caso já tem um pagamento registrado (ou outra confirmação
-                  aconteceu ao mesmo tempo). Recarregue para ver o plano atual.
+                  {conflictMessage}
+                  {/[.!?]$/.test(conflictMessage) ? "" : "."} Recarregue para ver o
+                  estado atual antes de confirmar.
                 </Notification>
               )}
 

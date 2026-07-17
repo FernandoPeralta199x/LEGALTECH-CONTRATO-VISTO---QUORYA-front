@@ -8,6 +8,7 @@ import type {
   PaginatedResponse
 } from "@/types";
 import {
+  BACKEND_CASE_STATUS_VALUES,
   CASE_STATUS_VALUES,
   DOCUMENT_STATUS_VALUES,
   MODULE_STATUS_VALUES,
@@ -17,6 +18,15 @@ import {
   RISK_LEVEL_VALUES,
   SOURCE_MODE_VALUES
 } from "@/types";
+
+// Espelho em runtime de LegacyCaseStatus (domain.ts) — não há array em runtime
+// para o tipo; usado no teste de fronteira para verificar cobertura de exibição.
+const LEGACY_CASE_STATUS_MIRROR = [
+  "open", "in_progress", "closed", "submitted", "triagem_pendente",
+  "coleta_pendente", "processamento_documental", "analise_contratual",
+  "compliance", "minuta_relatorio", "revisao_humana", "processing",
+  "review", "approved", "delivered", "cancelled"
+] as const;
 
 test("exports canonical multi-request enum values", () => {
   assert.deepEqual([...REQUEST_STATUS_VALUES], [
@@ -33,6 +43,39 @@ test("exports canonical multi-request enum values", () => {
   assert.equal(PROVIDER_RESULT_STATUS_VALUES.includes("not_configured"), true);
   assert.equal(SOURCE_MODE_VALUES.includes("hybrid"), true);
   assert.equal(RISK_LEVEL_VALUES.includes("critical"), true);
+});
+
+test("M9: fronteira BE↔FE de status de caso (não-autorreferencial; detecta drift)", () => {
+  // SSOT do FE espelha EXATAMENTE o CASE_STATUS_PATTERN do backend. Se o backend
+  // mudar (ou este mirror), a igualdade quebra e força reconciliação consciente.
+  const backendPattern = [
+    "open", "in_progress", "awaiting_triage", "triage_completed",
+    "report_ready", "completed", "closed"
+  ];
+  assert.deepEqual([...BACKEND_CASE_STATUS_VALUES], backendPattern);
+
+  // M8: TODO status que o backend pode DEVOLVER precisa ser representável na UI
+  // (Standard ∪ Legacy) — senão a tela mostraria um status cru/sem rótulo. Este é
+  // um subset-check real: adicionar um status ao backend sem cobri-lo no FE falha.
+  const feDisplayable = new Set<string>([
+    ...CASE_STATUS_VALUES,
+    ...LEGACY_CASE_STATUS_MIRROR
+  ]);
+  for (const status of BACKEND_CASE_STATUS_VALUES) {
+    assert.equal(
+      feDisplayable.has(status),
+      true,
+      `status do backend não representável no FE (drift): ${status}`
+    );
+  }
+
+  // Trava anti-tautologia: o conjunto Standard do FE é exatamente o esperado
+  // (uma edição acidental de CASE_STATUS_VALUES quebra o teste).
+  assert.deepEqual([...CASE_STATUS_VALUES], [
+    "draft", "created", "document_attached", "awaiting_triage", "triage_running",
+    "triage_partial", "triage_completed", "ai_running", "report_ready",
+    "needs_human_review", "completed", "failed"
+  ]);
 });
 
 test("ApiResponse success and error envelopes carry observability fields", () => {

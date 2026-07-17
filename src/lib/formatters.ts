@@ -34,6 +34,17 @@ export function formatBytes(bytes: number): string {
   return formatSizeUnit(bytes / (1024 * 1024), "MB");
 }
 
+/** Taxa em basis points -> percentual pt-BR (ex.: 199 -> "1,99"). ARQ-05: fonte
+ *  única do formato de juros, antes triplicado inline nas telas de parcelamento. */
+export function formatBps(bps: number): string {
+  return (bps / 100).toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+}
+
+/** Juros mensal por extenso (ex.: 199 -> "1,99% a.m."). */
+export function formatBpsMensal(bps: number): string {
+  return `${formatBps(bps)}% a.m.`;
+}
+
 export function caseDisplayTitle(legalCase: { title?: string | null; metadata?: { title?: unknown }; caseType: string }): string {
   if (legalCase.title?.trim()) {
     return legalCase.title.trim();

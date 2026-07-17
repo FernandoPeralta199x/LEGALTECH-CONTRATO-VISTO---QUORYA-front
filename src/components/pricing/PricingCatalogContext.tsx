@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, createContext, useContext } from "react";
+import { useCallback, useEffect, useState, useMemo, createContext, useContext } from "react";
 
 import { MATRIZ } from "@/lib/produtoConfig";
 import { errorMessage } from "@/lib/errorMessage";
@@ -33,7 +33,7 @@ export function PricingCatalogProvider({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const refetch = async () => {
+  const refetch = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -44,7 +44,7 @@ export function PricingCatalogProvider({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -63,10 +63,13 @@ export function PricingCatalogProvider({
     };
   }, []);
 
+  const value = useMemo(
+    () => ({ catalog, isLoading, error, refetch }),
+    [catalog, isLoading, error, refetch]
+  );
+
   return (
-    <PricingCatalogContext.Provider
-      value={{ catalog, isLoading, error, refetch }}
-    >
+    <PricingCatalogContext.Provider value={value}>
       {children}
     </PricingCatalogContext.Provider>
   );

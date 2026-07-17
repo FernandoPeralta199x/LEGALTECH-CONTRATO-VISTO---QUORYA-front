@@ -352,8 +352,9 @@ export default function DocumentsPage() {
                   )}
                 </SelectInput>
               </FormField>
-              <FormField error={formErrors.file} label="Arquivo" required>
+              <FormField error={formErrors.file} htmlFor="cv-file-upload" label="Arquivo" required>
                 <input
+                  aria-describedby={formErrors.file ? "cv-file-upload-desc" : undefined}
                   aria-invalid={Boolean(formErrors.file) || undefined}
                   accept={acceptedUploadTypes}
                   className="sr-only"

@@ -1,5 +1,5 @@
 import { formatBytes } from "@/lib/formatters";
-import type { Document, DocumentCreate } from "@/types";
+import type { Document } from "@/types";
 import { apiClient } from "./apiClient";
 import { shouldUseMockFallback, fallbackReason, type ServiceResult } from "./fallback";
 
@@ -81,29 +81,6 @@ export function mapBackendDocument(document: BackendDocument): Document {
   };
 }
 
-function makeMockDocument(payload: DocumentCreate): Document {
-  const now = new Date().toISOString();
-
-  return {
-    id: `doc-local-${Date.now()}`,
-    filename: payload.filename,
-    caseId: payload.case_id,
-    caseCode: caseCodeFromId(payload.case_id),
-    contentType: payload.content_type,
-    status: payload.status ?? "pending_upload",
-    sizeBytes: payload.size_bytes,
-    sizeLabel: formatBytes(payload.size_bytes),
-    fileHash: payload.file_hash ?? null,
-    uploadedAt: now,
-    processedAt: null,
-    metadata: payload.metadata ?? { source: "frontend_mock_fallback" },
-    notes:
-      typeof payload.metadata?.notes === "string"
-        ? payload.metadata.notes
-        : ""
-  };
-}
-
 function safeUploadMetadata(
   metadata: Record<string, unknown> | undefined
 ): Record<string, unknown> {
@@ -132,12 +109,13 @@ export async function listDocuments(
     }
 
     const query = search.toString();
-    const response = await apiClient.get<BackendDocument[]>(
+    // C3-04: /documents agora é paginado (envelope {items,total,...}), como /clients.
+    const response = await apiClient.get<{ items: BackendDocument[] }>(
       `/api/v1/documents${query ? `?${query}` : ""}`
     );
 
     return {
-      data: response.data.map(mapBackendDocument),
+      data: response.data.items.map(mapBackendDocument),
       source: "api"
     };
   } catch (error) {
@@ -147,28 +125,6 @@ export async function listDocuments(
 
     return {
       data: [],
-      fallbackReason: fallbackReason(error),
-      source: "mock"
-    };
-  }
-}
-
-export async function createDocument(
-  payload: DocumentCreate
-): Promise<ServiceResult<Document>> {
-  try {
-    const response = await apiClient.post<BackendDocument>("/api/v1/documents", payload);
-    return {
-      data: mapBackendDocument(response.data),
-      source: "api"
-    };
-  } catch (error) {
-    if (!shouldUseMockFallback(error)) {
-      throw error;
-    }
-
-    return {
-      data: makeMockDocument(payload),
       fallbackReason: fallbackReason(error),
       source: "mock"
     };

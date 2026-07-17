@@ -1,7 +1,7 @@
 import type { Client, ClientCreate, ClientUpdate } from "@/types";
 
 import { maskDocumentForDisplay } from "./clientForm";
-import { assertBrowserPersistDisallowedInProduction } from "./runtimeEnv";
+import { assertBrowserPersistDisallowedInProduction, isMockFallbackEnabled } from "./runtimeEnv";
 
 export const LOCAL_CLIENTS_STORAGE_KEY = "legaltech.local.clients.v1";
 
@@ -29,7 +29,8 @@ function isStoredClient(value: unknown): value is Client {
     typeof value.email === "string" &&
     typeof value.phone === "string" &&
     typeof value.status === "string" &&
-    typeof value.riskLevel === "string" &&
+    // UI-01: riskLevel é opcional (o backend não avalia risco de cliente) — aceita ausente/string.
+    (value.riskLevel === undefined || typeof value.riskLevel === "string") &&
     typeof value.casesCount === "number" &&
     typeof value.createdAt === "string"
   );
@@ -100,7 +101,7 @@ function localClientFromPayload(
     personType: payload.person_type,
     phone: payload.phone ?? "",
     rg: payload.rg,
-    riskLevel: "low",
+    // UI-01: sem risco fabricado — cliente local também cai em "Risco não avaliado" (riskLevel ausente).
     sourceMode: "local",
     status: "active",
     tradeName: payload.trade_name,
@@ -191,6 +192,9 @@ function dedupeClients(clients: Client[]): Client[] {
 }
 
 export function getStoredLocalClients(): Client[] {
+  // SEC-FE-01: leitura gateada (isProduction + flag), igual a getStoredLocalCases.
+  if (!isMockFallbackEnabled()) return [];
+
   const storage = getLocalStorage();
   if (!storage) return [];
 

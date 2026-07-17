@@ -65,15 +65,15 @@ const config: Config = {
         "card-rest":
           "0 1px 2px rgba(15,23,42,0.05), 0 12px 32px rgba(15,23,42,0.06)",
         "card-hover":
-          "0 18px 44px rgba(15,23,42,0.1), 0 0 0 1px rgba(5,150,105,0.14)",
+          "0 18px 44px rgba(15,23,42,0.1), 0 0 0 1px rgba(32,201,151,0.14)",
         glow:
-          "0 0 0 3px rgba(5, 150, 105, 0.12), 0 12px 28px rgba(5, 150, 105, 0.16)",
+          "0 0 0 3px rgba(32, 201, 151, 0.12), 0 12px 28px rgba(32, 201, 151, 0.16)",
         "glow-lg":
-          "0 0 0 4px rgba(5, 150, 105, 0.16), 0 18px 38px rgba(5, 150, 105, 0.2)",
+          "0 0 0 4px rgba(32, 201, 151, 0.16), 0 18px 38px rgba(32, 201, 151, 0.2)",
         "glow-teal":
-          "0 0 0 3px rgba(5, 150, 105, 0.12), 0 12px 28px rgba(5, 150, 105, 0.16)",
+          "0 0 0 3px rgba(32, 201, 151, 0.12), 0 12px 28px rgba(32, 201, 151, 0.16)",
         "glow-teal-lg":
-          "0 0 0 4px rgba(5, 150, 105, 0.18), 0 18px 38px rgba(5, 150, 105, 0.22)",
+          "0 0 0 4px rgba(32, 201, 151, 0.18), 0 18px 38px rgba(32, 201, 151, 0.22)",
         "inner-highlight":
           "inset 0 1px 0 rgba(255,255,255,0.08)"
       },
@@ -95,17 +95,17 @@ const config: Config = {
       /* ── Background images ──────────────────────────────────────────────── */
       backgroundImage: {
         "gradient-brand":
-          "linear-gradient(135deg, #047857 0%, #10b981 100%)",
+          "linear-gradient(135deg, #17a882 0%, #20c997 100%)",
         "gradient-brand-hover":
-          "linear-gradient(135deg, #065f46 0%, #059669 100%)",
+          "linear-gradient(135deg, #0d6b50 0%, #17a882 100%)",
         "gradient-dark":
           "linear-gradient(180deg, #f8faf7 0%, #edf7ef 100%)",
         "gradient-card":
           "linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(236,253,245,0.75) 100%)",
         "gradient-glow":
-          "radial-gradient(ellipse 80% 50% at 50% -10%, rgba(5,150,105,0.16) 0%, transparent 70%)",
+          "radial-gradient(ellipse 80% 50% at 50% -10%, rgba(32,201,151,0.16) 0%, transparent 70%)",
         "gradient-glow-teal":
-          "radial-gradient(ellipse 80% 50% at 50% -10%, rgba(16,185,129,0.16) 0%, transparent 70%)",
+          "radial-gradient(ellipse 80% 50% at 50% -10%, rgba(32,201,151,0.16) 0%, transparent 70%)",
         "gradient-card-top":
           "linear-gradient(180deg, rgba(255,255,255,0.92) 0%, transparent 100%)"
       },
@@ -142,8 +142,8 @@ const config: Config = {
           "100%": { opacity: "1", transform: "translateX(0)" }
         },
         pulseGlow: {
-          "0%, 100%": { boxShadow: "0 0 8px rgba(5,150,105,0.16)" },
-          "50%":      { boxShadow: "0 0 24px rgba(5,150,105,0.36)" }
+          "0%, 100%": { boxShadow: "0 0 8px rgba(32,201,151,0.16)" },
+          "50%":      { boxShadow: "0 0 24px rgba(32,201,151,0.36)" }
         },
         shimmer: {
           from: { backgroundPosition: "-200% 0" },

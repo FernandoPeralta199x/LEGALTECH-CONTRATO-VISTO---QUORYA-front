@@ -211,8 +211,8 @@ export default function SettingsPage() {
                   className={cn(
                     "pressable flex items-center gap-2.5 whitespace-nowrap rounded-lg px-3 py-2.5 text-xs font-medium transition",
                     active
-                      ? "bg-emerald-50 text-brand-teal-dark dark:bg-emerald-950/40 dark:text-emerald-100"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-100"
+                      ? "bg-[var(--teal-dim)] text-[var(--teal)]"
+                      : "text-[var(--text2)] hover:bg-[var(--surf3)] hover:text-[var(--text)]"
                   )}
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}

@@ -49,7 +49,8 @@ import { usePrintOnChange } from "@/lib/usePrintOnChange";
 import {
   productLabel,
   recommendationLabel,
-  riskLabel
+  riskLabel,
+  sourceModeLabel
 } from "@/lib/reportLabels";
 import {
   FINAL_REPORT_ACCEPT_ATTR,
@@ -77,22 +78,6 @@ const TABS = [
 ];
 
 type PageProps = { params: Promise<{ id: string }> };
-
-function sourceModeLabel(value: unknown): string {
-  if (typeof value !== "string" || !value) {
-    return "api";
-  }
-
-  const labels: Record<string, string> = {
-    hybrid: "híbrido",
-    local: "local",
-    mock: "mock",
-    real: "real",
-    simulated: "simulado"
-  };
-
-  return labels[value] ?? value;
-}
 
 export default function CaseDetailPage({ params }: PageProps) {
   const { id } = use(params);
@@ -139,8 +124,13 @@ export default function CaseDetailPage({ params }: PageProps) {
   });
   const [finalReports, setFinalReports] = useState<FinalReportDocument[]>([]);
   const [finalReportUploading, setFinalReportUploading] = useState(false);
-  const [finalReportError, setFinalReportError] = useState("");
-  const [finalReportSuccess, setFinalReportSuccess] = useState("");
+  // ARQ-04: erro e sucesso do relatório final num ÚNICO estado — antes eram dois
+  // useState soltos e um refreshFinalReports que setava erro sem limpar o sucesso,
+  // podendo renderizar sucesso e erro ao mesmo tempo. Estado único torna a
+  // inconsistência inexpressável por construção.
+  const [finalReportFeedback, setFinalReportFeedback] = useState<
+    { kind: "error" | "success"; text: string } | null
+  >(null);
 
   const session = useDevSession();
   const canWrite = session ? ["admin", "analyst"].includes(session.role) : false;
@@ -168,7 +158,7 @@ export default function CaseDetailPage({ params }: PageProps) {
       setFinalReports(reports);
     } catch (err) {
       if (token !== latestLoad.current) return;
-      setFinalReportError(errorMessage(err, "Não foi possível carregar relatórios finais."));
+      setFinalReportFeedback({ kind: "error", text: errorMessage(err, "Não foi possível carregar relatórios finais.") });
       setFinalReports([]);
     }
   }, [id]);
@@ -185,9 +175,10 @@ export default function CaseDetailPage({ params }: PageProps) {
       !FINAL_REPORT_ACCEPTED_MIME.includes(file.type) &&
       !allowedExt.includes(ext)
     ) {
-      setFinalReportError(
-        "Tipo de arquivo não suportado. Envie PDF, DOCX ou TXT."
-      );
+      setFinalReportFeedback({
+        kind: "error",
+        text: "Tipo de arquivo não suportado. Envie PDF, DOCX ou TXT."
+      });
       input.value = "";
       return;
     }
@@ -195,20 +186,19 @@ export default function CaseDetailPage({ params }: PageProps) {
     // Size limit: 25 MB (a generous cap for legal reports)
     const maxBytes = 25 * 1024 * 1024;
     if (file.size > maxBytes) {
-      setFinalReportError("Arquivo excede o limite de 25 MB.");
+      setFinalReportFeedback({ kind: "error", text: "Arquivo excede o limite de 25 MB." });
       input.value = "";
       return;
     }
 
     setFinalReportUploading(true);
-    setFinalReportError("");
-    setFinalReportSuccess("");
+    setFinalReportFeedback(null);
     try {
       const doc = await uploadFinalReport(id, file);
       setFinalReports((current) => [doc, ...current]);
-      setFinalReportSuccess(`"${doc.filename}" enviado com sucesso.`);
+      setFinalReportFeedback({ kind: "success", text: `"${doc.filename}" enviado com sucesso.` });
     } catch (err) {
-      setFinalReportError(errorMessage(err, "Falha ao enviar o relatório."));
+      setFinalReportFeedback({ kind: "error", text: errorMessage(err, "Falha ao enviar o relatório.") });
     } finally {
       setFinalReportUploading(false);
       input.value = "";
@@ -220,9 +210,10 @@ export default function CaseDetailPage({ params }: PageProps) {
       const url = await getFinalReportDownloadUrl(documentId);
       window.open(url, "_blank", "noopener,noreferrer");
     } catch (err) {
-      setFinalReportError(
-        errorMessage(err, "Não foi possível gerar o link de download.")
-      );
+      setFinalReportFeedback({
+        kind: "error",
+        text: errorMessage(err, "Não foi possível gerar o link de download.")
+      });
     }
   }
 
@@ -327,31 +318,34 @@ export default function CaseDetailPage({ params }: PageProps) {
   }
 
   function syncCaseParties(updater: (current: CaseParty[]) => CaseParty[]) {
-    setCaseParties((current) => {
-      const next = updater(current);
-      setCaseData((currentCase) =>
-        currentCase ? { ...currentCase, parties: next } : currentCase
-      );
-      setCaseAggregate((currentAggregate) =>
-        currentAggregate
-          ? {
-              ...currentAggregate,
-              case: { ...currentAggregate.case, parties: next },
-              parties: next.map((party) =>
-                aggregatePartyFromCaseParty(
-                  party,
-                  currentAggregate.case.organizationId ?? ""
-                )
-              ),
-              summary: {
-                ...currentAggregate.summary,
-                partiesCount: next.length
-              }
+    // M16: updater PURO. Antes, setCaseData/setCaseAggregate eram chamados DENTRO do
+    // updater de setCaseParties — em React StrictMode o updater é invocado 2x (para
+    // detectar impureza), disparando os setState aninhados em duplicidade. Agora
+    // calculamos `next` do valor atual e disparamos os três setState no nível do
+    // handler; cada um continua com um updater próprio e puro.
+    const next = updater(caseParties);
+    setCaseParties(next);
+    setCaseData((currentCase) =>
+      currentCase ? { ...currentCase, parties: next } : currentCase
+    );
+    setCaseAggregate((currentAggregate) =>
+      currentAggregate
+        ? {
+            ...currentAggregate,
+            case: { ...currentAggregate.case, parties: next },
+            parties: next.map((party) =>
+              aggregatePartyFromCaseParty(
+                party,
+                currentAggregate.case.organizationId ?? ""
+              )
+            ),
+            summary: {
+              ...currentAggregate.summary,
+              partiesCount: next.length
             }
-          : currentAggregate
-      );
-      return next;
-    });
+          }
+        : currentAggregate
+    );
   }
 
   useEffect(() => {
@@ -419,9 +413,13 @@ export default function CaseDetailPage({ params }: PageProps) {
   return (
     <AuthGuard>
       <AppLayout>
-        {fallbackReason && (
+        {/* SEC-FE-02: banner dirigido por `source` (verdade estrutural), não pela string
+            opcional fallbackReason — assim um retorno mock JAMAIS renderiza sem aviso,
+            mesmo que alguém esqueça de preencher o motivo. */}
+        {aggregateSource === "mock" && (
           <Notification title="Fallback local do MVP" tone="warning">
-            API local indisponível: detalhes carregados por fallback mockado local.
+            {fallbackReason ||
+              "Detalhes carregados de dados locais/mock, não sincronizados com o backend."}
           </Notification>
         )}
         {error && (
@@ -540,29 +538,58 @@ export default function CaseDetailPage({ params }: PageProps) {
           </dl>
         </div>
 
-        {/* Tabs */}
-        <div className="mb-6 flex overflow-x-auto border-b border-[var(--bd)]">
+        {/* Tabs (padrão ARIA Tabs — A11Y-05) */}
+        <div
+          aria-label="Seções do caso"
+          className="mb-6 flex overflow-x-auto border-b border-[var(--bd)]"
+          onKeyDown={(event) => {
+            const i = TABS.findIndex((t) => t.id === activeTab);
+            let nextIndex: number;
+            if (event.key === "ArrowRight") nextIndex = (i + 1) % TABS.length;
+            else if (event.key === "ArrowLeft")
+              nextIndex = (i - 1 + TABS.length) % TABS.length;
+            else if (event.key === "Home") nextIndex = 0;
+            else if (event.key === "End") nextIndex = TABS.length - 1;
+            else return;
+            event.preventDefault();
+            const next = TABS[nextIndex];
+            setActiveTab(next.id);
+            document.getElementById(`tab-${next.id}`)?.focus();
+          }}
+          role="tablist"
+        >
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;
             return (
               <button
-                className={`flex items-center gap-2 whitespace-nowrap border-b-2 px-4 py-3 text-xs font-medium transition ${
+                aria-controls={active ? `panel-${tab.id}` : undefined}
+                aria-selected={active}
+                className={`flex items-center gap-2 whitespace-nowrap border-b-2 px-4 py-3 text-xs transition ${
                   active
-                    ? "border-[var(--teal)] text-[var(--teal)]"
-                    : "border-transparent text-[var(--text2)] hover:text-[var(--text)]"
+                    ? "border-[var(--teal)] font-semibold text-[var(--teal)]"
+                    : "border-transparent font-medium text-[var(--text2)] hover:text-[var(--text)]"
                 }`}
+                id={`tab-${tab.id}`}
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
+                role="tab"
+                tabIndex={active ? 0 : -1}
                 type="button"
               >
-                <Icon size={14} />
+                <Icon aria-hidden="true" size={14} />
                 {tab.label}
               </button>
             );
           })}
         </div>
 
+        <div
+          aria-labelledby={`tab-${activeTab}`}
+          id={`panel-${activeTab}`}
+          role="tabpanel"
+          tabIndex={0}
+        >
         {/* Tab: Overview */}
         {activeTab === "overview" && (
           <CaseOverviewTab
@@ -678,11 +705,11 @@ export default function CaseDetailPage({ params }: PageProps) {
             finalReport={{
               acceptAttr: FINAL_REPORT_ACCEPT_ATTR,
               docs: finalReports,
-              error: finalReportError,
+              error: finalReportFeedback?.kind === "error" ? finalReportFeedback.text : "",
               onDownload: (documentId: string) =>
                 void handleFinalReportDownload(documentId),
               onUpload: handleFinalReportUpload,
-              success: finalReportSuccess,
+              success: finalReportFeedback?.kind === "success" ? finalReportFeedback.text : "",
               uploading: finalReportUploading
             }}
             report={{
@@ -696,6 +723,7 @@ export default function CaseDetailPage({ params }: PageProps) {
             }}
           />
         )}
+        </div>
         <TriagePrintSheet
           caseCode={caseData.code}
           caseTitle={caseDisplayTitle(caseData)}

@@ -35,9 +35,10 @@ import { PriorityBadge } from "@/components/PriorityBadge";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatDate, caseDisplayTitle } from "@/lib/formatters";
 import { errorMessage } from "@/lib/errorMessage";
-import { productLabel } from "@/lib/reportLabels";
+import { productLabel, reportStatusLabel, sourceModeLabel } from "@/lib/reportLabels";
 import { createCase, deleteCase, updateCase } from "@/services/cases";
 import { useCasesList } from "@/lib/useCasesList";
+import { useModalA11y } from "@/lib/useModalA11y";
 import { validateCaseForm, type ValidationErrors } from "@/lib/validation";
 import type { Case, CaseCreate, CaseStatus, CaseUpdate, Client, Priority, ProductType } from "@/types";
 import {
@@ -48,44 +49,6 @@ import {
   statusFilterOptions,
   type CaseForm
 } from "@/lib/caseFormOptions";
-
-function reportStatusLabel(legalCase: Case): string {
-  const reportStatus = legalCase.metadata?.reportStatus;
-  if (typeof reportStatus !== "string" || !reportStatus) {
-    return "Pendente";
-  }
-
-  const labels: Record<string, string> = {
-    failed: "Falhou",
-    generating: "Gerando",
-    not_started: "Pendente",
-    ready: "Pronto",
-    in_review: "Em revisão",
-    approved: "Aprovado",
-    rejected: "Rejeitado",
-    delivered: "Entregue",
-    draft: "Rascunho"
-  };
-
-  return labels[reportStatus] ?? reportStatus;
-}
-
-function sourceModeLabel(legalCase: Case): string {
-  const sourceMode = legalCase.sourceMode ?? legalCase.metadata?.sourceMode;
-  if (typeof sourceMode !== "string" || !sourceMode) {
-    return "api";
-  }
-
-  const labels: Record<string, string> = {
-    hybrid: "híbrido",
-    local: "local",
-    mock: "mock",
-    real: "real",
-    simulated: "simulado"
-  };
-
-  return labels[sourceMode] ?? sourceMode;
-}
 
 export default function CasesPage() {
   // form + modal (page-owned); lista/busca/paginação no hook useCasesList (fe-struct-02)
@@ -144,6 +107,9 @@ export default function CasesPage() {
     setEditing(null);
     setEditSaving(false);
   }
+
+  // Foco/ESC/trap do modal "Editar caso" (A11Y-02) — mesmo padrão do ConfirmDialog.
+  const editDialogRef = useModalA11y<HTMLDivElement>(Boolean(editing), closeEdit);
 
   async function handleEditSave() {
     if (!editing || editSaving) return;
@@ -569,7 +535,7 @@ export default function CasesPage() {
                   {c.code}
                 </p>
                 <p className="mt-1 text-[10px] font-semibold uppercase tracking-normal text-[var(--text3)]">
-                  Origem: {sourceModeLabel(c)}
+                  Origem: {sourceModeLabel(c.sourceMode ?? c.metadata?.sourceMode)}
                 </p>
                 <h2 className="mt-1 line-clamp-2 min-h-10 text-sm font-semibold leading-5 text-[var(--text)]">
                   {caseDisplayTitle(c)}
@@ -614,7 +580,7 @@ export default function CasesPage() {
                   </div>
                   <div className="flex min-w-0 items-center gap-2 text-[var(--text2)]">
                     <Shield className="shrink-0 text-[var(--text3)]" size={12} />
-                    <span className="truncate">Relatório: {reportStatusLabel(c)}</span>
+                    <span className="truncate">Relatório: {reportStatusLabel(c.metadata?.reportStatus)}</span>
                   </div>
                 </div>
 
@@ -662,6 +628,7 @@ export default function CasesPage() {
             aria-labelledby="edit-case-title"
             aria-modal="true"
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            ref={editDialogRef}
             role="dialog"
           >
             <div className="cv-card w-full max-w-md p-6">

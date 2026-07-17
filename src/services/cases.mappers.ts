@@ -530,25 +530,21 @@ function mapAggregateReport(report: BackendAggregateReport | null, legalCase: Ca
   const riskSections = [
     ...report.legal_risks.map((description, index) => ({
       id: `${report.id}-legal-${index}`,
-      level: "medium" as const,
       title: "Risco jurídico",
       description
     })),
     ...report.commercial_risks.map((description, index) => ({
       id: `${report.id}-commercial-${index}`,
-      level: "medium" as const,
       title: "Risco comercial",
       description
     })),
     ...report.reputational_risks.map((description, index) => ({
       id: `${report.id}-reputational-${index}`,
-      level: "medium" as const,
       title: "Risco reputacional",
       description
     })),
     ...report.contractual_risks.map((description, index) => ({
       id: `${report.id}-contractual-${index}`,
-      level: "medium" as const,
       title: "Risco contratual",
       description
     }))

@@ -75,7 +75,8 @@ test("listFinalReports filtra por classification=final_report no servidor", asyn
     const method = (init?.method ?? "GET").toUpperCase();
     getUrl = String(url);
     if (method === "GET") {
-      return Response.json({ success: true, data: [] });
+      // C3-04: /documents devolve envelope paginado {items,total,...}.
+      return Response.json({ success: true, data: { items: [], page: 1, page_size: 50, total: 0, total_pages: 0 } });
     }
     throw new Error(`URL inesperada no mock: ${method} ${getUrl}`);
   }) as typeof fetch;

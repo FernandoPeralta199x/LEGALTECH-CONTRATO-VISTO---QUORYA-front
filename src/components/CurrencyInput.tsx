@@ -23,6 +23,8 @@ type CurrencyInputProps = {
   id?: string;
   name?: string;
   "aria-label"?: string;
+  "aria-describedby"?: string;
+  invalid?: boolean;
 };
 
 function centsToDisplay(cents: number | null | undefined): string {
@@ -55,6 +57,8 @@ export function CurrencyInput({
   id,
   name,
   "aria-label": ariaLabel,
+  "aria-describedby": ariaDescribedby,
+  invalid,
 }: CurrencyInputProps) {
   const isControlled = value !== undefined;
   const [display, setDisplay] = useState(() =>
@@ -111,7 +115,8 @@ export function CurrencyInput({
   return (
     <div
       className={cn(
-        "relative inline-flex items-center rounded-lg border border-[var(--bd)] bg-[var(--surf3)] px-3 py-2 text-sm",
+        "relative inline-flex items-center rounded-lg border bg-[var(--surf3)] px-3 py-2 text-sm",
+        invalid ? "border-[var(--danger)]" : "border-[var(--bd)]",
         "focus-within:border-[var(--accent)] focus-within:ring-1 focus-within:ring-[var(--accent)]/30",
         disabled && "opacity-60",
         className
@@ -123,6 +128,8 @@ export function CurrencyInput({
         id={id}
         name={name}
         aria-label={ariaLabel}
+        aria-describedby={ariaDescribedby}
+        aria-invalid={invalid || undefined}
         type="text"
         inputMode="decimal"
         disabled={disabled}

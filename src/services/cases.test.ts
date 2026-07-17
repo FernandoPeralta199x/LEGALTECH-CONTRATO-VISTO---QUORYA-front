@@ -11,6 +11,12 @@ import {
   submitWizardRequest
 } from "./cases";
 
+// SEC-FE-01: a leitura do store local passou a ser gateada por isMockFallbackEnabled().
+// Este arquivo exercita os caminhos de fallback local, então liga a flag. (listCases no
+// caminho de SUCESSO não lê o store local, então os testes de "backend OK não mistura
+// local" continuam válidos.) O Node test runner isola cada arquivo em seu processo.
+process.env.NEXT_PUBLIC_ENABLE_API_MOCK_FALLBACK = "true";
+
 class MemoryStorage {
   private values = new Map<string, string>();
 
@@ -501,6 +507,10 @@ test("getCaseAggregate maps operational aggregate scoped to a case id", async ()
   assert.equal(result.data.providerResults[0].caseId, result.data.case.id);
   assert.equal(result.data.report?.summary, "Relatório do caso A.");
   assert.equal(result.data.summary.partiesCount, 1);
+  // UI-03: o backend não envia severidade por risco — o mapper NÃO pode fabricar "medium".
+  const legalRisk = result.data.report?.risks.find((r) => r.title === "Risco jurídico");
+  assert.equal(legalRisk?.description, "Risco jurídico A");
+  assert.equal(legalRisk?.level, undefined); // antes vinha "medium" hardcoded
 });
 
 test("getCaseAggregate local fallback keeps the requested case id", async () => {

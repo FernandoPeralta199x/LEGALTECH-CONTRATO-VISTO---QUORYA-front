@@ -130,6 +130,7 @@ export function Header({ onMenuClick }: HeaderProps) {
             size={15}
           />
           <input
+            aria-label="Buscar casos e clientes"
             autoFocus={searchOpen}
             className={cn(
               "cv-input min-h-11 w-full pl-9 pr-3 text-sm",
@@ -161,7 +162,13 @@ export function Header({ onMenuClick }: HeaderProps) {
 
           {/* Dropdown de resultados */}
           {resultsOpen && query.trim().length >= 2 && (
-            <div className="absolute left-0 right-0 top-full z-40 mt-1.5 max-h-96 overflow-auto rounded-lg border border-[var(--bd)] bg-[var(--surf)] py-1 shadow-xl">
+            // A11Y-A7-03: região viva — o leitor de tela anuncia a chegada dos resultados
+            // (ou o "nenhum resultado") sem precisar de foco no dropdown.
+            <div
+              aria-atomic="true"
+              aria-live="polite"
+              className="absolute left-0 right-0 top-full z-40 mt-1.5 max-h-96 overflow-auto rounded-lg border border-[var(--bd)] bg-[var(--surf)] py-1 shadow-xl"
+            >
               {loading && (
                 <p className="px-3 py-2 text-xs text-[var(--text3)]">Buscando…</p>
               )}
@@ -266,6 +273,7 @@ export function Header({ onMenuClick }: HeaderProps) {
 
               {/* Avatar — acts as logout button */}
               <button
+                aria-label="Sair da sessão"
                 className={cn(
                   "flex h-8 w-8 items-center justify-center rounded-full",
                   "bg-gradient-brand text-[11px] font-bold text-white",
@@ -275,6 +283,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                 )}
                 onClick={handleLogout}
                 title="Sair da sessão"
+                type="button"
               >
                 {initials}
               </button>

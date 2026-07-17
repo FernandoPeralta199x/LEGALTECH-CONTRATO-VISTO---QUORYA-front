@@ -281,6 +281,8 @@ export function makeMockCase(payload: CaseCreate, clients: Client[] = []): Case 
     clientName: client?.name ?? "Cliente",
     caseType: payload.case_type,
     product: productFromMetadata(payload.metadata ?? {}),
+    // Caso LOCAL mock: registra a origem honesta para a UI não exibir "Origem: api".
+    sourceMode: "local",
     status: "draft",
     priority: payload.priority ?? "normal",
     documentsCount: 0,

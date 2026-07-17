@@ -100,15 +100,18 @@ export async function uploadFinalReport(
 export async function listFinalReports(
   caseId: string
 ): Promise<FinalReportDocument[]> {
-  const res = await apiClient.get<BackendDocument[]>(
+  // C3-04: /documents agora é paginado (envelope {items,total,...}).
+  const res = await apiClient.get<{ items: BackendDocument[] }>(
     `/api/v1/documents?case_id=${caseId}&classification=${FINAL_REPORT_KIND}`
   );
-  return res.data.map(mapDocument);
+  return res.data.items.map(mapDocument);
 }
 
 interface BackendDownloadUrl {
   url: string;
-  expires_at: string;
+  // M10: o backend retorna `expires_in_seconds` (segundos), não `expires_at`.
+  // Alinhado ao contrato real (documents.py:294-298); só `url` é consumido aqui.
+  expires_in_seconds: number;
 }
 
 /**

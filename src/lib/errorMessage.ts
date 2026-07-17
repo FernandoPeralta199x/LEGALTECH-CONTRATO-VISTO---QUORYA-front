@@ -25,8 +25,9 @@ export function errorMessage(
       return "Recurso não encontrado.";
     }
 
-    if (error.status === 422) {
-      // Erro de validação: a mensagem do backend costuma orientar o usuário.
+    // C3-01: validação (400/422) e regras de negócio (402/409/413/429) — a mensagem do
+    // backend é controlada (error_response) e ORIENTA o usuário; não descartá-la em produção.
+    if ([400, 402, 409, 413, 422, 429].includes(error.status)) {
       return isDev ? `${error.code}: ${error.message}` : error.message;
     }
 

@@ -1,5 +1,9 @@
-import { isProduction } from "@/lib/runtimeEnv";
+import { isMockFallbackEnabled } from "@/lib/runtimeEnv";
 import { ApiNetworkError } from "./apiClient";
+
+// isMockFallbackEnabled mora em lib/runtimeEnv (SEC-FE-01) e é reexportado aqui para
+// não quebrar os consumidores que já o importam de services/fallback.
+export { isMockFallbackEnabled };
 
 export type DataSource = "api" | "mock";
 
@@ -8,11 +12,6 @@ export type ServiceResult<T> = {
   fallbackReason?: string;
   source: DataSource;
 };
-
-export function isMockFallbackEnabled(): boolean {
-  if (isProduction()) return false;
-  return process.env.NEXT_PUBLIC_ENABLE_API_MOCK_FALLBACK === "true";
-}
 
 export function shouldUseMockFallback(error: unknown): boolean {
   return isMockFallbackEnabled() && error instanceof ApiNetworkError;

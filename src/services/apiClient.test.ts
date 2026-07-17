@@ -1,8 +1,22 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { clearStoredSession, saveStoredSession } from "@/lib/authStorage";
+import {
+  clearStoredSession,
+  getStoredToken,
+  saveStoredSession
+} from "@/lib/authStorage";
 import { ApiClientError, apiClient } from "./apiClient";
+
+const DEV_SESSION = {
+  email: "dev.admin@example.test",
+  issuedAt: "2026-05-24T12:00:00.000Z",
+  organizationId: "11111111-1111-4111-8111-111111111111",
+  role: "admin" as const,
+  source: "pasted" as const,
+  token: "valid.session.jwt",
+  userId: "22222222-2222-4222-8222-222222222222"
+};
 
 class MemoryStorage {
   private values = new Map<string, string>();
@@ -165,4 +179,79 @@ test("apiClient preserves standard response envelope metadata", async () => {
   assert.equal(response.error, null);
   assert.equal(response.request_id, "req-standard");
   assert.equal(response.source_mode, "local");
+});
+
+test("apiClient surfaces the backend {error} message instead of a generic HTTP error (C3-01)", async () => {
+  storage.clear();
+
+  globalThis.fetch = (async () =>
+    Response.json(
+      { error: "Cliente não encontrado", timestamp: "2026-06-11T10:00:00.000Z" },
+      { status: 404 }
+    )) as typeof fetch;
+
+  await assert.rejects(
+    () => apiClient.get<unknown>("/api/v1/clients/missing"),
+    (error: unknown) => {
+      assert.equal(error instanceof ApiClientError, true);
+      assert.equal((error as ApiClientError).message, "Cliente não encontrado");
+      assert.equal((error as ApiClientError).status, 404);
+      return true;
+    }
+  );
+});
+
+test("apiClient clears the stored session on a 403 authorizer denial (C3-02)", async () => {
+  storage.clear();
+  saveStoredSession(DEV_SESSION);
+  assert.equal(getStoredToken(), DEV_SESSION.token);
+
+  // Corpo próprio do API Gateway (sem o envelope {error} do app) = token negado.
+  globalThis.fetch = (async () =>
+    Response.json(
+      { message: "User is not authorized to access this resource" },
+      { status: 403 }
+    )) as typeof fetch;
+
+  await assert.rejects(() => apiClient.get<unknown>("/api/v1/cases"));
+
+  assert.equal(getStoredToken(), null);
+});
+
+test("apiClient keeps the session on a 403 role denial from the app (C3-02)", async () => {
+  storage.clear();
+  saveStoredSession(DEV_SESSION);
+
+  // Envelope do app ({error}) = usuário válido sem permissão → mantém a sessão.
+  globalThis.fetch = (async () =>
+    Response.json(
+      { error: "Acesso negado", timestamp: "2026-06-11T10:00:00.000Z" },
+      { status: 403 }
+    )) as typeof fetch;
+
+  await assert.rejects(
+    () => apiClient.post<unknown>("/api/v1/users", { role: "admin" }),
+    (error: unknown) => {
+      assert.equal((error as ApiClientError).message, "Acesso negado");
+      return true;
+    }
+  );
+
+  assert.equal(getStoredToken(), DEV_SESSION.token);
+  clearStoredSession();
+});
+
+test("apiClient clears the stored session on a 401 with a token (C3-02)", async () => {
+  storage.clear();
+  saveStoredSession(DEV_SESSION);
+
+  globalThis.fetch = (async () =>
+    Response.json(
+      { error: "Usuário não autenticado", timestamp: "2026-06-11T10:00:00.000Z" },
+      { status: 401 }
+    )) as typeof fetch;
+
+  await assert.rejects(() => apiClient.get<unknown>("/api/v1/cases"));
+
+  assert.equal(getStoredToken(), null);
 });

@@ -5,7 +5,7 @@ const config: Record<Priority, { label: string; className: string }> = {
   low: { label: "Baixa", className: "cv-badge-muted" },
   normal: { label: "Normal", className: "cv-badge-blue" },
   high: { label: "Alta", className: "cv-badge-orange" },
-  urgent: { label: "Urgente", className: "border-red-500/25 bg-red-500/10 text-red-300 animate-pulse" }
+  urgent: { label: "Urgente", className: "cv-badge-red animate-pulse" }
 };
 
 type PriorityBadgeProps = {

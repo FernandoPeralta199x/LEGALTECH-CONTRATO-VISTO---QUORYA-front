@@ -12,11 +12,6 @@ export interface RegisterPayload {
   role: string;
 }
 
-export interface VerifyEmailPayload {
-  email: string;
-  token: string;
-}
-
 export interface AuthTokenResult {
   access_token: string;
   token_type: string;
@@ -35,7 +30,6 @@ export interface RegisterResult {
   email: string;
   status: string;
   message: string;
-  verification_token?: string;
 }
 
 export async function login(payload: LoginPayload): Promise<AuthTokenResult> {
@@ -61,9 +55,4 @@ export async function register(payload: RegisterPayload): Promise<RegisterResult
     status: "active",
     message: "Conta criada com sucesso."
   };
-}
-
-export async function verifyEmail(payload: VerifyEmailPayload): Promise<AuthTokenResult> {
-  const response = await apiClient.post<AuthTokenResult>("/api/v1/auth/verify-email", payload);
-  return response.data;
 }

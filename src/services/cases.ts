@@ -193,6 +193,9 @@ export async function getCaseAggregate(
   if (localCase && !isUuidLike(caseId)) {
     return {
       data: makeFallbackAggregate(localCase),
+      // SEC-FE-02: sem fallbackReason, o cache local aparecia SEM marcação, idêntico
+      // a um caso real do backend. O motivo alimenta o banner "Fallback local".
+      fallbackReason: "Caso local (não sincronizado com o backend).",
       source: "mock"
     };
   }
@@ -235,6 +238,9 @@ export type CasePaymentPayload = {
   parcelas: number;
   method: PaymentMethod;
   pricing_config_version?: number;
+  // PRC-02: total que a tela exibiu e o usuário confirmou. O backend responde 409 se
+  // divergir do recalculado (config mudou entre o load e o clique), pedindo revisão.
+  expected_total_cents?: number;
   idempotency_key: string;
   card_token?: string;
   card_last4?: string;
@@ -298,6 +304,7 @@ export async function getCase(
   if (localCase) {
     return {
       data: localCase,
+      fallbackReason: "Caso local (não sincronizado com o backend).", // SEC-FE-02
       source: "mock"
     };
   }

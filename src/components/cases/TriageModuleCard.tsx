@@ -40,7 +40,7 @@ export function TriageModuleCard({ module, result, onPrint }: TriageModuleCardPr
             {module.provider} · {sourceModeLabel(module.sourceMode)}
           </p>
         </div>
-        <StatusBadge status={module.status} />
+        <StatusBadge kind="triage" status={module.status} />
       </div>
 
       <dl className="mt-4 grid grid-cols-2 gap-3 text-xs">
