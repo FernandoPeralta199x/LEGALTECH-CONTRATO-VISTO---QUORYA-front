@@ -37,6 +37,43 @@ test("listDocuments maps backend documents and reports api source", async () => 
   assert.equal(result.data[0].caseCode, "CASE-API-1");
 });
 
+test("listDocuments tolera o array cru legado (backend antigo) sem quebrar com undefined.map", async () => {
+  // Regressão do bug de runtime: um servidor com o contrato LEGADO devolve `data` como
+  // ARRAY (sem envelope). Antes, response.data.items era undefined -> "Cannot read
+  // properties of undefined (reading 'map')" derrubava Documentos E o Dashboard.
+  globalThis.fetch = (async () =>
+    Response.json({
+      success: true,
+      data: [
+        {
+          id: "doc-legacy-1",
+          case_id: "case-legacy-1",
+          filename: "antigo.pdf",
+          content_type: "application/pdf",
+          size_bytes: 1024,
+          file_hash: null,
+          status: "uploaded",
+          uploaded_by: null,
+          uploaded_at: "2026-05-25T10:00:00.000Z",
+          metadata: {},
+          created_at: "2026-05-25T10:00:00.000Z",
+          updated_at: "2026-05-25T10:00:00.000Z"
+        }
+      ]
+    })) as typeof fetch;
+
+  const result = await listDocuments();
+  assert.equal(result.source, "api");
+  assert.equal(result.data.length, 1);
+  assert.equal(result.data[0].id, "doc-legacy-1");
+});
+
+test("listDocuments não quebra se data vier ausente/undefined (degrada para lista vazia)", async () => {
+  globalThis.fetch = (async () => Response.json({ success: true })) as typeof fetch;
+  const result = await listDocuments();
+  assert.deepEqual(result.data, []);
+});
+
 test("uploadDocument segue o fluxo presign (registra JSON, faz PUT, busca) sem organization_id", async () => {
   let registerUrl = "";
   let registerBody = "";

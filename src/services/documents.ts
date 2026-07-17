@@ -109,13 +109,18 @@ export async function listDocuments(
     }
 
     const query = search.toString();
-    // C3-04: /documents agora é paginado (envelope {items,total,...}), como /clients.
-    const response = await apiClient.get<{ items: BackendDocument[] }>(
+    // C3-04: /documents passou a devolver o envelope paginado {items,total,...}, como
+    // /clients. Mas aceita TAMBÉM o array cru do contrato legado — assim FE e BE em
+    // versões diferentes (deploy não-atômico, ou o dev-server ainda não reiniciado)
+    // não quebram com "undefined.map"; degrada para lista sem `total`.
+    const response = await apiClient.get<BackendDocument[] | { items?: BackendDocument[] }>(
       `/api/v1/documents${query ? `?${query}` : ""}`
     );
+    const payload = response.data;
+    const items = Array.isArray(payload) ? payload : payload?.items ?? [];
 
     return {
-      data: response.data.items.map(mapBackendDocument),
+      data: items.map(mapBackendDocument),
       source: "api"
     };
   } catch (error) {

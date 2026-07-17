@@ -100,11 +100,14 @@ export async function uploadFinalReport(
 export async function listFinalReports(
   caseId: string
 ): Promise<FinalReportDocument[]> {
-  // C3-04: /documents agora é paginado (envelope {items,total,...}).
-  const res = await apiClient.get<{ items: BackendDocument[] }>(
+  // C3-04: /documents devolve o envelope paginado {items,...}; aceita também o array
+  // cru legado para não quebrar com "undefined.map" quando FE e BE divergem de versão.
+  const res = await apiClient.get<BackendDocument[] | { items?: BackendDocument[] }>(
     `/api/v1/documents?case_id=${caseId}&classification=${FINAL_REPORT_KIND}`
   );
-  return res.data.items.map(mapDocument);
+  const payload = res.data;
+  const items = Array.isArray(payload) ? payload : payload?.items ?? [];
+  return items.map(mapDocument);
 }
 
 interface BackendDownloadUrl {
