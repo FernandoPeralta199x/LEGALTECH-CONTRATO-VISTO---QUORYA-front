@@ -98,7 +98,7 @@ fallback mock é desligado e a sessão não persiste PII (fail-closed).
 /documents       Documentos (upload presign, lista, download-url, enfileirar processamento)
 /clients         Clientes (CRUD; CPF/CNPJ/RG validados)
 /reports         Relatórios/pareceres
-/financial       Módulo financeiro (visão geral, vendas, custos, tributos, notas, relatório, auditoria) — admin
+/financial       Módulo financeiro (visão geral, vendas, pagamentos, custos, tributos, notas, relatório, auditoria) — admin
 /analyst         Triagem/revisão conceitual
 /admin           Governança (atalhos + referência de papéis)
 /admin/pricing   Configuração de pricing
