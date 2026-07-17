@@ -1,7 +1,7 @@
 import type { Client, ClientCreate, ClientUpdate } from "@/types";
 
 import { maskDocumentForDisplay } from "./clientForm";
-import { assertBrowserPersistDisallowedInProduction } from "./runtimeEnv";
+import { assertBrowserPersistDisallowedInProduction, isMockFallbackEnabled } from "./runtimeEnv";
 
 export const LOCAL_CLIENTS_STORAGE_KEY = "legaltech.local.clients.v1";
 
@@ -192,6 +192,9 @@ function dedupeClients(clients: Client[]): Client[] {
 }
 
 export function getStoredLocalClients(): Client[] {
+  // SEC-FE-01: leitura gateada (isProduction + flag), igual a getStoredLocalCases.
+  if (!isMockFallbackEnabled()) return [];
+
   const storage = getLocalStorage();
   if (!storage) return [];
 

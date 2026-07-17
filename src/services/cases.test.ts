@@ -11,6 +11,12 @@ import {
   submitWizardRequest
 } from "./cases";
 
+// SEC-FE-01: a leitura do store local passou a ser gateada por isMockFallbackEnabled().
+// Este arquivo exercita os caminhos de fallback local, então liga a flag. (listCases no
+// caminho de SUCESSO não lê o store local, então os testes de "backend OK não mistura
+// local" continuam válidos.) O Node test runner isola cada arquivo em seu processo.
+process.env.NEXT_PUBLIC_ENABLE_API_MOCK_FALLBACK = "true";
+
 class MemoryStorage {
   private values = new Map<string, string>();
 

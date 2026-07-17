@@ -9,6 +9,17 @@ export function isProduction(): boolean {
 }
 
 /**
+ * O fallback de dados mock (dev only) está habilitado? Fail-closed em produção
+ * (nunca serve mock em prod) e, fora dela, só quando a flag opt-in está ligada.
+ * Mora aqui (lib) para que os stores locais possam gatear a LEITURA sem inverter
+ * a dependência lib -> services (SEC-FE-01). Reexportado por services/fallback.
+ */
+export function isMockFallbackEnabled(): boolean {
+  if (isProduction()) return false;
+  return process.env.NEXT_PUBLIC_ENABLE_API_MOCK_FALLBACK === "true";
+}
+
+/**
  * Politica unica do projeto: nenhuma sessao/token ou PII pode ser persistida
  * no storage do browser (localStorage/sessionStorage) em producao.
  * O caminho de producao e Cognito + cookie HttpOnly/Secure/SameSite.

@@ -1,6 +1,6 @@
 import { MODULOS, PRODUTOS, type Modulo } from "@/lib/produtoConfig";
 import type { Case, CaseParty, CaseStatus, Priority, ProductType } from "@/types";
-import { assertBrowserPersistDisallowedInProduction } from "./runtimeEnv";
+import { assertBrowserPersistDisallowedInProduction, isMockFallbackEnabled } from "./runtimeEnv";
 
 export const LOCAL_CASES_STORAGE_KEY = "legaltech.local.cases.v1";
 
@@ -148,6 +148,11 @@ function dedupeCases(cases: Case[]): Case[] {
 }
 
 export function getStoredLocalCases(): Case[] {
+  // SEC-FE-01: a LEITURA também é gateada (antes só a escrita era). Sem isto, um
+  // item stale em localStorage seria servido no lugar da API mesmo em produção /
+  // com a flag off — a API sequer seria chamada. Espelha readStoredSession (auth).
+  if (!isMockFallbackEnabled()) return [];
+
   const storage = getLocalStorage();
   if (!storage) return [];
 
@@ -200,17 +205,6 @@ export function findStoredLocalCase(caseId: string): Case | undefined {
   );
 }
 
-export function isLocalOnlyCase(legalCase: Case): boolean {
-  return (
-    legalCase.id.startsWith("case-local-") ||
-    legalCase.metadata?.origin === "local" ||
-    legalCase.metadata?.syncStatus === "local_only"
-  );
-}
-
-export function mergeCasesWithLocalCases(cases: Case[]): Case[] {
-  return dedupeCases([...getStoredLocalCases(), ...cases]);
-}
 
 export function createLocalCaseFromWizard(
   input: LocalCaseWizardInput,
