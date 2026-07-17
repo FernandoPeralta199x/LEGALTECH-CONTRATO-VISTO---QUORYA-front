@@ -85,7 +85,9 @@ export function FormField({
       </label>
       {content}
       {error ? (
-        <p className="mt-1.5 text-xs leading-5 text-red-700 dark:text-red-300" id={describedById}>
+        // A11Y-A7-01: role="alert" só no ramo de ERRO (anuncia a mensagem ao leitor de tela
+        // quando aparece). NUNCA no hint abaixo — senão toda dica estática seria falada.
+        <p className="mt-1.5 text-xs leading-5 text-red-700 dark:text-red-300" id={describedById} role="alert">
           {error}
         </p>
       ) : hint ? (

@@ -162,7 +162,13 @@ export function Header({ onMenuClick }: HeaderProps) {
 
           {/* Dropdown de resultados */}
           {resultsOpen && query.trim().length >= 2 && (
-            <div className="absolute left-0 right-0 top-full z-40 mt-1.5 max-h-96 overflow-auto rounded-lg border border-[var(--bd)] bg-[var(--surf)] py-1 shadow-xl">
+            // A11Y-A7-03: região viva — o leitor de tela anuncia a chegada dos resultados
+            // (ou o "nenhum resultado") sem precisar de foco no dropdown.
+            <div
+              aria-atomic="true"
+              aria-live="polite"
+              className="absolute left-0 right-0 top-full z-40 mt-1.5 max-h-96 overflow-auto rounded-lg border border-[var(--bd)] bg-[var(--surf)] py-1 shadow-xl"
+            >
               {loading && (
                 <p className="px-3 py-2 text-xs text-[var(--text3)]">Buscando…</p>
               )}
