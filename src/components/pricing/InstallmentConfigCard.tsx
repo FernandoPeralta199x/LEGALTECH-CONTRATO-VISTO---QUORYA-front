@@ -9,6 +9,7 @@ import { FormField, TextInput } from "@/components/FormField";
 import { Notification } from "@/components/Notification";
 import { Switch } from "@/components/Switch";
 import { METHOD_LABELS, METHOD_ORDER } from "@/lib/paymentMethods";
+import { bpsToPercentLabel, parsePercentToBps } from "@/lib/percentBps";
 import type { InstallmentConfig, MethodRule } from "@/services/pricing";
 import type { PaymentMethod } from "@/types";
 
@@ -69,21 +70,6 @@ export function normalizeInstallmentConfig(
   }
 
   return { ...merged, allowed_methods: methods };
-}
-
-function bpsToPercentLabel(bps: number): string {
-  return (bps / 100).toLocaleString("pt-BR", { maximumFractionDigits: 2 });
-}
-
-function parsePercentToBps(raw: string): number | null {
-  const trimmed = raw.trim();
-  if (!trimmed) return null;
-  const normalized = trimmed.includes(",")
-    ? trimmed.replace(/\./g, "").replace(",", ".")
-    : trimmed;
-  const parsed = Number(normalized);
-  if (Number.isNaN(parsed) || parsed < 0) return null;
-  return Math.round(parsed * 100);
 }
 
 type IntFieldProps = {
