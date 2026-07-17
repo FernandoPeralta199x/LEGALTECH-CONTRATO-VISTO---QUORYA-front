@@ -25,8 +25,10 @@ import { LoadingState } from "@/components/LoadingState";
 import { Notification } from "@/components/Notification";
 import { PageTitle } from "@/components/PageTitle";
 import { StatusBadge } from "@/components/StatusBadge";
+import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/formatters";
 import { errorMessage } from "@/lib/errorMessage";
+import { riskLabel, RISK_TONE } from "@/lib/reportLabels";
 import { createClient, listClientsPaged, updateClient } from "@/services/clients";
 import { validateClientForm, type ValidationErrors } from "@/lib/validation";
 import {
@@ -44,16 +46,6 @@ import {
 } from "@/lib/clientForm";
 import type { Client } from "@/types";
 
-// Cores via tokens do design system (theme-aware); o wrapper preserva o formato
-// pill não-uppercase (rounded-full + border 1px), diferente do cv-badge base.
-const riskConfig: Record<string, { label: string; className: string }> = {
-  high: { label: "Indicador local alto", className: "cv-badge-red" },
-  low: { label: "Indicador local baixo", className: "cv-badge-teal" },
-  medium: { label: "Indicador local médio", className: "cv-badge-orange" },
-  // UI-01: estado honesto para quando o backend não avaliou risco (a maioria dos clientes).
-  // Antes, a ausência caía num "baixo" verde fabricado para todos.
-  unknown: { label: "Risco não avaliado", className: "cv-badge-muted" }
-};
 
 const contractRoleOptions = Object.entries(clientContractRoleLabels);
 
@@ -512,7 +504,9 @@ export default function ClientsPage() {
         ) : (
           <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
             {clients.map((client, index) => {
-              const risk = riskConfig[client.riskLevel ?? "unknown"] ?? riskConfig.unknown;
+              // UI-02: rótulo e tom vêm da fonte única (reportLabels), não de um mapa local.
+              const riskText = riskLabel(client.riskLevel);
+              const riskTone = RISK_TONE[client.riskLevel ?? "unknown"] ?? "cv-badge-muted";
               const displayName = client.displayName ?? client.name;
               const personTypeLabel = client.personType
                 ? clientPersonTypeLabels[client.personType]
@@ -581,11 +575,12 @@ export default function ClientsPage() {
                   </dl>
 
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--bd)] pt-4">
+                    {/* UI-08: classe base .cv-badge (padrão de todos os badges), não utilities remontadas. */}
                     <span
-                      className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold ${risk.className}`}
+                      className={cn("cv-badge", riskTone)}
                       title="Indicador operacional local; não substitui revisão jurídica."
                     >
-                      {risk.label}
+                      {riskText}
                     </span>
                     <span className="text-[11px] text-[var(--text3)]">
                       {client.sourceMode ? `Origem: ${client.sourceMode} · ` : ""}

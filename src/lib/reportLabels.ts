@@ -19,10 +19,10 @@ export function recommendationLabel(value: unknown): string {
   return labels[value] ?? value;
 }
 
-/** Nível de risco do caso; "unknown"/vazio → "Não informado". */
+/** Nível de risco; "unknown"/vazio → "Não avaliado". Fonte ÚNICA do rótulo (UI-02). */
 export function riskLabel(value: unknown): string {
   if (typeof value !== "string" || !value || value === "unknown") {
-    return "Não informado";
+    return "Não avaliado";
   }
 
   const labels: Record<string, string> = {
@@ -34,6 +34,16 @@ export function riskLabel(value: unknown): string {
 
   return labels[value] ?? value;
 }
+
+/** Fonte ÚNICA do TOM (cv-badge-*) por nível de risco (UI-02) — antes duplicado em
+ *  clients/page.tsx, onde já havia divergido. Ausente/`unknown` → neutro. */
+export const RISK_TONE: Record<string, string> = {
+  unknown: "cv-badge-muted",
+  low: "cv-badge-teal",
+  medium: "cv-badge-orange",
+  high: "cv-badge-red",
+  critical: "cv-badge-red"
+};
 
 /** Status operacional da triagem do caso; vazio → "Não iniciada". */
 export function triageStatusLabel(value: unknown): string {
