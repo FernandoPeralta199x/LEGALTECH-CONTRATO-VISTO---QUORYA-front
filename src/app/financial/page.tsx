@@ -37,7 +37,9 @@ import { PageTitle } from "@/components/PageTitle";
 import { ApiCostsPanel } from "@/components/financial/ApiCostsPanel";
 import { AuditPanel } from "@/components/financial/AuditPanel";
 import { ClientsPanel } from "@/components/financial/ClientsPanel";
+import { PaymentsPanel } from "@/components/financial/PaymentsPanel";
 import { ReportsPanel } from "@/components/financial/ReportsPanel";
+import { SalesPanel } from "@/components/financial/SalesPanel";
 import { ServicesPanel } from "@/components/financial/ServicesPanel";
 import { TaxesNotesPanel } from "@/components/financial/TaxesNotesPanel";
 import { FinancialStatusPill, type FinancialStatus } from "@/components/financial/FinancialStatusPill";
@@ -140,61 +142,10 @@ const KPI_GROUPS: { label: string; kpis: OverviewKpi[] }[] = [
   }
 ];
 
-/* ── Colunas das tabelas (estrutura real; dados só na Fase 3) ───────────────── */
-const codeCell = (value: string) => (
-  <span className="font-mono text-[11px] text-[var(--teal)]">{value}</span>
-);
+/* ── Colunas de tabela ainda sem painel próprio (Recebíveis) ────────────────── */
 const dateCell = (value: string) => (
   <span className="font-mono text-[11px] text-[var(--text2)]">{value}</span>
 );
-
-type SaleRow = {
-  code: string;
-  client: string;
-  service: string;
-  grossCents: number;
-  discountCents: number;
-  finalCents: number;
-  status: FinancialStatus;
-  paymentStatus: FinancialStatus;
-  noteStatus: FinancialStatus;
-};
-
-const SALE_COLUMNS: Column<SaleRow>[] = [
-  { key: "code", label: "Código", render: (r) => codeCell(r.code) },
-  { key: "client", label: "Cliente", render: (r) => r.client },
-  { key: "service", label: "Serviço", render: (r) => r.service },
-  { key: "gross", label: "Valor bruto", align: "right", render: (r) => <MoneyText cents={r.grossCents} /> },
-  { key: "discount", label: "Desconto", align: "right", render: (r) => <MoneyText cents={r.discountCents} /> },
-  { key: "final", label: "Valor final", align: "right", render: (r) => <MoneyText cents={r.finalCents} /> },
-  { key: "status", label: "Status", render: (r) => <FinancialStatusPill status={r.status} /> },
-  { key: "payment", label: "Pagamento", render: (r) => <FinancialStatusPill status={r.paymentStatus} /> },
-  { key: "note", label: "Nota", render: (r) => <FinancialStatusPill status={r.noteStatus} /> }
-];
-
-type PaymentRow = {
-  id: string;
-  sale: string;
-  client: string;
-  method: string;
-  amountCents: number;
-  feeCents: number;
-  netCents: number;
-  status: FinancialStatus;
-  date: string;
-};
-
-const PAYMENT_COLUMNS: Column<PaymentRow>[] = [
-  { key: "id", label: "ID", render: (r) => codeCell(r.id) },
-  { key: "sale", label: "Venda", render: (r) => r.sale },
-  { key: "client", label: "Cliente", render: (r) => r.client },
-  { key: "method", label: "Método", render: (r) => r.method },
-  { key: "amount", label: "Valor", align: "right", render: (r) => <MoneyText cents={r.amountCents} /> },
-  { key: "fee", label: "Taxa gateway", align: "right", render: (r) => <MoneyText cents={r.feeCents} /> },
-  { key: "net", label: "Líquido", align: "right", render: (r) => <MoneyText cents={r.netCents} /> },
-  { key: "status", label: "Status", render: (r) => <FinancialStatusPill status={r.status} /> },
-  { key: "date", label: "Data", render: (r) => dateCell(r.date) }
-];
 
 type ReceivableRow = {
   client: string;
@@ -534,25 +485,9 @@ export default function FinancialPage() {
   } else if (activeTab === "overview") {
     panel = <OverviewPanel error={overviewError} loading={overviewLoading} overview={overview} />;
   } else if (activeTab === "sales") {
-    panel = (
-      <TablePanel<SaleRow>
-        columns={SALE_COLUMNS}
-        emptyDescription="Esta aba ainda não é alimentada por endpoint próprio. As vendas existem e aparecem nos KPIs da Visão Geral e nas abas Serviços e Clientes; o detalhamento venda a venda (valor bruto, desconto, valor final, status, nota) chega quando o ledger financeiro do backend existir."
-        emptyIcon={ShoppingCart}
-        emptyTitle="Vendas ainda não conectadas"
-        phase="Fase 3 — backend núcleo"
-      />
-    );
+    panel = <SalesPanel from={rangeFrom} period={period} to={rangeTo} />;
   } else if (activeTab === "payments") {
-    panel = (
-      <TablePanel<PaymentRow>
-        columns={PAYMENT_COLUMNS}
-        emptyDescription="Esta aba ainda não é alimentada por endpoint próprio. Os totais recebido/pendente aparecem nos KPIs da Visão Geral; o detalhamento pagamento a pagamento (gateway, taxa, valor líquido) chega com o ledger de eventos financeiros."
-        emptyIcon={CreditCard}
-        emptyTitle="Pagamentos ainda não conectados"
-        phase="Fase 3 — backend núcleo"
-      />
-    );
+    panel = <PaymentsPanel from={rangeFrom} period={period} to={rangeTo} />;
   } else if (activeTab === "receivables") {
     panel = (
       <TablePanel<ReceivableRow>
@@ -597,11 +532,12 @@ export default function FinancialPage() {
                 Módulo Financeiro — dados reais (Fases 3–6)
               </p>
               <p className="mt-1 text-xs leading-5 text-[var(--text2)]">
-                Visão Geral, Serviços, Clientes, Gastos com APIs, Tributos e Notas e Relatórios são{" "}
+                Visão Geral, Vendas, Pagamentos, Serviços, Clientes, Gastos com APIs, Tributos e
+                Notas e Relatórios são{" "}
                 <strong className="font-semibold text-[var(--text)]">calculados pelo backend</strong>{" "}
                 a partir dos dados reais da organização. Indicadores ainda sem fonte (receita
-                líquida, margem, atraso) e as abas de Vendas/Pagamentos/Recebíveis/Reembolsos
-                aparecem vazias até serem integradas nas próximas fases.
+                líquida, margem, atraso) e as abas de Recebíveis/Reembolsos aparecem vazias até
+                serem integradas nas próximas fases.
               </p>
             </div>
           </div>

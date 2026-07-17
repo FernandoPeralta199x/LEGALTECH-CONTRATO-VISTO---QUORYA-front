@@ -4,6 +4,12 @@
 // evitando o hardcode de localhost que quebraria em staging/prod.
 const apiTarget = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
 
+// PROD-03: o upload envia os bytes por fetch PUT direto ao presigned URL do S3
+// (documents.ts), que em produção é CROSS-ORIGIN (ex.: https://<bucket>.s3.<region>.amazonaws.com).
+// fetch/PUT é regido por connect-src — sem o host, o browser BLOQUEIA o upload em produção.
+// Derivado de env: vazio em dev/local (storage mock, sem PUT cross-origin), setado no deploy.
+const s3UploadOrigin = process.env.NEXT_PUBLIC_S3_UPLOAD_ORIGIN || "";
+
 // M-04: Content-Security-Policy. 'unsafe-inline'/'unsafe-eval' sao necessarios para o
 // runtime do Next (hidratacao) e o HMR em dev; endurecer com nonces fica para a Fase 7.
 // O restante trava clickjacking (frame-ancestors), base-uri e plugins (object-src).
@@ -16,7 +22,7 @@ const csp = [
   "font-src 'self' data:",
   "style-src 'self' 'unsafe-inline'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-  "connect-src 'self' ws: wss:",
+  `connect-src 'self' ws: wss:${s3UploadOrigin ? " " + s3UploadOrigin : ""}`,
   "form-action 'self'",
 ].join("; ");
 

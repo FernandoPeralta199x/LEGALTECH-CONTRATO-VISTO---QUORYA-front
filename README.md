@@ -9,7 +9,7 @@ reais — os adapters do backend são mock-first e o deploy AWS é uma etapa pos
 
 - Next.js 16 (Turbopack) · React 19 · TypeScript
 - Tailwind CSS · lucide-react (ícones)
-- Testes: `node:test` via `tsx`
+- Testes: `node:test` via `tsx` (**114 testes**); `tsc --noEmit` + `eslint --max-warnings=0` no CI
 
 ## Configuração local
 
@@ -78,6 +78,8 @@ O login é por **e-mail e senha** reais contra o backend local:
 - **Login** (`POST /api/v1/auth/login`): retorna um JWT (HS256, dev) guardado em
   `localStorage`; o `apiClient` envia `Authorization: Bearer <token>` automaticamente.
 - **Sair**: limpa a sessão pelo Header.
+- **Reset de senha revoga sessões anteriores** (backend, AUTH-02): um token emitido antes da
+  troca passa a receber `403` nas ações de escrita/admin — refaça login.
 
 Papéis reconhecidos pelo backend: `admin`, `analyst`, `viewer`. O `organization_id` vem
 sempre do token/contexto autenticado — nunca de payloads enviados pela UI. Em produção o
@@ -92,9 +94,11 @@ fallback mock é desligado e a sessão não persiste PII (fail-closed).
 /cases           Casos (lista, busca, criar caso rápido)
 /cases/new       Novo Pedido (wizard: partes, contrato, produto, módulos, revisão)
 /cases/[id]      Detalhe do caso (partes, timeline, triagem, relatório)
+/cases/[id]/pagamento  Pagamento do caso (parcelas / cartão via token)
 /documents       Documentos (upload presign, lista, download-url, enfileirar processamento)
 /clients         Clientes (CRUD; CPF/CNPJ/RG validados)
 /reports         Relatórios/pareceres
+/financial       Módulo financeiro (visão geral, vendas, pagamentos, custos, tributos, notas, relatório, auditoria) — admin
 /analyst         Triagem/revisão conceitual
 /admin           Governança (atalhos + referência de papéis)
 /admin/pricing   Configuração de pricing
@@ -107,8 +111,13 @@ Rotas internas usam uma guarda local (`AuthGuard`): sem sessão salva, redirecio
 
 Componentes compartilhados para feedback consistente: `LoadingState`, `ErrorState`,
 `EmptyState`, `FormField`/`TextInput`/`TextArea`/`SelectInput`, `Notification`,
-`ConfirmDialog`. A busca global (Header) consulta casos e clientes no backend; o sino de
-notificações deriva de casos (triagem concluída, relatório gerado) e documentos processados.
+`ConfirmDialog`. A busca global (Header) consulta casos e clientes no backend (com navegação
+por teclado e `role="listbox"`); o sino de notificações deriva de casos (triagem concluída,
+relatório gerado) e documentos processados, com cache isolado por usuário.
+
+**Acessibilidade & permissões:** skip-to-content, `aria-current` na navegação, foco/`inert` no
+drawer mobile, `role="tablist"` no detalhe do caso; ações de escrita (upload, envio, exclusão)
+ficam atrás de `canWrite` — `viewer` vê o conteúdo em modo somente-leitura.
 
 ## Estrutura
 
@@ -145,7 +154,9 @@ GET/POST/PUT /api/v1/pricing[...]           catálogo, estimativa, config
 
 ## Segurança de dependências (npm audit)
 
-Estado em 2026-07-01: **2 vulnerabilidades moderadas**, ambas do mesmo pacote transitivo.
+Estado (reverificado 2026-07-17, sem mudança): **2 vulnerabilidades moderadas**, ambas do
+mesmo pacote transitivo. O CI (`.github/workflows/ci.yml`) roda `npm audit --audit-level=high`,
+que **não** falha por estas (moderate).
 
 - **Pacote:** `postcss <8.5.10` — XSS via `</style>` não escapado na saída do stringify de CSS
   ([GHSA-qx2v-qp2m-jg93](https://github.com/advisories/GHSA-qx2v-qp2m-jg93)).

@@ -14,7 +14,7 @@ import {
   type Produto
 } from "@/lib/produtoConfig";
 import { submitWizardRequest } from "@/services/cases";
-import { listClients } from "@/services/clients";
+import { listClientsPaged } from "@/services/clients";
 import type { Client } from "@/types";
 
 import { ContractStep } from "./ContractStep";
@@ -73,9 +73,29 @@ export function NewCaseWizard() {
   const [arquivo, setArquivo] = useState<WizardFile | null>(null);
 
   useEffect(() => {
-    listClients()
-      .then((result) => setClients(result.data ?? []))
-      .catch(() => setClients([]));
+    // API-03: carrega TODAS as páginas de clientes (o backend pagina em 100/página),
+    // para que clientes além dos 50 mais recentes fiquem alcançáveis no seletor —
+    // antes listClients() sem paginação trazia só a 1ª página.
+    let cancelled = false;
+    (async () => {
+      try {
+        const all: Client[] = [];
+        let page = 1;
+        let totalPages = 1;
+        do {
+          const res = await listClientsPaged({ page, pageSize: 100 });
+          all.push(...res.data);
+          totalPages = res.totalPages;
+          page += 1;
+        } while (page <= totalPages && page <= 50 && !cancelled); // teto de segurança
+        if (!cancelled) setClients(all);
+      } catch {
+        if (!cancelled) setClients([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
   const [anexarContrato, setAnexarContrato] = useState(true);
   const [produto, setProduto] = useState<Produto | null>(null);

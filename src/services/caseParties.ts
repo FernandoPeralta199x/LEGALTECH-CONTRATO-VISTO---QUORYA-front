@@ -87,11 +87,15 @@ export async function listCaseParties(
   caseId: string
 ): Promise<ServiceResult<CaseParty[]>> {
   try {
-    const response = await apiClient.get<BackendCaseParty[]>(
+    const response = await apiClient.get<BackendCaseParty[] | { items?: BackendCaseParty[] }>(
       `/api/v1/cases/${caseId}/parties`
     );
+    // Tolerante a array cru (contrato atual) e a envelope {items}, como clients/documents —
+    // nunca "undefined.map" se a forma da resposta divergir.
+    const payload = response.data;
+    const parties = Array.isArray(payload) ? payload : payload?.items ?? [];
     return {
-      data: response.data.map(mapBackendCaseParty),
+      data: parties.map(mapBackendCaseParty),
       source: "api"
     };
   } catch (error) {
