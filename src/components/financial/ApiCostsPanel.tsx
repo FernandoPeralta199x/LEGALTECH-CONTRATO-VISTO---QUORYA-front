@@ -8,13 +8,13 @@ import {
   Plus,
   Search,
   TrendingUp,
-  TriangleAlert,
   type LucideIcon
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/Button";
 import { centsToReaisLabel } from "@/components/CurrencyInput";
+import { ErrorState } from "@/components/ErrorState";
 import { ApiCostFormModal } from "@/components/financial/ApiCostFormModal";
 import {
   FinancialStatusPill,
@@ -197,16 +197,7 @@ export function ApiCostsPanel({
       )}
 
       {error && (
-        <div
-          className="flex items-start gap-3 rounded-[var(--r)] border border-[rgba(239,68,68,0.28)] bg-[var(--danger-dim)] p-4"
-          role="alert"
-        >
-          <TriangleAlert aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--danger)]" size={16} />
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-[var(--text)]">Não foi possível carregar os custos de API</p>
-            <p className="mt-1 text-xs leading-5 text-[var(--text2)]">{error}</p>
-          </div>
-        </div>
+        <ErrorState description={error} title="Não foi possível carregar os custos de API" />
       )}
 
       {auto && !loading && !error && (

@@ -1,9 +1,10 @@
 "use client";
 
-import { Plus, Search, TriangleAlert, type LucideIcon } from "lucide-react";
+import { Plus, Search, type LucideIcon } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/Button";
+import { ErrorState } from "@/components/ErrorState";
 import { FinancialTable, type Column } from "@/components/financial/FinancialTable";
 import { KpiCard, type KpiState, type KpiTone } from "@/components/financial/KpiCard";
 import { ChartCard, MiniDonut, type ChartTone } from "@/components/financial/MiniChart";
@@ -183,18 +184,7 @@ export function FinancialListSection<Item, Summary, Payload>({
         </div>
       )}
 
-      {error && (
-        <div
-          className="flex items-start gap-3 rounded-[var(--r)] border border-[rgba(239,68,68,0.28)] bg-[var(--danger-dim)] p-4"
-          role="alert"
-        >
-          <TriangleAlert aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--danger)]" size={16} />
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-[var(--text)]">Não foi possível carregar</p>
-            <p className="mt-1 text-xs leading-5 text-[var(--text2)]">{error}</p>
-          </div>
-        </div>
-      )}
+      {error && <ErrorState description={error} title="Não foi possível carregar" />}
 
       <div>
         <p className="mb-3 px-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--text3)]">

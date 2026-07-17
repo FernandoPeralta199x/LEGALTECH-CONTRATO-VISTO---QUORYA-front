@@ -52,7 +52,9 @@ html[data-theme="dark"] {
   --bd3: rgba(255, 255, 255, 0.22);
   --text: #e4eaf2;
   --text2: #7d8fa8;
-  --text3: #3d4f68;
+  /* UI-05: era #3d4f68 (2.17:1, reprovava WCAG AA). #75879f = 4.93:1 sobre --surf2
+     (passa AA) e segue menos proeminente que --text2 (5.48:1), preservando a hierarquia. */
+  --text3: #75879f;
   /* Cores semânticas de status (contraste AA em ambos os temas) */
   --ok: #34d399;
   --danger: #fca5a5;
@@ -84,7 +86,9 @@ html[data-theme="light"] {
   --bd3: rgba(15, 100, 70, 0.28);
   --text: #0d1f1a;
   --text2: #406858;
-  --text3: #8ab5a2;
+  /* UI-05: era #8ab5a2 (2.28:1, reprovava WCAG AA). #556f60 = 5.2:1 sobre --surf2 e
+     4.88:1 sobre --surf3 (passa AA), abaixo de --text2 (5.96:1) — hierarquia preservada. */
+  --text3: #556f60;
   --ok: #0f7a5a;
   --danger: #b91c1c;
   --nav-bg: rgba(240, 246, 243, 0.80);
@@ -350,11 +354,30 @@ textarea:-webkit-autofill:focus {
     justify-content: center;
     height: 28px;
     width: 28px;
+    /* UI-06: neutraliza o clamp global `min-height:44px` (que deformava o botão em 28x44).
+       O visual segue 28x28. */
+    min-height: 28px;
+    position: relative;
     border-radius: 8px;
     border: 1px solid var(--bd);
     background: var(--surf2);
     color: var(--text2);
     transition: all 0.15s;
+  }
+
+  /* UI-06: restaura o alvo tocável de 44x44 (WCAG 2.5.5 / mobile) sem alterar a caixa
+     visual nem deslocar vizinhos — área invisível centrada sobre o botão. z-index:-1 deixa
+     o halo ATRÁS dos vizinhos posicionados (os toolbars têm botões a poucos px): ele expande
+     o alvo só onde não há vizinho e não rouba os cliques da borda do botão ao lado. */
+  .cv-icon-btn::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 44px;
+    height: 44px;
+    z-index: -1;
   }
 
   .cv-icon-btn:hover:not(:disabled) {
@@ -866,4 +889,19 @@ textarea:-webkit-autofill:focus {
     padding: 24px;
   }
   @page { margin: 16mm; }
+}
+
+/* A11Y-A7-02: respeita a preferência do sistema por menos movimento (WCAG 2.3.3).
+   Cobre de uma vez os ~69 usos de animação/transição do app, sem tocar em componente
+   algum. Não zera de todo (0.01ms) para não quebrar transições que disparam callbacks
+   de `transitionend`; apenas as torna instantâneas. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

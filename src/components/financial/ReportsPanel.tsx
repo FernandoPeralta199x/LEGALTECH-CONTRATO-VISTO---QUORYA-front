@@ -1,9 +1,10 @@
 "use client";
 
-import { Info, Printer, RefreshCw, TriangleAlert } from "lucide-react";
+import { Info, Printer, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/Button";
+import { ErrorState } from "@/components/ErrorState";
 import { FinancialReportSheet } from "@/components/financial/FinancialReportSheet";
 import type { PeriodKey } from "@/components/financial/PeriodFilter";
 import { usePrintOnChange } from "@/lib/usePrintOnChange";
@@ -94,19 +95,15 @@ export function ReportsPanel({
       </div>
 
       {error && (
-        <div
-          className="flex items-start gap-3 rounded-[var(--r)] border border-[rgba(239,68,68,0.28)] bg-[var(--danger-dim)] p-4"
-          role="alert"
-        >
-          <TriangleAlert aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--danger)]" size={16} />
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-[var(--text)]">Não foi possível gerar o relatório</p>
-            <p className="mt-1 text-xs leading-5 text-[var(--text2)]">{error}</p>
-            <Button className="mt-3" onClick={() => setReload((r) => r + 1)} size="sm" variant="secondary">
+        <ErrorState
+          action={
+            <Button onClick={() => setReload((r) => r + 1)} size="sm" variant="secondary">
               Tentar novamente
             </Button>
-          </div>
-        </div>
+          }
+          description={error}
+          title="Não foi possível gerar o relatório"
+        />
       )}
 
       {loading && (

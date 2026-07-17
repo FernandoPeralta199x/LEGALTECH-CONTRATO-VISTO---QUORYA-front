@@ -1,9 +1,10 @@
 "use client";
 
-import { Activity, FilePlus2, History, Info, Search, TriangleAlert, Users } from "lucide-react";
+import { Activity, FilePlus2, History, Info, Search, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { centsToReaisLabel } from "@/components/CurrencyInput";
+import { ErrorState } from "@/components/ErrorState";
 import { FinancialTable, type Column } from "@/components/financial/FinancialTable";
 import { KpiCard, type KpiState } from "@/components/financial/KpiCard";
 import type { PeriodKey } from "@/components/financial/PeriodFilter";
@@ -256,18 +257,7 @@ export function AuditPanel({
         </div>
       </div>
 
-      {error && (
-        <div
-          className="flex items-start gap-3 rounded-[var(--r)] border border-[rgba(239,68,68,0.28)] bg-[var(--danger-dim)] p-4"
-          role="alert"
-        >
-          <TriangleAlert aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--danger)]" size={16} />
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-[var(--text)]">Não foi possível carregar a auditoria</p>
-            <p className="mt-1 text-xs leading-5 text-[var(--text2)]">{error}</p>
-          </div>
-        </div>
-      )}
+      {error && <ErrorState description={error} title="Não foi possível carregar a auditoria" />}
 
       <div>
         <p className="mb-3 px-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--text3)]">
