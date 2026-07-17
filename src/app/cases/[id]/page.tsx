@@ -206,10 +206,16 @@ export default function CaseDetailPage({ params }: PageProps) {
   }
 
   async function handleFinalReportDownload(documentId: string) {
+    // FE-04: abre a aba NO GESTO do clique (antes do await), senão o popup é bloqueado
+    // por abrir fora do handler síncrono. Depois aponta a aba já aberta para a URL.
+    const win = window.open("", "_blank");
+    if (win) win.opener = null; // mitiga reverse tabnabbing (sem perder a referência)
     try {
       const url = await getFinalReportDownloadUrl(documentId);
-      window.open(url, "_blank", "noopener,noreferrer");
+      if (win) win.location.href = url;
+      else window.location.href = url; // fallback se o popup foi bloqueado mesmo assim
     } catch (err) {
+      win?.close();
       setFinalReportFeedback({
         kind: "error",
         text: errorMessage(err, "Não foi possível gerar o link de download.")

@@ -88,21 +88,26 @@ export function CaseReportTab({ finalReport, report }: CaseReportTabProps) {
           </div>
         )}
 
-        <label
-          className={`flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--bd2)] bg-[var(--surf2)] px-4 py-6 text-sm font-medium text-[var(--text2)] transition hover:border-[var(--accent)] hover:bg-[var(--surf3)] ${
-            uploading ? "pointer-events-none opacity-60" : ""
-          }`}
-        >
-          <Upload size={16} />
-          {uploading ? "Enviando..." : "Selecionar arquivo (PDF, DOCX, TXT)"}
-          <input
-            accept={acceptAttr}
-            className="hidden"
-            disabled={uploading}
-            onChange={onUpload}
-            type="file"
-          />
-        </label>
+        {/* FE-02/FE-03: o upload do relatório final bate em POST /documents @require_writer —
+            só writers veem o dropzone (não-writers já têm o banner "Modo leitura" na página). */}
+        {canWrite && (
+          <label
+            className={`flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--bd2)] bg-[var(--surf2)] px-4 py-6 text-sm font-medium text-[var(--text2)] transition hover:border-[var(--accent)] hover:bg-[var(--surf3)] ${
+              uploading ? "pointer-events-none opacity-60" : ""
+            }`}
+          >
+            <Upload size={16} />
+            {uploading ? "Enviando..." : "Selecionar arquivo (PDF, DOCX, TXT)"}
+            <input
+              accept={acceptAttr}
+              aria-label="Enviar relatório final (PDF, DOCX ou TXT)"
+              className="sr-only"
+              disabled={uploading}
+              onChange={onUpload}
+              type="file"
+            />
+          </label>
+        )}
 
         {docs.length > 0 && (
           <div className="mt-5 space-y-2">

@@ -122,6 +122,7 @@ function NavItem({
       )}
       href={href}
       onClick={onClick}
+      aria-current={active ? "page" : undefined}
     >
       {/* Active left bar */}
       {active && (
