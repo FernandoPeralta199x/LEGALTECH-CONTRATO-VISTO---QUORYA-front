@@ -124,8 +124,13 @@ export default function CaseDetailPage({ params }: PageProps) {
   });
   const [finalReports, setFinalReports] = useState<FinalReportDocument[]>([]);
   const [finalReportUploading, setFinalReportUploading] = useState(false);
-  const [finalReportError, setFinalReportError] = useState("");
-  const [finalReportSuccess, setFinalReportSuccess] = useState("");
+  // ARQ-04: erro e sucesso do relatório final num ÚNICO estado — antes eram dois
+  // useState soltos e um refreshFinalReports que setava erro sem limpar o sucesso,
+  // podendo renderizar sucesso e erro ao mesmo tempo. Estado único torna a
+  // inconsistência inexpressável por construção.
+  const [finalReportFeedback, setFinalReportFeedback] = useState<
+    { kind: "error" | "success"; text: string } | null
+  >(null);
 
   const session = useDevSession();
   const canWrite = session ? ["admin", "analyst"].includes(session.role) : false;
@@ -153,7 +158,7 @@ export default function CaseDetailPage({ params }: PageProps) {
       setFinalReports(reports);
     } catch (err) {
       if (token !== latestLoad.current) return;
-      setFinalReportError(errorMessage(err, "Não foi possível carregar relatórios finais."));
+      setFinalReportFeedback({ kind: "error", text: errorMessage(err, "Não foi possível carregar relatórios finais.") });
       setFinalReports([]);
     }
   }, [id]);
@@ -170,9 +175,10 @@ export default function CaseDetailPage({ params }: PageProps) {
       !FINAL_REPORT_ACCEPTED_MIME.includes(file.type) &&
       !allowedExt.includes(ext)
     ) {
-      setFinalReportError(
-        "Tipo de arquivo não suportado. Envie PDF, DOCX ou TXT."
-      );
+      setFinalReportFeedback({
+        kind: "error",
+        text: "Tipo de arquivo não suportado. Envie PDF, DOCX ou TXT."
+      });
       input.value = "";
       return;
     }
@@ -180,20 +186,19 @@ export default function CaseDetailPage({ params }: PageProps) {
     // Size limit: 25 MB (a generous cap for legal reports)
     const maxBytes = 25 * 1024 * 1024;
     if (file.size > maxBytes) {
-      setFinalReportError("Arquivo excede o limite de 25 MB.");
+      setFinalReportFeedback({ kind: "error", text: "Arquivo excede o limite de 25 MB." });
       input.value = "";
       return;
     }
 
     setFinalReportUploading(true);
-    setFinalReportError("");
-    setFinalReportSuccess("");
+    setFinalReportFeedback(null);
     try {
       const doc = await uploadFinalReport(id, file);
       setFinalReports((current) => [doc, ...current]);
-      setFinalReportSuccess(`"${doc.filename}" enviado com sucesso.`);
+      setFinalReportFeedback({ kind: "success", text: `"${doc.filename}" enviado com sucesso.` });
     } catch (err) {
-      setFinalReportError(errorMessage(err, "Falha ao enviar o relatório."));
+      setFinalReportFeedback({ kind: "error", text: errorMessage(err, "Falha ao enviar o relatório.") });
     } finally {
       setFinalReportUploading(false);
       input.value = "";
@@ -205,9 +210,10 @@ export default function CaseDetailPage({ params }: PageProps) {
       const url = await getFinalReportDownloadUrl(documentId);
       window.open(url, "_blank", "noopener,noreferrer");
     } catch (err) {
-      setFinalReportError(
-        errorMessage(err, "Não foi possível gerar o link de download.")
-      );
+      setFinalReportFeedback({
+        kind: "error",
+        text: errorMessage(err, "Não foi possível gerar o link de download.")
+      });
     }
   }
 
@@ -407,9 +413,13 @@ export default function CaseDetailPage({ params }: PageProps) {
   return (
     <AuthGuard>
       <AppLayout>
-        {fallbackReason && (
+        {/* SEC-FE-02: banner dirigido por `source` (verdade estrutural), não pela string
+            opcional fallbackReason — assim um retorno mock JAMAIS renderiza sem aviso,
+            mesmo que alguém esqueça de preencher o motivo. */}
+        {aggregateSource === "mock" && (
           <Notification title="Fallback local do MVP" tone="warning">
-            API local indisponível: detalhes carregados por fallback mockado local.
+            {fallbackReason ||
+              "Detalhes carregados de dados locais/mock, não sincronizados com o backend."}
           </Notification>
         )}
         {error && (
@@ -695,11 +705,11 @@ export default function CaseDetailPage({ params }: PageProps) {
             finalReport={{
               acceptAttr: FINAL_REPORT_ACCEPT_ATTR,
               docs: finalReports,
-              error: finalReportError,
+              error: finalReportFeedback?.kind === "error" ? finalReportFeedback.text : "",
               onDownload: (documentId: string) =>
                 void handleFinalReportDownload(documentId),
               onUpload: handleFinalReportUpload,
-              success: finalReportSuccess,
+              success: finalReportFeedback?.kind === "success" ? finalReportFeedback.text : "",
               uploading: finalReportUploading
             }}
             report={{

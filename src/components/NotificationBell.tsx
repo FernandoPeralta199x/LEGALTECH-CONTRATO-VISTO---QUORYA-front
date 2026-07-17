@@ -4,6 +4,7 @@ import { Bell, CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { readStoredSession } from "@/lib/authStorage";
 import { cn } from "@/lib/cn";
 import { listCases } from "@/services/cases";
 import { listDocuments } from "@/services/documents";
@@ -80,13 +81,52 @@ function buildNotices(cases: Case[], documents: Document[]): Notice[] {
     .slice(0, 12);
 }
 
-async function fetchNotices(): Promise<Notice[]> {
+// PERF-A7-01: o shell (AppLayout->Header->NotificationBell) remonta a CADA navegação
+// (não há layout.tsx compartilhado no App Router), então o efeito de mount refazia
+// listCases()+listDocuments() a cada clique de menu — 2 requests descartados por página,
+// só para o badge. Um cache de módulo com TTL curto guarda os DADOS BRUTOS e zera essas
+// chamadas dentro da janela; os avisos são reconstruídos a cada mount para o estado de
+// "lido" (getReadIds) ficar sempre fresco.
+const NOTICES_TTL_MS = 60_000;
+let rawCache: {
+  cases: Case[];
+  documents: Document[];
+  fetchedAt: number;
+  sessionKey: string;
+} | null = null;
+
+/** Identidade da sessão atual (userId). O cache é chaveado por ela para que uma
+ *  troca de usuário na mesma aba invalide o cache POR CONSTRUÇÃO — logout desktop,
+ *  logout mobile, expiração de sessão e 401/403 limpam a sessão por caminhos
+ *  diferentes; chavear aqui cobre todos sem depender de cada um lembrar de limpar
+ *  (senão o próximo usuário veria os avisos do anterior — vazamento cross-usuário). */
+function currentSessionKey(): string {
+  return readStoredSession().session?.userId ?? "";
+}
+
+async function fetchRaw(): Promise<{ cases: Case[]; documents: Document[] }> {
+  const [cases, documents] = await Promise.all([
+    listCases().catch(() => ({ data: [] as Case[] })),
+    listDocuments().catch(() => ({ data: [] as Document[] })),
+  ]);
+  return { cases: cases.data ?? [], documents: documents.data ?? [] };
+}
+
+async function fetchNotices(force = false): Promise<Notice[]> {
   try {
-    const [cases, documents] = await Promise.all([
-      listCases().catch(() => ({ data: [] as Case[] })),
-      listDocuments().catch(() => ({ data: [] as Document[] })),
-    ]);
-    return buildNotices(cases.data ?? [], documents.data ?? []);
+    const sessionKey = currentSessionKey();
+    let cache = rawCache;
+    if (
+      force ||
+      !cache ||
+      cache.sessionKey !== sessionKey ||
+      Date.now() - cache.fetchedAt >= NOTICES_TTL_MS
+    ) {
+      const raw = await fetchRaw();
+      cache = { ...raw, fetchedAt: Date.now(), sessionKey };
+      rawCache = cache;
+    }
+    return buildNotices(cache.cases, cache.documents);
   } catch {
     return [];
   }
