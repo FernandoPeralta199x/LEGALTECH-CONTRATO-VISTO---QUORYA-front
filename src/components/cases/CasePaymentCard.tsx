@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { centsToReaisLabel } from "@/components/CurrencyInput";
+import { formatBps } from "@/lib/formatters";
 import { isCardMethod, methodLabel, paymentStatusLabel } from "@/lib/paymentMethods";
 import type { InstallmentPlan } from "@/types";
 
@@ -91,10 +92,7 @@ export function CasePaymentCard({
             <p className="mt-3 text-[11px] text-[var(--text3)]">
               Juros de{" "}
               <span className="font-mono">
-                {(installmentPlan.jurosMensalBps / 100).toLocaleString("pt-BR", {
-                  maximumFractionDigits: 2
-                })}
-                %
+                {formatBps(installmentPlan.jurosMensalBps)}%
               </span>{" "}
               a.m. · acréscimo de{" "}
               <span className="font-mono">
