@@ -44,6 +44,46 @@ Object.defineProperty(globalThis, "localStorage", {
   value: storage
 });
 
+test("apiClient usa path relativo no browser mesmo com backend remoto configurado (evita CORS/CSP)", async () => {
+  storage.clear();
+  const previousBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const previousWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
+
+  process.env.NEXT_PUBLIC_API_BASE_URL =
+    "https://m4362mxrai.execute-api.sa-east-1.amazonaws.com/dev";
+
+  Object.defineProperty(globalThis, "window", {
+    configurable: true,
+    value: {
+      location: new URL("https://contrato-visto.vercel.app/dashboard"),
+      setTimeout: globalThis.setTimeout.bind(globalThis),
+      clearTimeout: globalThis.clearTimeout.bind(globalThis)
+    }
+  });
+
+  let capturedUrl = "";
+  globalThis.fetch = (async (url) => {
+    capturedUrl = String(url);
+    return Response.json({ success: true, data: [] });
+  }) as typeof fetch;
+
+  try {
+    await apiClient.get<unknown[]>("/api/v1/clients");
+    assert.equal(capturedUrl, "/api/v1/clients");
+  } finally {
+    if (previousBaseUrl === undefined) {
+      Reflect.deleteProperty(process.env, "NEXT_PUBLIC_API_BASE_URL");
+    } else {
+      process.env.NEXT_PUBLIC_API_BASE_URL = previousBaseUrl;
+    }
+    if (previousWindow) {
+      Object.defineProperty(globalThis, "window", previousWindow);
+    } else {
+      Reflect.deleteProperty(globalThis, "window");
+    }
+  }
+});
+
 test("apiClient sends Authorization from the stored dev session", async () => {
   storage.clear();
   saveStoredSession({

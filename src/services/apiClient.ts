@@ -55,11 +55,11 @@ function rewriteLoopbackForLanAccess(
   }
 }
 
-function isLocalhost(hostname: string | undefined): boolean {
-  if (!hostname) return false;
-  const h = hostname.toLowerCase();
-  return h === "localhost" || h === "127.0.0.1" || h === "::1" || h === "[::1]";
-}
+//function isLocalhost(hostname: string | undefined): boolean {
+//  if (!hostname) return false;
+//  const h = hostname.toLowerCase();
+//  return h === "localhost" || h === "127.0.0.1" || h === "::1" || h === "[::1]";
+//}
 
 export function resolveApiBaseUrl(): string {
   const runtimeLocation = getRuntimeLocation();
@@ -70,9 +70,9 @@ export function resolveApiBaseUrl(): string {
   // ensures the dev/prod proxy config is respected. Only use an absolute URL
   // when explicitly pointed at a remote API.
   if (typeof window !== "undefined" && window.location) {
-    if (configuredBaseUrl && !isLocalhost(new URL(configuredBaseUrl).hostname)) {
-      return rewriteLoopbackForLanAccess(configuredBaseUrl, runtimeLocation);
-    }
+//    if (configuredBaseUrl && !isLocalhost(new URL(configuredBaseUrl).hostname)) {
+//      return rewriteLoopbackForLanAccess(configuredBaseUrl, runtimeLocation);
+//    }
     return "";
   }
 
