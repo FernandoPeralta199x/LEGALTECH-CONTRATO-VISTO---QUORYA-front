@@ -5,18 +5,10 @@ import {
   isValidEmail,
   validateCaseForm,
   validateClientForm,
-  validateDevJwtForm,
   validateDocumentForm,
   validateDocumentUploadForm,
   validatePasswordChange
 } from "./validation";
-
-function makeJwt(payload: Record<string, unknown>): string {
-  const encode = (value: Record<string, unknown>) =>
-    Buffer.from(JSON.stringify(value)).toString("base64url");
-
-  return `${encode({ alg: "HS256", typ: "JWT" })}.${encode(payload)}.signature`;
-}
 
 test("validateClientForm requires a client name", () => {
   const result = validateClientForm({ name: "   " });
@@ -223,59 +215,6 @@ test("validateDocumentUploadForm accepts local MVP image and pdf uploads", () =>
     }).valid,
     true
   );
-});
-
-test("validateDevJwtForm requires a pasted dev JWT", () => {
-  const result = validateDevJwtForm("");
-
-  assert.equal(result.valid, false);
-  assert.equal(
-    result.errors.token,
-    "Cole o JWT dev gerado pelo backend para acessar o ambiente local."
-  );
-});
-
-test("validateDevJwtForm rejects malformed or expired JWTs", () => {
-  const validToken = makeJwt({
-    aud: "legaltech-local-api",
-    email: "dev.local@example.test",
-    exp: Math.floor(Date.now() / 1000) + 60,
-    iat: Math.floor(Date.now() / 1000),
-    iss: "legaltech-local-dev",
-    sub: "22222222-2222-4222-8222-222222222222",
-    token_use: "dev",
-    "custom:organization_id": "11111111-1111-4111-8111-111111111111",
-    "custom:role": "admin"
-  });
-
-  assert.equal(validateDevJwtForm(validToken).valid, true);
-
-  const invalid = validateDevJwtForm("token-invalido");
-  assert.equal(invalid.valid, false);
-  assert.equal(
-    invalid.errors.token,
-    "Cole um JWT dev válido com três partes no formato header.payload.signature."
-  );
-
-  const invalidPayload = validateDevJwtForm("header.payload.signature");
-  assert.equal(invalidPayload.valid, false);
-  assert.equal(invalidPayload.errors.token, "O payload do JWT dev não pôde ser lido.");
-
-  const expired = validateDevJwtForm(
-    makeJwt({
-      aud: "legaltech-local-api",
-      email: "dev.local@example.test",
-      exp: Math.floor(Date.now() / 1000) - 60,
-      iat: Math.floor(Date.now() / 1000) - 120,
-      iss: "legaltech-local-dev",
-      sub: "22222222-2222-4222-8222-222222222222",
-      token_use: "dev",
-      "custom:organization_id": "11111111-1111-4111-8111-111111111111",
-      "custom:role": "admin"
-    })
-  );
-  assert.equal(expired.valid, false);
-  assert.equal(expired.errors.token, "JWT dev expirado. Gere um novo token no backend.");
 });
 
 test("validatePasswordChange requires a strong new password and matching confirmation", () => {

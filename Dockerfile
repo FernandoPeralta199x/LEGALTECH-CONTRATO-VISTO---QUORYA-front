@@ -11,9 +11,6 @@ FROM node:22-slim AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# NEXT_PUBLIC_* e embutido no build; ajuste por --build-arg em staging/prod.
-ARG NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
-ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 RUN npm run build
 
 # --- runtime ---
@@ -22,6 +19,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
+# Injete API_BASE_URL, APP_ORIGIN e AUTH_COOKIE_SECRET apenas no runtime
+# (ECS task definition/Secrets Manager); nunca grave segredos na imagem.
 RUN useradd --create-home --uid 10001 app
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static

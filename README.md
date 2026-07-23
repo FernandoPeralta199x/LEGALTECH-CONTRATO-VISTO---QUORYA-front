@@ -1,15 +1,14 @@
 # Contrato Visto — Frontend
 
-Frontend em Next.js + TypeScript do MVP local **Contrato Visto** (LegalTech). Consome o
-backend **serverless** (AWS Lambda + API Gateway + PostgreSQL/RLS) que, em desenvolvimento,
-roda via um dev-server local. Nesta fase não há Cognito, S3, SQS, OCR, IA/RAG ou e-mail
-reais — os adapters do backend são mock-first e o deploy AWS é uma etapa posterior.
+Frontend em Next.js + TypeScript do **Contrato Visto** (LegalTech). Consome o backend
+serverless por um BFF same-origin, mantendo o token de acesso fora do JavaScript do
+navegador.
 
 ## Stack
 
 - Next.js 16 (Turbopack) · React 19 · TypeScript
 - Tailwind CSS · lucide-react (ícones)
-- Testes: `node:test` via `tsx` (**114 testes**); `tsc --noEmit` + `eslint --max-warnings=0` no CI
+- Testes: `node:test` via `tsx` (**108 testes**); `tsc --noEmit` + `eslint --max-warnings=0` no CI
 
 ## Configuração local
 
@@ -19,16 +18,20 @@ Crie o `.env.local` a partir do exemplo:
 Copy-Item .env.example .env.local
 ```
 
-Variáveis públicas (expostas no navegador — nunca coloque segredos):
+Configuração mínima local:
 
 ```env
 NEXT_PUBLIC_APP_NAME=Contrato Visto
 NEXT_PUBLIC_APP_ENV=local
-NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
 NEXT_PUBLIC_ENABLE_API_MOCK_FALLBACK=true
+APP_ORIGIN=http://localhost:3000
+API_BASE_URL=http://127.0.0.1:8000
+AUTH_COOKIE_SECRET=gere-um-segredo-aleatorio-com-pelo-menos-32-caracteres
 ```
 
-O `next.config` reescreve `/api/v1/*` para `${NEXT_PUBLIC_API_BASE_URL}/api/v1/*`.
+`API_BASE_URL`, `APP_ORIGIN` e `AUTH_COOKIE_SECRET` são variáveis exclusivas do servidor
+Next.js e nunca devem usar o prefixo `NEXT_PUBLIC_`. Em produção, `API_BASE_URL` precisa
+usar HTTPS e `APP_ORIGIN` deve ser a origem exata do deploy.
 `NEXT_PUBLIC_ENABLE_API_MOCK_FALLBACK=true` deixa as telas usarem dados fictícios locais
 quando o backend está fora; em `staging`/`prod` use `false`. O fallback nunca mascara
 `401`/`403`/erros de validação — só falha de conexão.
@@ -68,28 +71,33 @@ npm run test
 npm run build
 ```
 
-## Autenticação (dev local, real por e-mail/senha)
+## Autenticação via BFF
 
 O login é por **e-mail e senha** reais contra o backend local:
 
 - **Cadastro** (`POST /api/v1/users`): cria uma nova organização e o primeiro usuário como
   `admin` (dono do tenant). Política de senha: mínimo 12 caracteres, com maiúscula,
   minúscula e caractere especial (alinhada ao backend).
-- **Login** (`POST /api/v1/auth/login`): retorna um JWT (HS256, dev) guardado em
-  `localStorage`; o `apiClient` envia `Authorization: Bearer <token>` automaticamente.
-- **Sair**: limpa a sessão pelo Header.
+- **Login** (`POST /api/auth/login`): o BFF autentica no backend, valida o perfil e
+  cifra o JWT com AES-256-GCM em cookie `HttpOnly`, `Secure` e `SameSite=Lax`.
+- **Sessão** (`GET /api/auth/session`): retorna somente perfil público; nunca retorna JWT.
+- **API autenticada** (`/api/backend/api/v1/*`): o BFF abre o cookie no servidor e injeta
+  `Authorization: Bearer` apenas na chamada interna ao backend.
+- **CSRF**: toda mutação exige origem exata, cookie `SameSite=Strict` e
+  `X-CSRF-Token` correspondente.
+- **Sair** (`POST /api/auth/logout`): invalida os cookies e limpa dados locais legados.
 - **Reset de senha revoga sessões anteriores** (backend, AUTH-02): um token emitido antes da
   troca passa a receber `403` nas ações de escrita/admin — refaça login.
 
-Papéis reconhecidos pelo backend: `admin`, `analyst`, `viewer`. O `organization_id` vem
-sempre do token/contexto autenticado — nunca de payloads enviados pela UI. Em produção o
-fallback mock é desligado e a sessão não persiste PII (fail-closed).
+Papéis e `organization_id` vêm sempre do token/contexto validado pelo backend, nunca de
+payloads enviados pela UI. O frontend usa o papel apenas para UX; autorização real
+continua obrigatória no backend.
 
 ## Rotas
 
 ```text
 /                Visão operacional inicial
-/login           Cadastro/login por e-mail e senha (dev local)
+/login           Cadastro/login por e-mail e senha via BFF
 /dashboard       Painel operacional (métricas + áreas + atividade recente)
 /cases           Casos (lista, busca, criar caso rápido)
 /cases/new       Novo Pedido (wizard: partes, contrato, produto, módulos, revisão)
@@ -105,7 +113,7 @@ fallback mock é desligado e a sessão não persiste PII (fail-closed).
 /settings        Configurações locais (organização, segurança, tema)
 ```
 
-Rotas internas usam uma guarda local (`AuthGuard`): sem sessão salva, redireciona para `/login`.
+Rotas internas usam `AuthGuard`: a sessão é revalidada no backend antes de liberar a UI.
 
 ## Estados de UX
 
@@ -127,14 +135,15 @@ components/            componentes de UI (AppLayout, Header, Card, Button, AuthG
 src/app/               rotas (App Router): dashboard, cases, documents, clients, reports,
                        analyst, admin, settings, login
 src/services/          camada de API (apiClient, cases, clients, documents, reports, authApi, ...)
-src/lib/               authStorage, useDevSession, validation, cpfCnpj, clientForm, runtimeEnv
+src/lib/               sessionClient, useSession, validation, cpfCnpj, clientForm, runtimeEnv
+src/server/            criptografia de sessão, CSRF, cliente do backend e limites do BFF
 types/                 contratos compartilhados (api.ts, domain.ts, index.ts)
 ```
 
 ## Integração com a API
 
-`src/services/apiClient.ts` usa o rewrite `/api/v1/*` e injeta `Authorization: Bearer` da
-sessão salva. Endpoints consumidos pelas telas (não exaustivo):
+`src/services/apiClient.ts` chama apenas o BFF same-origin. O navegador nunca recebe nem
+envia diretamente o JWT. Endpoints do backend consumidos pelo BFF (não exaustivo):
 
 ```text
 POST /api/v1/users                         cadastro (cria org + admin)
@@ -172,7 +181,8 @@ que **não** falha por estas (moderate).
 
 ## Limites desta fase (MVP local)
 
-- Sem Cognito/auth gerenciado, sem S3/SQS/OCR/IA/RAG/e-mail reais (adapters mock no backend).
+- Sem Cognito/auth gerenciado; a autenticação atual usa BFF e cookie HttpOnly cifrado.
+  S3/SQS/OCR/IA/RAG/e-mail ainda dependem da configuração real dos adapters do backend.
 - Upload local registra metadados + presign (sem envio real ao S3 nesta fase).
 - Cross-browser/real device, HTTPS, CORS de produção, monitoramento e custos ficam para
   staging/deploy (Fase 7). Use apenas dados fictícios neste ambiente.

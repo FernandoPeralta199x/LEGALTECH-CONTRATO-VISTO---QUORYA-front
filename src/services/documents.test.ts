@@ -158,7 +158,11 @@ test("uploadDocument segue o fluxo presign (registra JSON, faz PUT, busca) sem o
   assert.equal(result.data.status, "uploaded");
   // registro é JSON (presign), nunca multipart; sem organization_id (autoridade do back)
   assert.match(registerUrl, /\/api\/v1\/documents$/);
-  assert.equal(authorizationHeader, "Bearer valid.dev.jwt");
+  assert.equal(
+    authorizationHeader,
+    null,
+    "o browser nunca deve enviar o JWT; Authorization é injetado apenas pelo BFF"
+  );
   const reg = JSON.parse(registerBody);
   assert.equal(reg.case_id, "case-api-1");
   assert.equal(reg.file_name, "contrato.pdf");

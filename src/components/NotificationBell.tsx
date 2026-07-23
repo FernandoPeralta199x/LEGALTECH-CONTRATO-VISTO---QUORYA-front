@@ -4,8 +4,8 @@ import { Bell, CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-import { readStoredSession } from "@/lib/authStorage";
 import { cn } from "@/lib/cn";
+import { useSession } from "@/lib/useSession";
 import { listCases } from "@/services/cases";
 import { listDocuments } from "@/services/documents";
 import type { Case, Document } from "@/types";
@@ -21,10 +21,14 @@ type Notice = {
   read: boolean;
 };
 
-function getReadIds(): Set<string> {
+function readNoticesKey(sessionKey: string): string {
+  return `${READ_NOTICES_KEY}:${sessionKey}`;
+}
+
+function getReadIds(sessionKey: string): Set<string> {
   if (typeof window === "undefined") return new Set();
   try {
-    const raw = localStorage.getItem(READ_NOTICES_KEY);
+    const raw = localStorage.getItem(readNoticesKey(sessionKey));
     const parsed = raw ? (JSON.parse(raw) as string[]) : [];
     return new Set(parsed);
   } catch {
@@ -32,17 +36,21 @@ function getReadIds(): Set<string> {
   }
 }
 
-function saveReadIds(ids: string[]) {
+function saveReadIds(sessionKey: string, ids: string[]) {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(READ_NOTICES_KEY, JSON.stringify(ids));
+    localStorage.setItem(readNoticesKey(sessionKey), JSON.stringify(ids));
   } catch {
     // ignore
   }
 }
 
-function buildNotices(cases: Case[], documents: Document[]): Notice[] {
-  const readIds = getReadIds();
+function buildNotices(
+  cases: Case[],
+  documents: Document[],
+  sessionKey: string
+): Notice[] {
+  const readIds = getReadIds(sessionKey);
   const notices: Notice[] = [];
 
   for (const c of cases) {
@@ -95,15 +103,6 @@ let rawCache: {
   sessionKey: string;
 } | null = null;
 
-/** Identidade da sessão atual (userId). O cache é chaveado por ela para que uma
- *  troca de usuário na mesma aba invalide o cache POR CONSTRUÇÃO — logout desktop,
- *  logout mobile, expiração de sessão e 401/403 limpam a sessão por caminhos
- *  diferentes; chavear aqui cobre todos sem depender de cada um lembrar de limpar
- *  (senão o próximo usuário veria os avisos do anterior — vazamento cross-usuário). */
-function currentSessionKey(): string {
-  return readStoredSession().session?.userId ?? "";
-}
-
 async function fetchRaw(): Promise<{ cases: Case[]; documents: Document[] }> {
   const [cases, documents] = await Promise.all([
     listCases().catch(() => ({ data: [] as Case[] })),
@@ -112,9 +111,12 @@ async function fetchRaw(): Promise<{ cases: Case[]; documents: Document[] }> {
   return { cases: cases.data ?? [], documents: documents.data ?? [] };
 }
 
-async function fetchNotices(force = false): Promise<Notice[]> {
+async function fetchNotices(
+  sessionKey: string,
+  force = false
+): Promise<Notice[]> {
   try {
-    const sessionKey = currentSessionKey();
+    if (!sessionKey) return [];
     let cache = rawCache;
     if (
       force ||
@@ -126,7 +128,7 @@ async function fetchNotices(force = false): Promise<Notice[]> {
       cache = { ...raw, fetchedAt: Date.now(), sessionKey };
       rawCache = cache;
     }
-    return buildNotices(cache.cases, cache.documents);
+    return buildNotices(cache.cases, cache.documents, sessionKey);
   } catch {
     return [];
   }
@@ -134,6 +136,10 @@ async function fetchNotices(force = false): Promise<Notice[]> {
 
 export function NotificationBell() {
   const router = useRouter();
+  const session = useSession();
+  const sessionKey = session
+    ? `${session.organizationId}:${session.userId}`
+    : "";
   const [open, setOpen] = useState(false);
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -144,14 +150,14 @@ export function NotificationBell() {
 
   async function loadNotices() {
     setLoading(true);
-    setNotices(await fetchNotices());
+    setNotices(await fetchNotices(sessionKey));
     setLoading(false);
     loadedRef.current = true;
   }
 
   useEffect(() => {
     let cancelled = false;
-    fetchNotices().then((items) => {
+    fetchNotices(sessionKey).then((items) => {
       if (cancelled) return;
       setNotices(items);
       setLoading(false);
@@ -160,7 +166,7 @@ export function NotificationBell() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [sessionKey]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -197,9 +203,9 @@ export function NotificationBell() {
     setNotices((prev) =>
       prev.map((n) => (ids.includes(n.id) ? { ...n, read: true } : n))
     );
-    const currentReadIds = getReadIds();
+    const currentReadIds = getReadIds(sessionKey);
     ids.forEach((id) => currentReadIds.add(id));
-    saveReadIds(Array.from(currentReadIds));
+    saveReadIds(sessionKey, Array.from(currentReadIds));
   }
 
   function handleClick(notice: Notice) {

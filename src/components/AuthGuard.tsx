@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { useEffect } from "react";
 
 import { Button } from "@/components/Button";
-import { useDevSessionState } from "@/lib/useDevSession";
+import { useSessionState } from "@/lib/useSession";
 
 type AuthGuardProps = {
   children: ReactNode;
@@ -46,10 +46,10 @@ function GuardScreen({
 export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { session, status } = useDevSessionState();
+  const { error, session, status } = useSessionState();
 
   useEffect(() => {
-    if (status === "invalid" || status === "unauthenticated") {
+    if (status === "unauthenticated") {
       router.replace(`/login?next=${encodeURIComponent(pathname)}`);
     }
   }, [pathname, router, status]);
@@ -57,9 +57,23 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
   if (status === "loading") {
     return (
       <GuardScreen
-        description="Confirmando a sessão dev salva neste navegador."
+        description="Confirmando sua sessão segura com o servidor."
         live
-        title="Verificando acesso local"
+        title="Verificando acesso"
+      />
+    );
+  }
+
+  if (status === "error") {
+    return (
+      <GuardScreen
+        action={
+          <Button className="mt-6" onClick={() => window.location.reload()}>
+            Tentar novamente
+          </Button>
+        }
+        description={error ?? "Não foi possível validar sua sessão agora."}
+        title="Serviço indisponível"
       />
     );
   }
@@ -88,7 +102,7 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
           Ir para login
         </Button>
       }
-      description="Cole um JWT dev válido no login local para acessar esta página."
+      description="Faça login para acessar esta página."
       title="Acesso restrito"
     />
   );

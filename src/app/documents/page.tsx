@@ -27,7 +27,7 @@ import { PageTitle } from "@/components/PageTitle";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatBytes, formatDate } from "@/lib/formatters";
 import { errorMessage } from "@/lib/errorMessage";
-import { useDevSession } from "@/lib/useDevSession";
+import { useSession } from "@/lib/useSession";
 import { listCases } from "@/services/cases";
 import {
   enqueueDocumentProcessing,
@@ -82,7 +82,7 @@ function documentSourceLabel(document: Document): string {
 }
 
 export default function DocumentsPage() {
-  const session = useDevSession();
+  const session = useSession();
   // Papel de escrita (admin/analyst). Viewer é somente-leitura: a URL de download
   // é writer-only no backend (contorna mascaramento de PII), então o botão fica
   // oculto p/ viewer — senão a ação daria 403 na tela.

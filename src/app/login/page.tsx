@@ -20,11 +20,9 @@ import { Button } from "@/components/Button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/cn";
 import { errorMessage } from "@/lib/errorMessage";
-import { saveDevSession } from "@/services/auth";
 import { login, register as registerUser } from "@/services/authApi";
 import { sanitizeNextPath } from "@/lib/safeRedirect";
 import { validatePasswordCreate } from "@/lib/validation";
-import { DEV_ROLES, type DevRole } from "@/types/auth";
 
 type Tab = "login" | "register";
 type ToastState = {
@@ -64,17 +62,9 @@ function LoginContent() {
     setLoading(true);
 
     try {
-      const result = await login({
+      await login({
         email: loginEmail,
         password: loginPassword
-      });
-
-      await saveDevSession({
-        email: result.user.email,
-        role: (DEV_ROLES.includes(result.user.role as DevRole)
-          ? result.user.role
-          : "client") as DevRole,
-        token: result.access_token
       });
 
       setToast({
@@ -118,16 +108,9 @@ function LoginContent() {
       });
       // Serverless: a conta já fica ativa após o signup (sem verificação por
       // e-mail). Faz login direto com as credenciais recém-criadas.
-      const result = await login({
+      await login({
         email: registerEmail,
         password: registerPassword
-      });
-      await saveDevSession({
-        email: result.user.email,
-        role: (DEV_ROLES.includes(result.user.role as DevRole)
-          ? result.user.role
-          : "client") as DevRole,
-        token: result.access_token
       });
       setToast({ message: "Conta criada. Redirecionando...", tone: "success" });
       await new Promise((resolve) => setTimeout(resolve, 450));
@@ -178,7 +161,7 @@ function LoginContent() {
           </p>
           <span className="cv-badge cv-badge-teal">
             <Sparkles size={12} />
-            Ambiente local
+            Sessão segura
           </span>
         </div>
 
@@ -371,10 +354,10 @@ function LoginContent() {
         )}
 
         <div className="mt-6 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-[11px] leading-5 text-amber-200">
-          <strong className="text-amber-100">Ambiente local:</strong>{" "}
-          o acesso é feito por e-mail e senha. A confirmação de cadastro é
-          simulada localmente; em produção o link será enviado por e-mail. O
-          token de sessão fica apenas no navegador.
+          <strong className="text-amber-100">Acesso protegido:</strong>{" "}
+          o token de autenticação permanece cifrado em cookie HttpOnly e não é
+          exposto ao JavaScript da página. Ações de escrita também exigem
+          validação de origem e proteção CSRF.
         </div>
 
         <div className="mt-6 flex flex-col items-center gap-2 border-t border-[var(--bd)] pt-5">

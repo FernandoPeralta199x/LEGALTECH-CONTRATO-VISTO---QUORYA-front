@@ -1,197 +1,97 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {
-  clearStoredSession,
-  getStoredToken,
-  saveStoredSession
-} from "@/lib/authStorage";
+import { getSessionSnapshot } from "@/lib/sessionClient";
 import { ApiClientError, apiClient } from "./apiClient";
 
-const DEV_SESSION = {
-  email: "dev.admin@example.test",
-  issuedAt: "2026-05-24T12:00:00.000Z",
-  organizationId: "11111111-1111-4111-8111-111111111111",
-  role: "admin" as const,
-  source: "pasted" as const,
-  token: "valid.session.jwt",
-  userId: "22222222-2222-4222-8222-222222222222"
-};
-
-class MemoryStorage {
-  private values = new Map<string, string>();
-
-  clear() {
-    this.values.clear();
-  }
-
-  getItem(key: string) {
-    return this.values.get(key) ?? null;
-  }
-
-  removeItem(key: string) {
-    this.values.delete(key);
-  }
-
-  setItem(key: string, value: string) {
-    this.values.set(key, value);
-  }
+function setDocumentCookie(cookie: string): () => void {
+  const previous = Object.getOwnPropertyDescriptor(globalThis, "document");
+  Object.defineProperty(globalThis, "document", {
+    configurable: true,
+    value: { cookie }
+  });
+  return () => {
+    if (previous) {
+      Object.defineProperty(globalThis, "document", previous);
+    } else {
+      Reflect.deleteProperty(globalThis, "document");
+    }
+  };
 }
 
-const storage = new MemoryStorage();
-Object.defineProperty(globalThis, "localStorage", {
-  configurable: true,
-  value: storage
-});
-
-test("apiClient sends Authorization from the stored dev session", async () => {
-  storage.clear();
-  saveStoredSession({
-    email: "dev.admin@example.test",
-    issuedAt: "2026-05-24T12:00:00.000Z",
-    organizationId: "11111111-1111-4111-8111-111111111111",
-    role: "admin",
-    source: "pasted",
-    token: "stored.jwt.token",
-    userId: "22222222-2222-4222-8222-222222222222"
-  });
-
+test("apiClient chama somente o BFF same-origin e nunca envia Authorization", async () => {
   let capturedUrl = "";
-  let capturedAuthorization = "";
+  let capturedHeaders = new Headers();
+  let capturedCredentials: RequestCredentials | undefined;
 
-  globalThis.fetch = (async (url, init) => {
-    capturedUrl = String(url);
-    const headers = new Headers(init?.headers);
-    capturedAuthorization = headers.get("Authorization") ?? "";
-
+  globalThis.fetch = (async (input, init) => {
+    capturedUrl = String(input);
+    capturedHeaders = new Headers(init?.headers);
+    capturedCredentials = init?.credentials;
     return Response.json({ success: true, data: [] });
   }) as typeof fetch;
 
   await apiClient.get<unknown[]>("/api/v1/clients");
 
-  assert.equal(capturedUrl, "http://127.0.0.1:8000/api/v1/clients");
-  assert.equal(capturedAuthorization, "Bearer stored.jwt.token");
-
-  clearStoredSession();
+  assert.equal(capturedUrl, "/api/backend/api/v1/clients");
+  assert.equal(capturedHeaders.has("Authorization"), false);
+  assert.equal(capturedCredentials, "same-origin");
 });
 
-test("apiClient derives the API host from the browser host when no env URL is configured", async () => {
-  storage.clear();
-  const previousLocation = Object.getOwnPropertyDescriptor(globalThis, "location");
+test("apiClient envia double-submit CSRF em mutações", async () => {
+  const restoreDocument = setDocumentCookie("quorya_csrf=csrf-token-123");
+  let capturedCsrf = "";
+  let capturedMethod = "";
 
-  Object.defineProperty(globalThis, "location", {
-    configurable: true,
-    value: new URL("http://192.168.0.102:3000/dashboard")
-  });
-
-  let capturedUrl = "";
-
-  globalThis.fetch = (async (url) => {
-    capturedUrl = String(url);
-
-    return Response.json({ success: true, data: [] });
+  globalThis.fetch = (async (_input, init) => {
+    capturedCsrf = new Headers(init?.headers).get("X-CSRF-Token") ?? "";
+    capturedMethod = init?.method ?? "";
+    return Response.json({ success: true, data: { id: "case-1" } });
   }) as typeof fetch;
 
   try {
-    await apiClient.get<unknown[]>("/api/v1/cases");
-
-    assert.equal(capturedUrl, "http://192.168.0.102:8000/api/v1/cases");
+    await apiClient.post("/api/v1/cases", { title: "Contrato" });
+    assert.equal(capturedCsrf, "csrf-token-123");
+    assert.equal(capturedMethod, "POST");
   } finally {
-    if (previousLocation) {
-      Object.defineProperty(globalThis, "location", previousLocation);
-    } else {
-      Reflect.deleteProperty(globalThis, "location");
-    }
+    restoreDocument();
   }
 });
 
-test("apiClient rewrites a loopback env URL when the frontend is opened from a LAN host", async () => {
-  storage.clear();
-  const previousBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-  const previousLocation = Object.getOwnPropertyDescriptor(globalThis, "location");
-  process.env.NEXT_PUBLIC_API_BASE_URL = "http://127.0.0.1:8000";
-
-  Object.defineProperty(globalThis, "location", {
-    configurable: true,
-    value: new URL("http://192.168.0.102:3000/cases")
-  });
-
-  let capturedUrl = "";
-
-  globalThis.fetch = (async (url) => {
-    capturedUrl = String(url);
-
-    return Response.json({ success: true, data: [] });
-  }) as typeof fetch;
-
-  try {
-    await apiClient.get<unknown[]>("/api/v1/documents");
-
-    assert.equal(capturedUrl, "http://192.168.0.102:8000/api/v1/documents");
-  } finally {
-    if (previousBaseUrl === undefined) {
-      Reflect.deleteProperty(process.env, "NEXT_PUBLIC_API_BASE_URL");
-    } else {
-      process.env.NEXT_PUBLIC_API_BASE_URL = previousBaseUrl;
-    }
-
-    if (previousLocation) {
-      Object.defineProperty(globalThis, "location", previousLocation);
-    } else {
-      Reflect.deleteProperty(globalThis, "location");
-    }
-  }
-});
-
-test("apiClient handles non-standard error envelopes without undefined message access", async () => {
-  storage.clear();
-
-  globalThis.fetch = (async () =>
-    Response.json({ detail: "Not Found" }, { status: 404 })) as typeof fetch;
-
+test("apiClient rejeita URLs absolutas e rotas fora de /api/v1", async () => {
   await assert.rejects(
-    () => apiClient.get<unknown>("/api/v1/cases/case-local-missing"),
+    () => apiClient.get("https://evil.example/api/v1/cases"),
     (error: unknown) => {
       assert.equal(error instanceof ApiClientError, true);
-      assert.equal((error as ApiClientError).code, "HTTP_ERROR");
-      assert.equal((error as ApiClientError).message, "Erro HTTP 404.");
+      assert.equal((error as ApiClientError).code, "INVALID_API_PATH");
       return true;
     }
   );
 });
 
-test("apiClient preserves standard response envelope metadata", async () => {
-  storage.clear();
-
+test("apiClient preserva metadados do envelope padrão", async () => {
   globalThis.fetch = (async () =>
     Response.json({
-      success: true,
       data: { id: "case-1" },
       error: null,
       request_id: "req-standard",
       source_mode: "local",
+      success: true,
       timestamp: "2026-06-11T10:00:00.000Z"
     })) as typeof fetch;
 
   const response = await apiClient.get<{ id: string }>("/api/v1/cases/case-1");
-
   assert.equal(response.data.id, "case-1");
-  assert.equal(response.error, null);
   assert.equal(response.request_id, "req-standard");
   assert.equal(response.source_mode, "local");
 });
 
-test("apiClient surfaces the backend {error} message instead of a generic HTTP error (C3-01)", async () => {
-  storage.clear();
-
+test("apiClient preserva mensagem segura de erro do backend", async () => {
   globalThis.fetch = (async () =>
-    Response.json(
-      { error: "Cliente não encontrado", timestamp: "2026-06-11T10:00:00.000Z" },
-      { status: 404 }
-    )) as typeof fetch;
+    Response.json({ error: "Cliente não encontrado" }, { status: 404 })) as typeof fetch;
 
   await assert.rejects(
-    () => apiClient.get<unknown>("/api/v1/clients/missing"),
+    () => apiClient.get("/api/v1/clients/missing"),
     (error: unknown) => {
       assert.equal(error instanceof ApiClientError, true);
       assert.equal((error as ApiClientError).message, "Cliente não encontrado");
@@ -201,57 +101,11 @@ test("apiClient surfaces the backend {error} message instead of a generic HTTP e
   );
 });
 
-test("apiClient clears the stored session on a 403 authorizer denial (C3-02)", async () => {
-  storage.clear();
-  saveStoredSession(DEV_SESSION);
-  assert.equal(getStoredToken(), DEV_SESSION.token);
-
-  // Corpo próprio do API Gateway (sem o envelope {error} do app) = token negado.
+test("apiClient invalida o estado público em falha de autenticação", async () => {
   globalThis.fetch = (async () =>
-    Response.json(
-      { message: "User is not authorized to access this resource" },
-      { status: 403 }
-    )) as typeof fetch;
+    Response.json({ message: "Unauthorized" }, { status: 401 })) as typeof fetch;
 
-  await assert.rejects(() => apiClient.get<unknown>("/api/v1/cases"));
-
-  assert.equal(getStoredToken(), null);
-});
-
-test("apiClient keeps the session on a 403 role denial from the app (C3-02)", async () => {
-  storage.clear();
-  saveStoredSession(DEV_SESSION);
-
-  // Envelope do app ({error}) = usuário válido sem permissão → mantém a sessão.
-  globalThis.fetch = (async () =>
-    Response.json(
-      { error: "Acesso negado", timestamp: "2026-06-11T10:00:00.000Z" },
-      { status: 403 }
-    )) as typeof fetch;
-
-  await assert.rejects(
-    () => apiClient.post<unknown>("/api/v1/users", { role: "admin" }),
-    (error: unknown) => {
-      assert.equal((error as ApiClientError).message, "Acesso negado");
-      return true;
-    }
-  );
-
-  assert.equal(getStoredToken(), DEV_SESSION.token);
-  clearStoredSession();
-});
-
-test("apiClient clears the stored session on a 401 with a token (C3-02)", async () => {
-  storage.clear();
-  saveStoredSession(DEV_SESSION);
-
-  globalThis.fetch = (async () =>
-    Response.json(
-      { error: "Usuário não autenticado", timestamp: "2026-06-11T10:00:00.000Z" },
-      { status: 401 }
-    )) as typeof fetch;
-
-  await assert.rejects(() => apiClient.get<unknown>("/api/v1/cases"));
-
-  assert.equal(getStoredToken(), null);
+  await assert.rejects(() => apiClient.get("/api/v1/cases"));
+  assert.equal(getSessionSnapshot().status, "unauthenticated");
+  assert.equal(getSessionSnapshot().session, null);
 });

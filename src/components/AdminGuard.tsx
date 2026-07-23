@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { useEffect } from "react";
 
 import { Button } from "@/components/Button";
-import { useDevSessionState } from "@/lib/useDevSession";
+import { useSessionState } from "@/lib/useSession";
 
 type AdminGuardProps = {
   children: ReactNode;
@@ -16,11 +16,11 @@ type AdminGuardProps = {
  *  É conforto/UX — a segurança real das ações fica no backend (require_role). */
 export function AdminGuard({ children }: AdminGuardProps) {
   const router = useRouter();
-  const { session, status } = useDevSessionState();
+  const { session, status } = useSessionState();
   const isAdmin = session?.role === "admin";
 
   useEffect(() => {
-    if (status === "loading") {
+    if (status === "loading" || status === "error") {
       return;
     }
     if (!isAdmin) {
@@ -28,7 +28,7 @@ export function AdminGuard({ children }: AdminGuardProps) {
     }
   }, [status, isAdmin, router]);
 
-  if (status === "loading") {
+  if (status === "loading" || status === "error") {
     return null;
   }
 

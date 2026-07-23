@@ -44,7 +44,7 @@ import {
   reviewCaseReport,
   runCaseTriage
 } from "@/services/caseWorkflow";
-import { useDevSession } from "@/lib/useDevSession";
+import { useSession } from "@/lib/useSession";
 import { usePrintOnChange } from "@/lib/usePrintOnChange";
 import {
   productLabel,
@@ -132,7 +132,7 @@ export default function CaseDetailPage({ params }: PageProps) {
     { kind: "error" | "success"; text: string } | null
   >(null);
 
-  const session = useDevSession();
+  const session = useSession();
   const canWrite = session ? ["admin", "analyst"].includes(session.role) : false;
   const [triageRunning, setTriageRunning] = useState(false);
   const [reportBusy, setReportBusy] = useState(false);
