@@ -3,8 +3,8 @@
 import { NotificationBell } from "@/components/NotificationBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/cn";
-import { clearStoredSession } from "@/lib/authStorage";
-import { useDevSession } from "@/lib/useDevSession";
+import { logoutSession } from "@/lib/sessionClient";
+import { useSession } from "@/lib/useSession";
 import { listCases } from "@/services/cases";
 import { listClients } from "@/services/clients";
 import type { Case, Client } from "@/types";
@@ -24,7 +24,7 @@ const roleMeta: Record<string, { label: string; cls: string }> = {
 
 export function Header({ onMenuClick }: HeaderProps) {
   const router        = useRouter();
-  const session       = useDevSession();
+  const session       = useSession();
   const [query, setQuery]           = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [cases, setCases]           = useState<Case[]>([]);
@@ -104,9 +104,13 @@ export function Header({ onMenuClick }: HeaderProps) {
   ];
   const activeId = activeIndex >= 0 ? flatResults[activeIndex]?.id : undefined;
 
-  function handleLogout() {
-    clearStoredSession();
-    router.replace("/login");
+  async function handleLogout() {
+    try {
+      await logoutSession();
+      router.replace("/login");
+    } catch {
+      window.alert("Não foi possível encerrar a sessão. Tente novamente.");
+    }
   }
 
   const meta = session ? (roleMeta[session.role] ?? roleMeta.client) : null;
@@ -337,7 +341,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                   "transition-all duration-base hover:shadow-glow-teal-lg hover:scale-105",
                   "active:scale-95"
                 )}
-                onClick={handleLogout}
+                onClick={() => void handleLogout()}
                 title="Sair da sessão"
                 type="button"
               >
@@ -349,7 +353,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                   "cv-btn-secondary min-h-11 px-2.5 text-[11px] font-semibold",
                   "md:flex"
                 )}
-                onClick={handleLogout}
+                onClick={() => void handleLogout()}
                 type="button"
               >
                 <LogOut size={13} />

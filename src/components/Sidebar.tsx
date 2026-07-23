@@ -21,8 +21,8 @@ import { usePathname, useRouter } from "next/navigation";
 
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/cn";
-import { clearStoredSession } from "@/lib/authStorage";
-import { useDevSession } from "@/lib/useDevSession";
+import { logoutSession } from "@/lib/sessionClient";
+import { useSession } from "@/lib/useSession";
 import { useModalA11y } from "@/lib/useModalA11y";
 
 type NavItem = {
@@ -151,7 +151,7 @@ function NavItem({
 
 export function Sidebar() {
   const pathname = usePathname();
-  const session = useDevSession();
+  const session = useSession();
   const groups = visibleNavGroups(session?.role);
 
   const isActive = (href: string) => isNavItemActive(pathname, href);
@@ -174,7 +174,7 @@ export function Sidebar() {
               Contrato Visto
             </span>
             <span className="block text-[10px] text-[var(--text2)]">
-              MVP local controlado
+              Plataforma segura
             </span>
           </div>
         </Link>
@@ -211,11 +211,11 @@ export function Sidebar() {
               <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--teal)]" />
             </span>
             <p className="text-[11px] font-semibold text-[var(--teal)]">
-              MVP local
+              Sessão protegida
             </p>
           </div>
           <p className="mt-1 text-[10px] leading-4 text-[var(--text2)]">
-            API local com fallback de desenvolvimento.
+            Acesso autenticado via BFF e cookie HttpOnly.
           </p>
         </div>
       </div>
@@ -229,17 +229,21 @@ type MobileSidebarProps = { open: boolean; onClose: () => void };
 export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const session = useDevSession();
+  const session = useSession();
   const groups = visibleNavGroups(session?.role);
   // Foco inicial + restauração, ESC fecha e trap de Tab enquanto aberto (A11Y-04).
   const drawerRef = useModalA11y<HTMLElement>(open, onClose);
 
   const isActive = (href: string) => isNavItemActive(pathname, href);
 
-  function handleLogout() {
-    clearStoredSession();
-    onClose();
-    router.replace("/login");
+  async function handleLogout() {
+    try {
+      await logoutSession();
+      onClose();
+      router.replace("/login");
+    } catch {
+      window.alert("Não foi possível encerrar a sessão. Tente novamente.");
+    }
   }
 
   return (
@@ -332,7 +336,7 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
             className={cn(
               "cv-btn cv-btn-secondary flex w-full items-center justify-center gap-2 text-xs font-semibold"
             )}
-            onClick={handleLogout}
+            onClick={() => void handleLogout()}
             type="button"
           >
             <LogOut size={14} />

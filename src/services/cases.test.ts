@@ -193,7 +193,7 @@ test("listCases accepts pagination and multi-case filters", async () => {
     status: "created"
   });
 
-  const url = new URL(capturedUrl);
+  const url = new URL(capturedUrl, "http://frontend.test");
   assert.equal(url.searchParams.get("page"), "2");
   assert.equal(url.searchParams.get("page_size"), "10");
   assert.equal(url.searchParams.get("product_type"), "analise_contratual");
@@ -495,7 +495,10 @@ test("getCaseAggregate maps operational aggregate scoped to a case id", async ()
 
   const result = await getCaseAggregate("11111111-1111-4111-8111-111111111111");
 
-  assert.equal(new URL(capturedUrl).pathname, "/api/v1/cases/11111111-1111-4111-8111-111111111111/aggregate");
+  assert.equal(
+    new URL(capturedUrl, "http://frontend.test").pathname,
+    "/api/backend/api/v1/cases/11111111-1111-4111-8111-111111111111/aggregate"
+  );
   assert.equal(result.source, "api");
   assert.equal(result.data.case.id, "11111111-1111-4111-8111-111111111111");
   assert.equal(result.data.case.progressPercent, 90);
@@ -693,8 +696,15 @@ test("submitWizardRequest sends operational wizard payload without organization_
   });
 
   const payload = JSON.parse(requestBody);
-  assert.equal(new URL(capturedUrl).pathname, "/api/v1/requests");
-  assert.equal(authorizationHeader, "Bearer wizard.jwt.token");
+  assert.equal(
+    new URL(capturedUrl, "http://frontend.test").pathname,
+    "/api/backend/api/v1/requests"
+  );
+  assert.equal(
+    authorizationHeader,
+    "",
+    "o browser nunca deve enviar o JWT; Authorization é injetado apenas pelo BFF"
+  );
   assert.equal(payload.organization_id, undefined);
   assert.equal(payload.product_type, "analise_contratual");
   assert.equal(payload.source_mode, "local");
