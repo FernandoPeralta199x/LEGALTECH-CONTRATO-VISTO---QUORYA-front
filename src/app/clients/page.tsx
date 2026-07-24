@@ -274,8 +274,8 @@ export default function ClientsPage() {
               </h2>
               <p className="text-xs leading-5 text-[var(--text2)]">
                 {editingClient
-                  ? "Edite apenas dados cadastrais. Organização e permissões continuam vindo do JWT/contexto da API local."
-                  : "Cadastre um cliente local para organizar partes e iniciar pedidos no MVP local. Organização e permissões continuam vindo do JWT/contexto da API local."}
+                  ? "Edite apenas dados cadastrais. Organização e permissões continuam vindo da sessão validada pelo backend."
+                  : "Cadastre um cliente para organizar partes e iniciar pedidos. Organização e permissões continuam vindo da sessão validada pelo backend."}
               </p>
               {editingClient && (
                 <p className="mt-1 inline-flex items-center gap-1.5 text-[11px] text-[var(--text2)]">

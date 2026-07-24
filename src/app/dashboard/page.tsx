@@ -28,10 +28,10 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { badgeStyle, processAreas } from "@/components/dashboard/config";
 import { caseDisplayTitle, formatDate } from "@/lib/formatters";
 import { useDashboardData } from "@/lib/useDashboardData";
-import { useDevSession } from "@/lib/useDevSession";
+import { useSession } from "@/lib/useSession";
 
 export default function DashboardPage() {
-  const session = useDevSession();
+  const session = useSession();
   // Atalhos adminOnly só para admin (espelha o gate do Sidebar/AdminGuard).
   const visibleAreas = processAreas.filter(
     (area) => !("adminOnly" in area) || session?.role === "admin"

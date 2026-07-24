@@ -1,36 +1,25 @@
-export const DEV_ROLES = ["owner", "admin", "manager", "analyst", "viewer", "client", "support"] as const;
+export const SESSION_ROLES = [
+  "owner",
+  "admin",
+  "manager",
+  "analyst",
+  "viewer",
+  "client",
+  "support"
+] as const;
 
-export type DevRole = (typeof DEV_ROLES)[number];
+export type SessionRole = (typeof SESSION_ROLES)[number];
 
-export type DevSessionSource = "pasted";
-
-export type DevSession = {
+/**
+ * Visão pública e não sensível da sessão. O JWT nunca faz parte deste tipo:
+ * ele permanece cifrado no cookie HttpOnly e só é aberto pelo BFF.
+ */
+export type Session = {
   email: string;
-  expiresAt?: string;
+  expiresAt: string;
   issuedAt: string;
+  name?: string;
   organizationId: string;
-  role: DevRole;
-  source: DevSessionSource;
-  token: string;
+  role: SessionRole;
   userId: string;
-};
-
-export type DevLoginInput = {
-  email?: string;
-  role: DevRole;
-  token?: string;
-};
-
-export type DecodedDevJwt = {
-  aud?: string;
-  email?: string;
-  exp?: number;
-  iat?: number;
-  iss?: string;
-  sub?: string;
-  token_use?: string;
-  "custom:organization_id"?: string;
-  "custom:role"?: string;
-  organization_id?: string;
-  role?: string;
 };

@@ -22,7 +22,7 @@ export function isMockFallbackEnabled(): boolean {
 /**
  * Politica unica do projeto: nenhuma sessao/token ou PII pode ser persistida
  * no storage do browser (localStorage/sessionStorage) em producao.
- * O caminho de producao e Cognito + cookie HttpOnly/Secure/SameSite.
+ * O caminho de producao e BFF + cookie HttpOnly/Secure/SameSite.
  *
  * Fail-closed: lanca em producao. `context` identifica o chamador na mensagem.
  */
@@ -30,7 +30,7 @@ export function assertBrowserPersistDisallowedInProduction(context: string): voi
   if (isProduction()) {
     throw new Error(
       `[${context}] Persistir sessao/PII em storage do browser nao e permitido em producao. ` +
-        "Use Cognito + cookie HttpOnly."
+        "Use o BFF com cookie HttpOnly."
     );
   }
 }

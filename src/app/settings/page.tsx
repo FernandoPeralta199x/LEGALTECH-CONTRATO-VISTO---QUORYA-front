@@ -25,7 +25,7 @@ import { Card } from "@/components/Card";
 import { Notification } from "@/components/Notification";
 import { PageTitle } from "@/components/PageTitle";
 import { cn } from "@/lib/cn";
-import { useDevSession } from "@/lib/useDevSession";
+import { useSession } from "@/lib/useSession";
 import {
   applyThemePreference,
   getStoredNotificationPreferences,
@@ -95,7 +95,7 @@ const requirementLabels = [
 ] as const;
 
 export default function SettingsPage() {
-  const session = useDevSession();
+  const session = useSession();
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]["id"]>("org");
   const [theme, setTheme] = useState<ThemePreference>(() => getStoredThemePreference());
   const [notificationPreferences, setNotificationPreferences] =
