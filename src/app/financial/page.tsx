@@ -38,16 +38,14 @@ import { ApiCostsPanel } from "@/components/financial/ApiCostsPanel";
 import { AuditPanel } from "@/components/financial/AuditPanel";
 import { ClientsPanel } from "@/components/financial/ClientsPanel";
 import { PaymentsPanel } from "@/components/financial/PaymentsPanel";
+import { ReceivablesPanel } from "@/components/financial/ReceivablesPanel";
 import { ReportsPanel } from "@/components/financial/ReportsPanel";
 import { SalesPanel } from "@/components/financial/SalesPanel";
 import { ServicesPanel } from "@/components/financial/ServicesPanel";
 import { TaxesNotesPanel } from "@/components/financial/TaxesNotesPanel";
-import { FinancialStatusPill, type FinancialStatus } from "@/components/financial/FinancialStatusPill";
-import { FinancialTable, type Column } from "@/components/financial/FinancialTable";
 import { FinancialTabs } from "@/components/financial/FinancialTabs";
 import { KpiCard, type KpiState, type KpiTone } from "@/components/financial/KpiCard";
 import { ChartCard, StackedBar } from "@/components/financial/MiniChart";
-import { MoneyText } from "@/components/financial/MoneyText";
 import { PeriodCustomRange } from "@/components/financial/PeriodCustomRange";
 import { PeriodFilter, periodLabel, type PeriodKey } from "@/components/financial/PeriodFilter";
 import {
@@ -140,29 +138,6 @@ const KPI_GROUPS: { label: string; kpis: OverviewKpi[] }[] = [
       { key: "invoices", field: "invoices_count", label: "Notas emitidas", icon: Receipt, tone: "blue", format: "integer", hint: "Documentos fiscais autorizados" }
     ]
   }
-];
-
-/* ── Colunas de tabela ainda sem painel próprio (Recebíveis) ────────────────── */
-const dateCell = (value: string) => (
-  <span className="font-mono text-[11px] text-[var(--text2)]">{value}</span>
-);
-
-type ReceivableRow = {
-  client: string;
-  sale: string;
-  amountCents: number;
-  dueDate: string;
-  daysOverdue: number;
-  status: FinancialStatus;
-};
-
-const RECEIVABLE_COLUMNS: Column<ReceivableRow>[] = [
-  { key: "client", label: "Cliente", render: (r) => r.client },
-  { key: "sale", label: "Venda", render: (r) => r.sale },
-  { key: "amount", label: "Valor a receber", align: "right", render: (r) => <MoneyText cents={r.amountCents} /> },
-  { key: "due", label: "Vencimento", render: (r) => dateCell(r.dueDate) },
-  { key: "overdue", label: "Dias em atraso", align: "right", render: (r) => <span className="font-mono tabular-nums">{r.daysOverdue}</span> },
-  { key: "status", label: "Status", render: (r) => <FinancialStatusPill status={r.status} /> }
 ];
 
 /* ── Estado vazio honesto das abas ainda sem estrutura de tabela ────────────── */
@@ -341,44 +316,6 @@ function OverviewPanel({
   );
 }
 
-/** Aba de tabela (Vendas/Pagamentos/Recebíveis). Estrutura real (colunas +
- *  toolbar), corpo em estado vazio honesto até o backend existir. */
-function TablePanel<Row>({
-  columns,
-  emptyIcon,
-  emptyTitle,
-  emptyDescription,
-  phase
-}: {
-  columns: Column<Row>[];
-  emptyIcon: LucideIcon;
-  emptyTitle: string;
-  emptyDescription: string;
-  phase: string;
-}) {
-  const rows: Row[] = [];
-  const Icon = emptyIcon;
-
-  // FIN-05: sem busca aqui. A aba ainda não é alimentada por endpoint, então a tabela é
-  // sempre vazia — um campo de busca que nunca filtra nada seria um controle fantasma.
-  return (
-    <div className="space-y-3">
-      <FinancialTable
-        columns={columns}
-        emptyDescription={emptyDescription}
-        emptyIcon={<Icon aria-hidden="true" size={20} />}
-        emptyTitle={emptyTitle}
-        rowKey={(_, index) => String(index)}
-        rows={rows}
-        state="empty"
-      />
-      <div className="flex justify-end">
-        <PhasePill>{phase}</PhasePill>
-      </div>
-    </div>
-  );
-}
-
 function EmptyTabPanel({ tab }: { tab: EmptyTab }) {
   const Icon = tab.icon;
   return (
@@ -489,15 +426,7 @@ export default function FinancialPage() {
   } else if (activeTab === "payments") {
     panel = <PaymentsPanel from={rangeFrom} period={period} to={rangeTo} />;
   } else if (activeTab === "receivables") {
-    panel = (
-      <TablePanel<ReceivableRow>
-        columns={RECEIVABLE_COLUMNS}
-        emptyDescription="Esta aba ainda não é alimentada por endpoint próprio. O total pendente aparece nos KPIs da Visão Geral; o detalhamento com vencimentos e atrasos será materializado a partir do cronograma de parcelas."
-        emptyIcon={CalendarClock}
-        emptyTitle="Recebíveis ainda não conectados"
-        phase="Fase 2 — controle avançado"
-      />
-    );
+    panel = <ReceivablesPanel from={rangeFrom} period={period} to={rangeTo} />;
   } else if (activeTab === "api-costs") {
     panel = <ApiCostsPanel from={rangeFrom} period={period} to={rangeTo} />;
   } else if (activeTab === "taxes") {
@@ -532,12 +461,12 @@ export default function FinancialPage() {
                 Módulo Financeiro — dados reais (Fases 3–6)
               </p>
               <p className="mt-1 text-xs leading-5 text-[var(--text2)]">
-                Visão Geral, Vendas, Pagamentos, Serviços, Clientes, Gastos com APIs, Tributos e
-                Notas e Relatórios são{" "}
+                Visão Geral, Vendas, Pagamentos, Recebíveis, Serviços, Clientes, Gastos com APIs,
+                Tributos e Notas e Relatórios são{" "}
                 <strong className="font-semibold text-[var(--text)]">calculados pelo backend</strong>{" "}
                 a partir dos dados reais da organização. Indicadores ainda sem fonte (receita
-                líquida, margem, atraso) e as abas de Recebíveis/Reembolsos aparecem vazias até
-                serem integradas nas próximas fases.
+                líquida, margem) e a aba de Reembolsos aparecem vazios até serem integrados nas
+                próximas fases.
               </p>
             </div>
           </div>
