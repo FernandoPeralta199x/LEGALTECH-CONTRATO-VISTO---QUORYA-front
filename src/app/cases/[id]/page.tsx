@@ -1,81 +1,34 @@
 "use client";
 
-import {
-  ArrowLeft,
-  Bot,
-  ClipboardList,
-  Clock,
-  FileText,
-  Shield,
-  Users
-} from "lucide-react";
-import type { FormEvent } from "react";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { use, useCallback, useEffect, useRef, useState } from "react";
+import { use, useEffect, useState } from "react";
 
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
-import { Badge } from "@/components/Badge";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CaseAgentsTab } from "@/components/cases/CaseAgentsTab";
+import { CaseDetailHeader } from "@/components/cases/CaseDetailHeader";
+import { CaseDocumentsTab } from "@/components/cases/CaseDocumentsTab";
 import { CaseOverviewTab } from "@/components/cases/CaseOverviewTab";
 import { CasePartiesTab } from "@/components/cases/CasePartiesTab";
 import { CaseReportTab } from "@/components/cases/CaseReportTab";
+import { CaseTabsNav, CASE_TAB_IDS } from "@/components/cases/CaseTabsNav";
 import { PaymentReceiptSheet } from "@/components/cases/PaymentReceiptSheet";
 import { TriagePrintSheet } from "@/components/cases/TriagePrintSheet";
-import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingState } from "@/components/LoadingState";
 import { Notification } from "@/components/Notification";
-import { PriorityBadge } from "@/components/PriorityBadge";
-import { StatusBadge } from "@/components/StatusBadge";
 import { Timeline } from "@/components/Timeline";
-import { caseDisplayTitle, formatDate } from "@/lib/formatters";
-import { errorMessage } from "@/lib/errorMessage";
-import {
-  aggregatePartyFromCaseParty,
-  useCasePartiesEditor
-} from "@/lib/useCasePartiesEditor";
-import { getCaseAggregate } from "@/services/cases";
-import {
-  generateCaseReport,
-  reviewCaseReport,
-  runCaseTriage
-} from "@/services/caseWorkflow";
+import { caseDisplayTitle } from "@/lib/formatters";
+import { useCaseDetail } from "@/lib/useCaseDetail";
+import { useCasePartiesEditor } from "@/lib/useCasePartiesEditor";
+import { useCaseWorkflow } from "@/lib/useCaseWorkflow";
 import { useSession } from "@/lib/useSession";
 import { usePrintOnChange } from "@/lib/usePrintOnChange";
-import {
-  productLabel,
-  recommendationLabel,
-  riskLabel,
-  sourceModeLabel
-} from "@/lib/reportLabels";
-import {
-  FINAL_REPORT_ACCEPT_ATTR,
-  FINAL_REPORT_ACCEPTED_MIME,
-  getFinalReportDownloadUrl,
-  listFinalReports,
-  uploadFinalReport,
-  type FinalReportDocument
-} from "@/services/finalReports";
-import type {
-  Case,
-  CaseAggregate,
-  CaseParty,
-  Document,
-  ProviderResult
-} from "@/types";
-
-const TABS = [
-  { id: "overview", label: "Visão geral", icon: ClipboardList },
-  { id: "parties", label: "Partes", icon: Users },
-  { id: "documents", label: "Documentos", icon: FileText },
-  { id: "timeline", label: "Timeline", icon: Clock },
-  { id: "agents", label: "Triagem local", icon: Bot },
-  { id: "report", label: "Relatório", icon: Shield }
-];
+import { FINAL_REPORT_ACCEPT_ATTR } from "@/services/finalReports";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -86,22 +39,35 @@ export default function CaseDetailPage({ params }: PageProps) {
   // usado pelas ações rápidas da fila do Analista).
   useEffect(() => {
     const hash = window.location.hash.replace("#", "");
-    if (["overview", "parties", "documents", "timeline", "agents", "report"].includes(hash)) {
+    if (CASE_TAB_IDS.includes(hash)) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- o fragmento (#tab) só existe no cliente e não chega ao servidor; é uma sincronização única no mount, sem loop.
       setActiveTab(hash);
     }
   }, []);
-  const [caseAggregate, setCaseAggregate] = useState<CaseAggregate | null>(null);
-  const [caseData, setCaseData] = useState<Case | null>(null);
-  const [caseDocuments, setCaseDocuments] = useState<Document[]>([]);
-  const [caseParties, setCaseParties] = useState<CaseParty[]>([]);
-  const [error, setError] = useState("");
-  const [fallbackReason, setFallbackReason] = useState("");
-  const [aggregateSource, setAggregateSource] = useState<"api" | "mock">("api");
-  const [loading, setLoading] = useState(true);
 
-  // Formulário de partes (criar/editar/validar/submeter) extraído para hook
-  // próprio — a página segue dona da lista (syncCaseParties, hoisted abaixo).
+  // Dados do caso (agregado + documentos + partes + relatórios finais) e o
+  // carregamento com guarda de corrida.
+  const {
+    caseAggregate,
+    caseData,
+    caseDocuments,
+    caseParties,
+    error,
+    fallbackReason,
+    aggregateSource,
+    loading,
+    finalReports,
+    finalReportUploading,
+    finalReportFeedback,
+    refreshCase,
+    syncCaseParties,
+    setFallbackReason,
+    handleFinalReportUpload,
+    handleFinalReportDownload
+  } = useCaseDetail(id);
+
+  // Formulário de partes (criar/editar/validar/submeter) — a página segue dona da
+  // lista (syncCaseParties, do hook de dados).
   const {
     editingParty,
     partyError,
@@ -122,245 +88,27 @@ export default function CaseDetailPage({ params }: PageProps) {
     applyParties: (updater) => syncCaseParties(updater),
     onFallbackReason: setFallbackReason
   });
-  const [finalReports, setFinalReports] = useState<FinalReportDocument[]>([]);
-  const [finalReportUploading, setFinalReportUploading] = useState(false);
-  // ARQ-04: erro e sucesso do relatório final num ÚNICO estado — antes eram dois
-  // useState soltos e um refreshFinalReports que setava erro sem limpar o sucesso,
-  // podendo renderizar sucesso e erro ao mesmo tempo. Estado único torna a
-  // inconsistência inexpressável por construção.
-  const [finalReportFeedback, setFinalReportFeedback] = useState<
-    { kind: "error" | "success"; text: string } | null
-  >(null);
 
   const session = useSession();
   const canWrite = session ? ["admin", "analyst"].includes(session.role) : false;
-  const [triageRunning, setTriageRunning] = useState(false);
-  const [reportBusy, setReportBusy] = useState(false);
-  const [approveOpen, setApproveOpen] = useState(false);
-  const [approving, setApproving] = useState(false);
+
+  // Ações de workflow (triagem / gerar relatório / aprovar) e o estado só delas.
+  const {
+    triageRunning,
+    reportBusy,
+    approving,
+    approveOpen,
+    workflowNotice,
+    runTriage,
+    generateReport,
+    approveReport,
+    openApprove,
+    closeApprove,
+    dismissNotice
+  } = useCaseWorkflow(id, refreshCase);
+
   const [printTarget, setPrintTarget] = useState<string | null>(null);
   const [printReceipt, setPrintReceipt] = useState(false);
-  const [workflowNotice, setWorkflowNotice] = useState<{
-    tone: "success" | "error";
-    title: string;
-    description: string;
-  } | null>(null);
-
-  // Token de carga: invalida o setState de um refresh anterior quando o id troca
-  // (ou um novo refresh começa), evitando exibir dados do caso errado numa corrida.
-  const latestLoad = useRef(0);
-
-  const refreshFinalReports = useCallback(async () => {
-    const token = latestLoad.current;
-    try {
-      const reports = await listFinalReports(id);
-      if (token !== latestLoad.current) return;
-      setFinalReports(reports);
-    } catch (err) {
-      if (token !== latestLoad.current) return;
-      setFinalReportFeedback({ kind: "error", text: errorMessage(err, "Não foi possível carregar relatórios finais.") });
-      setFinalReports([]);
-    }
-  }, [id]);
-
-  async function handleFinalReportUpload(event: FormEvent<HTMLInputElement>) {
-    const input = event.currentTarget;
-    const file = input.files?.[0];
-    if (!file) return;
-
-    // Validate MIME / extension
-    const ext = file.name.toLowerCase().split(".").pop() ?? "";
-    const allowedExt = ["pdf", "docx", "doc", "txt"];
-    if (
-      !FINAL_REPORT_ACCEPTED_MIME.includes(file.type) &&
-      !allowedExt.includes(ext)
-    ) {
-      setFinalReportFeedback({
-        kind: "error",
-        text: "Tipo de arquivo não suportado. Envie PDF, DOCX ou TXT."
-      });
-      input.value = "";
-      return;
-    }
-
-    // Size limit: 25 MB (a generous cap for legal reports)
-    const maxBytes = 25 * 1024 * 1024;
-    if (file.size > maxBytes) {
-      setFinalReportFeedback({ kind: "error", text: "Arquivo excede o limite de 25 MB." });
-      input.value = "";
-      return;
-    }
-
-    setFinalReportUploading(true);
-    setFinalReportFeedback(null);
-    try {
-      const doc = await uploadFinalReport(id, file);
-      setFinalReports((current) => [doc, ...current]);
-      setFinalReportFeedback({ kind: "success", text: `"${doc.filename}" enviado com sucesso.` });
-    } catch (err) {
-      setFinalReportFeedback({ kind: "error", text: errorMessage(err, "Falha ao enviar o relatório.") });
-    } finally {
-      setFinalReportUploading(false);
-      input.value = "";
-    }
-  }
-
-  async function handleFinalReportDownload(documentId: string) {
-    // FE-04: abre a aba NO GESTO do clique (antes do await), senão o popup é bloqueado
-    // por abrir fora do handler síncrono. Depois aponta a aba já aberta para a URL.
-    const win = window.open("", "_blank");
-    if (win) win.opener = null; // mitiga reverse tabnabbing (sem perder a referência)
-    try {
-      const url = await getFinalReportDownloadUrl(documentId);
-      if (win) win.location.href = url;
-      else window.location.href = url; // fallback se o popup foi bloqueado mesmo assim
-    } catch (err) {
-      win?.close();
-      setFinalReportFeedback({
-        kind: "error",
-        text: errorMessage(err, "Não foi possível gerar o link de download.")
-      });
-    }
-  }
-
-  const refreshCase = useCallback(async () => {
-    const token = ++latestLoad.current;
-    setLoading(true);
-    setError("");
-
-    try {
-      const aggregateResult = await getCaseAggregate(id);
-      if (token !== latestLoad.current) return; // id trocou / novo refresh — descarta
-      setCaseAggregate(aggregateResult.data);
-      setCaseData(aggregateResult.data.case);
-      setCaseDocuments(aggregateResult.data.documents);
-      setCaseParties(aggregateResult.data.parties);
-      setAggregateSource(aggregateResult.source);
-      setFallbackReason(
-        aggregateResult.source === "mock" ? aggregateResult.fallbackReason ?? "" : ""
-      );
-      void refreshFinalReports();
-    } catch (err) {
-      if (token !== latestLoad.current) return;
-      setError(errorMessage(err));
-      setFallbackReason("");
-      setCaseAggregate(null);
-      setCaseData(null);
-      setCaseDocuments([]);
-      setCaseParties([]);
-    } finally {
-      if (token === latestLoad.current) setLoading(false);
-    }
-  }, [id, refreshFinalReports]);
-
-  async function handleRunTriage() {
-    if (triageRunning) return;
-    setTriageRunning(true);
-    setWorkflowNotice(null);
-    try {
-      const result = await runCaseTriage(id);
-      await refreshCase();
-      setWorkflowNotice({
-        tone: "success",
-        title: "Triagem executada",
-        description: `${result.modules_executed} módulos processados. Risco estimado: ${result.risk_level}.`
-      });
-    } catch (err) {
-      setWorkflowNotice({
-        tone: "error",
-        title: "Falha na triagem",
-        description: errorMessage(err, "Não foi possível executar a triagem.")
-      });
-    } finally {
-      setTriageRunning(false);
-    }
-  }
-
-  async function handleGenerateReport() {
-    if (reportBusy) return;
-    setReportBusy(true);
-    setWorkflowNotice(null);
-    try {
-      await generateCaseReport(id);
-      await refreshCase();
-      setWorkflowNotice({
-        tone: "success",
-        title: "Relatório gerado",
-        description: "Parecer consolidado a partir das evidências da triagem."
-      });
-    } catch (err) {
-      setWorkflowNotice({
-        tone: "error",
-        title: "Falha ao gerar relatório",
-        description: errorMessage(err, "Não foi possível gerar o relatório.")
-      });
-    } finally {
-      setReportBusy(false);
-    }
-  }
-
-  async function handleApproveReport() {
-    if (approving) return;
-    setApproving(true);
-    setWorkflowNotice(null);
-    try {
-      await reviewCaseReport(id, { status: "approved" });
-      await refreshCase();
-      setApproveOpen(false);
-      setWorkflowNotice({
-        tone: "success",
-        title: "Relatório aprovado",
-        description: "Revisão humana registrada; o caso foi concluído."
-      });
-    } catch (err) {
-      setWorkflowNotice({
-        tone: "error",
-        title: "Falha ao aprovar",
-        description: errorMessage(err, "Não foi possível aprovar o relatório.")
-      });
-    } finally {
-      setApproving(false);
-    }
-  }
-
-  function syncCaseParties(updater: (current: CaseParty[]) => CaseParty[]) {
-    // M16: updater PURO. Antes, setCaseData/setCaseAggregate eram chamados DENTRO do
-    // updater de setCaseParties — em React StrictMode o updater é invocado 2x (para
-    // detectar impureza), disparando os setState aninhados em duplicidade. Agora
-    // calculamos `next` do valor atual e disparamos os três setState no nível do
-    // handler; cada um continua com um updater próprio e puro.
-    const next = updater(caseParties);
-    setCaseParties(next);
-    setCaseData((currentCase) =>
-      currentCase ? { ...currentCase, parties: next } : currentCase
-    );
-    setCaseAggregate((currentAggregate) =>
-      currentAggregate
-        ? {
-            ...currentAggregate,
-            case: { ...currentAggregate.case, parties: next },
-            parties: next.map((party) =>
-              aggregatePartyFromCaseParty(
-                party,
-                currentAggregate.case.organizationId ?? ""
-              )
-            ),
-            summary: {
-              ...currentAggregate.summary,
-              partiesCount: next.length
-            }
-          }
-        : currentAggregate
-    );
-  }
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void refreshCase();
-    }, 0);
-
-    return () => window.clearTimeout(timer);
-  }, [refreshCase]);
 
   // Impressão/PDF: dispara o print e limpa o estado da folha no afterprint (usePrintOnChange).
   usePrintOnChange(printTarget, () => setPrintTarget(null)); // evidências (TriagePrintSheet)
@@ -441,7 +189,7 @@ export default function CaseDetailPage({ params }: PageProps) {
         )}
         {workflowNotice && (
           <Notification
-            onDismiss={() => setWorkflowNotice(null)}
+            onDismiss={dismissNotice}
             title={workflowNotice.title}
             tone={workflowNotice.tone}
           >
@@ -472,123 +220,14 @@ export default function CaseDetailPage({ params }: PageProps) {
           Todos os casos
         </Link>
 
-        {/* Case header */}
-        <div className="cv-card mb-6 p-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <div className="flex flex-wrap items-center gap-2 mb-2">
-                <span className="font-mono text-xs font-semibold text-brand-teal">
-                  {caseData.code}
-                </span>
-                <StatusBadge status={caseData.status} />
-                <PriorityBadge priority={caseData.priority} />
-                {paymentPending && <Badge tone="orange">Pagamento pendente</Badge>}
-              </div>
-              <h1 className="text-xl font-bold tracking-tight text-[var(--text)]">
-                {caseDisplayTitle(caseData)}
-              </h1>
-              <p className="mt-1 text-sm text-[var(--text2)]">
-                {caseData.clientName} · {productLabel(caseData.caseType)}
-              </p>
-              {caseData.notes && (
-                <p className="mt-2 text-xs leading-5 text-[var(--text2)]">{caseData.notes}</p>
-              )}
-            </div>
-            <div className="shrink-0 text-left sm:text-right">
-              <div className="mb-3 text-left sm:text-right">
-                <span className="font-mono text-2xl font-bold tracking-tight text-[var(--text)]">
-                  {caseData.progressPercent}%
-                </span>
-                <p className="text-[11px] text-[var(--text2)]">Progresso geral</p>
-              </div>
-              <div className="h-1.5 w-32 overflow-hidden rounded-full bg-[var(--surf3)]">
-                <div
-                  className="h-1.5 rounded-full bg-[var(--teal)]"
-                  style={{ width: `${caseData.progressPercent}%` }}
-                />
-              </div>
-            </div>
-          </div>
+        <CaseDetailHeader
+          caseData={caseData}
+          caseParties={caseParties}
+          paymentPending={paymentPending}
+          summary={summary}
+        />
 
-          <dl className="mt-6 flex flex-wrap gap-6 border-t border-[var(--bd)] pt-4 text-xs">
-            {[
-              {
-                label: "Responsável",
-                value: caseData.assignedTo ?? "Não atribuído"
-              },
-              { label: "Documentos", value: `${summary?.documentsCount ?? caseData.documentsCount}` },
-              { label: "Partes", value: `${summary?.partiesCount ?? caseParties.length}` },
-              { label: "Risco", value: riskLabel(summary?.riskLevel ?? caseData.riskLevel) },
-              {
-                label: "Recomendação",
-                value: recommendationLabel(caseData.recommendation)
-              },
-              {
-                label: "Origem",
-                value: sourceModeLabel(summary?.sourceMode ?? caseData.sourceMode)
-              },
-              {
-                label: "Criado em",
-                value: formatDate(caseData.createdAt)
-              },
-              {
-                label: "Atualizado",
-                value: formatDate(caseData.updatedAt)
-              }
-            ].map((item) => (
-              <div key={item.label}>
-                <dt className="text-[var(--text3)]">{item.label}</dt>
-                <dd className="mt-0.5 font-medium text-[var(--text2)]">{item.value}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-
-        {/* Tabs (padrão ARIA Tabs — A11Y-05) */}
-        <div
-          aria-label="Seções do caso"
-          className="mb-6 flex overflow-x-auto border-b border-[var(--bd)]"
-          onKeyDown={(event) => {
-            const i = TABS.findIndex((t) => t.id === activeTab);
-            let nextIndex: number;
-            if (event.key === "ArrowRight") nextIndex = (i + 1) % TABS.length;
-            else if (event.key === "ArrowLeft")
-              nextIndex = (i - 1 + TABS.length) % TABS.length;
-            else if (event.key === "Home") nextIndex = 0;
-            else if (event.key === "End") nextIndex = TABS.length - 1;
-            else return;
-            event.preventDefault();
-            const next = TABS[nextIndex];
-            setActiveTab(next.id);
-            document.getElementById(`tab-${next.id}`)?.focus();
-          }}
-          role="tablist"
-        >
-          {TABS.map((tab) => {
-            const Icon = tab.icon;
-            const active = activeTab === tab.id;
-            return (
-              <button
-                aria-controls={active ? `panel-${tab.id}` : undefined}
-                aria-selected={active}
-                className={`flex items-center gap-2 whitespace-nowrap border-b-2 px-4 py-3 text-xs transition ${
-                  active
-                    ? "border-[var(--teal)] font-semibold text-[var(--teal)]"
-                    : "border-transparent font-medium text-[var(--text2)] hover:text-[var(--text)]"
-                }`}
-                id={`tab-${tab.id}`}
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                role="tab"
-                tabIndex={active ? 0 : -1}
-                type="button"
-              >
-                <Icon aria-hidden="true" size={14} />
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
+        <CaseTabsNav activeTab={activeTab} onTabChange={setActiveTab} />
 
         <div
           aria-labelledby={`tab-${activeTab}`}
@@ -596,139 +235,98 @@ export default function CaseDetailPage({ params }: PageProps) {
           role="tabpanel"
           tabIndex={0}
         >
-        {/* Tab: Overview */}
-        {activeTab === "overview" && (
-          <CaseOverviewTab
-            canWrite={canWrite}
-            caseData={caseData}
-            caseIsCompleted={caseIsCompleted}
-            caseParties={caseParties}
-            caseReport={caseReport}
-            installmentPlan={installmentPlan}
-            onGenerateReport={handleGenerateReport}
-            onOpenApprove={() => setApproveOpen(true)}
-            onPrintReceipt={() => setPrintReceipt(true)}
-            onRunTriage={handleRunTriage}
-            paymentPending={paymentPending}
-            paymentStatus={paymentStatus}
-            reportBusy={reportBusy}
-            showPayment={showPayment}
-            summary={summary}
-            triageHasRun={triageHasRun}
-            triageRunning={triageRunning}
-          />
-        )}
+          {/* Tab: Overview */}
+          {activeTab === "overview" && (
+            <CaseOverviewTab
+              canWrite={canWrite}
+              caseData={caseData}
+              caseIsCompleted={caseIsCompleted}
+              caseParties={caseParties}
+              caseReport={caseReport}
+              installmentPlan={installmentPlan}
+              onGenerateReport={generateReport}
+              onOpenApprove={openApprove}
+              onPrintReceipt={() => setPrintReceipt(true)}
+              onRunTriage={runTriage}
+              paymentPending={paymentPending}
+              paymentStatus={paymentStatus}
+              reportBusy={reportBusy}
+              showPayment={showPayment}
+              summary={summary}
+              triageHasRun={triageHasRun}
+              triageRunning={triageRunning}
+            />
+          )}
 
-        {/* Tab: Parties */}
-        {activeTab === "parties" && (
-          <CasePartiesTab
-            caseParties={caseParties}
-            editingParty={editingParty}
-            handlePartySubmit={handlePartySubmit}
-            partyForm={partyForm}
-            partyFormErrors={partyFormErrors}
-            partySubmitting={partySubmitting}
-            resetPartyForm={resetPartyForm}
-            showPartyForm={showPartyForm}
-            startCreateParty={startCreateParty}
-            startEditParty={startEditParty}
-            updatePartyForm={updatePartyForm}
-          />
-        )}
+          {/* Tab: Parties */}
+          {activeTab === "parties" && (
+            <CasePartiesTab
+              caseParties={caseParties}
+              editingParty={editingParty}
+              handlePartySubmit={handlePartySubmit}
+              partyForm={partyForm}
+              partyFormErrors={partyFormErrors}
+              partySubmitting={partySubmitting}
+              resetPartyForm={resetPartyForm}
+              showPartyForm={showPartyForm}
+              startCreateParty={startCreateParty}
+              startEditParty={startEditParty}
+              updatePartyForm={updatePartyForm}
+            />
+          )}
 
-        {/* Tab: Documents */}
-        {activeTab === "documents" && (
-          <div className="animate-in space-y-3">
-            {caseDocuments.length === 0 ? (
-              <EmptyState
-                action={
-                  <Button href="/documents" variant="secondary">
-                    Abrir documentos
-                  </Button>
-                }
-                description="Nenhum metadado de documento foi encontrado para este caso."
-                icon={<FileText size={20} />}
-                title="Sem documentos"
-              />
-            ) : (
-              caseDocuments.map((doc, index) => (
-                <div
-                  className="animate-in flex flex-col gap-3 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-5 py-4 sm:flex-row sm:items-center sm:gap-4"
-                  key={doc.id}
-                  style={{ animationDelay: `${index * 40}ms` }}
-                >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--surf3)]">
-                    <FileText className="text-[var(--text2)]" size={18} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-[var(--text)]">
-                      {doc.filename}
-                    </p>
-                    <p className="text-xs text-[var(--text3)]">
-                      {doc.sizeLabel} · {formatDate(doc.uploadedAt)}
-                    </p>
-                    <p className="mt-1 text-[11px] text-[var(--text3)]">
-                      OCR: {doc.ocrStatus ?? "not_started"} · IA: {doc.aiReadStatus ?? "not_started"}
-                    </p>
-                  </div>
-                  <div className="self-start sm:self-center">
-                    <StatusBadge status={doc.status} />
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
+          {/* Tab: Documents */}
+          {activeTab === "documents" && <CaseDocumentsTab documents={caseDocuments} />}
 
-        {/* Tab: Timeline */}
-        {activeTab === "timeline" && (
-          <div className="animate-in">
-            <Card title="Linha do tempo operacional">
-              <Timeline events={caseTimeline} />
-            </Card>
-          </div>
-        )}
+          {/* Tab: Timeline */}
+          {activeTab === "timeline" && (
+            <div className="animate-in">
+              <Card title="Linha do tempo operacional">
+                <Timeline events={caseTimeline} />
+              </Card>
+            </div>
+          )}
 
-        {/* Tab: Agents */}
-        {activeTab === "agents" && (
-          <CaseAgentsTab
-            canWrite={canWrite}
-            caseIsCompleted={caseIsCompleted}
-            onPrint={setPrintTarget}
-            onRunTriage={handleRunTriage}
-            paymentPending={paymentPending}
-            providerResults={providerResults}
-            resultByModule={resultByModule}
-            triageHasRun={triageHasRun}
-            triageModules={triageModules}
-            triageRunning={triageRunning}
-          />
-        )}
+          {/* Tab: Agents */}
+          {activeTab === "agents" && (
+            <CaseAgentsTab
+              canWrite={canWrite}
+              caseIsCompleted={caseIsCompleted}
+              onPrint={setPrintTarget}
+              onRunTriage={runTriage}
+              paymentPending={paymentPending}
+              providerResults={providerResults}
+              resultByModule={resultByModule}
+              triageHasRun={triageHasRun}
+              triageModules={triageModules}
+              triageRunning={triageRunning}
+            />
+          )}
 
-        {/* Tab: Report */}
-        {activeTab === "report" && (
-          <CaseReportTab
-            finalReport={{
-              acceptAttr: FINAL_REPORT_ACCEPT_ATTR,
-              docs: finalReports,
-              error: finalReportFeedback?.kind === "error" ? finalReportFeedback.text : "",
-              onDownload: (documentId: string) =>
-                void handleFinalReportDownload(documentId),
-              onUpload: handleFinalReportUpload,
-              success: finalReportFeedback?.kind === "success" ? finalReportFeedback.text : "",
-              uploading: finalReportUploading
-            }}
-            report={{
-              busy: reportBusy,
-              canWrite,
-              data: caseReport,
-              isCompleted: caseIsCompleted,
-              onApprove: () => setApproveOpen(true),
-              onGenerate: handleGenerateReport,
-              paymentPending
-            }}
-          />
-        )}
+          {/* Tab: Report */}
+          {activeTab === "report" && (
+            <CaseReportTab
+              finalReport={{
+                acceptAttr: FINAL_REPORT_ACCEPT_ATTR,
+                docs: finalReports,
+                error: finalReportFeedback?.kind === "error" ? finalReportFeedback.text : "",
+                onDownload: (documentId: string) =>
+                  void handleFinalReportDownload(documentId),
+                onUpload: handleFinalReportUpload,
+                success: finalReportFeedback?.kind === "success" ? finalReportFeedback.text : "",
+                uploading: finalReportUploading
+              }}
+              report={{
+                busy: reportBusy,
+                canWrite,
+                data: caseReport,
+                isCompleted: caseIsCompleted,
+                onApprove: openApprove,
+                onGenerate: generateReport,
+                paymentPending
+              }}
+            />
+          )}
         </div>
         <TriagePrintSheet
           caseCode={caseData.code}
@@ -749,8 +347,8 @@ export default function CaseDetailPage({ params }: PageProps) {
           confirmLabel="Aprovar e concluir"
           description="Aprovar registra a revisão humana e conclui o caso (status 'completed'). Um caso finalizado não aceita novas escritas."
           loading={approving}
-          onCancel={() => setApproveOpen(false)}
-          onConfirm={handleApproveReport}
+          onCancel={closeApprove}
+          onConfirm={approveReport}
           open={approveOpen}
           title="Aprovar relatório do caso?"
           variant="primary"
