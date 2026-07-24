@@ -49,7 +49,7 @@ export async function fetchVerifiedSession(
   issuedAt: number,
   expiresAt: number
 ): Promise<{ response: Response; session: Session | null; payload: unknown }> {
-  const response = await fetchBackend("/api/v1/me", { token });
+  const response = await fetchBackend("/me", { token });
   const payload = await readBackendJson(response);
   const user = extractBackendData<BackendCurrentUser>(payload);
   return {
