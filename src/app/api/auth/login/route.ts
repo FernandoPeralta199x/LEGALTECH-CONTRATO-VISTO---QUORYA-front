@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     const credentials = requireLoginCredentials(
       await readJsonBody<unknown>(request)
     );
-    const upstream = await fetchBackend("/auth/login", {
+    const upstream = await fetchBackend("/api/v1/auth/login", {
       body: JSON.stringify(credentials),
       headers: { "Content-Type": "application/json" },
       method: "POST"

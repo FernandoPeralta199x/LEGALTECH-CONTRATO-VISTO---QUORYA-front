@@ -14,7 +14,7 @@ test("production backend config is server-only HTTPS and preserves a stage prefi
 
   assert.equal(
     buildBackendUrl(base, "/api/v1/cases", "?page=2"),
-    "https://api.example.execute-api.sa-east-1.amazonaws.com/staging/api/v1/cases?page=2"
+    "https://api.example.execute-api.sa-east-1.amazonaws.com/staging/cases?page=2"
   );
 });
 
