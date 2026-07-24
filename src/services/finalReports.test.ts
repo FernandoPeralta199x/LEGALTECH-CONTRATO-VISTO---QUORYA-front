@@ -75,7 +75,8 @@ test("listFinalReports filtra por classification=final_report no servidor", asyn
     const method = (init?.method ?? "GET").toUpperCase();
     getUrl = String(url);
     if (method === "GET") {
-      return Response.json({ success: true, data: [] });
+      // C3-04: /documents devolve envelope paginado {items,total,...}.
+      return Response.json({ success: true, data: { items: [], page: 1, page_size: 50, total: 0, total_pages: 0 } });
     }
     throw new Error(`URL inesperada no mock: ${method} ${getUrl}`);
   }) as typeof fetch;
@@ -84,4 +85,29 @@ test("listFinalReports filtra por classification=final_report no servidor", asyn
 
   assert.match(getUrl, /case_id=case-9/);
   assert.match(getUrl, /classification=final_report/);
+});
+
+test("listFinalReports tolera o array cru legado sem quebrar com undefined.map", async () => {
+  mockSession();
+  globalThis.fetch = (async () =>
+    // contrato legado: `data` é ARRAY, sem envelope { items }.
+    Response.json({
+      success: true,
+      data: [
+        {
+          id: "rel-legacy",
+          case_id: "case-9",
+          filename: "rel.pdf",
+          content_type: "application/pdf",
+          size_bytes: 10,
+          uploaded_at: "2026-05-30T12:00:00.000Z",
+          uploaded_by: null,
+          metadata: { kind: "final_report" }
+        }
+      ]
+    })) as typeof fetch;
+
+  const reports = await listFinalReports("case-9");
+  assert.equal(reports.length, 1);
+  assert.equal(reports[0].id, "rel-legacy");
 });

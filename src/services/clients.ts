@@ -92,7 +92,9 @@ export function mapBackendClient(client: BackendClient): Client {
     phone: client.phone ?? "",
     rg: client.rg ?? metadataString(client, "rg"),
     status: (client.status ?? "active") as Client["status"],
-    riskLevel: (client.risk_level ?? "low") as Client["riskLevel"],
+    // UI-01: sem default fabricado — se o backend não avaliou risco, riskLevel fica undefined
+    // (a UI mostra "Risco não avaliado"), em vez de forjar um "baixo" verde para todos.
+    riskLevel: (client.risk_level ?? undefined) as Client["riskLevel"],
     sourceMode: client.source_mode as Client["sourceMode"],
     casesCount: client.cases_count ?? 0,
     metadata: client.metadata,

@@ -27,7 +27,7 @@ import { PageTitle } from "@/components/PageTitle";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatBytes, formatDate } from "@/lib/formatters";
 import { errorMessage } from "@/lib/errorMessage";
-import { useDevSession } from "@/lib/useDevSession";
+import { useSession } from "@/lib/useSession";
 import { listCases } from "@/services/cases";
 import {
   enqueueDocumentProcessing,
@@ -41,12 +41,10 @@ import type { Case, Document } from "@/types";
 
 type DocumentForm = {
   caseId: string;
-  notes: string;
 };
 
 const emptyDocumentForm: DocumentForm = {
-  caseId: "",
-  notes: ""
+  caseId: ""
 };
 
 const acceptedUploadTypes = ".pdf,.png,.jpg,.jpeg,.docx,.txt,.md";
@@ -84,7 +82,7 @@ function documentSourceLabel(document: Document): string {
 }
 
 export default function DocumentsPage() {
-  const session = useDevSession();
+  const session = useSession();
   // Papel de escrita (admin/analyst). Viewer é somente-leitura: a URL de download
   // é writer-only no backend (contorna mascaramento de PII), então o botão fica
   // oculto p/ viewer — senão a ação daria 403 na tela.
@@ -201,14 +199,12 @@ export default function DocumentsPage() {
     setActionMessage("");
 
     try {
+      // UPLOAD-08: não envia mais `notes` — o backend não persiste metadata de upload
+      // (schema extra="forbid"), então coletar a observação só a descartava em silêncio.
       const result = await uploadDocument(
         {
           caseId: form.caseId,
-          file: selectedFile as File,
-          metadata: {
-            notes: form.notes.trim(),
-            source: "frontend_local_upload"
-          }
+          file: selectedFile as File
         },
         (progress) => setUploadProgress(progress)
       );
@@ -261,6 +257,8 @@ export default function DocumentsPage() {
       const result = await enqueueDocumentProcessing(documentId);
       setActionMessage(`Job local/MVP de processamento registrado: ${result.data.job_id}.`);
       setPendingEnqueue(null);
+      // FE-07: reflete o novo estado do documento na lista sem exigir refresh manual.
+      void refreshDocuments();
     } catch (err) {
       setError(errorMessage(err, "Não foi possível enfileirar o processamento."));
     } finally {
@@ -289,16 +287,19 @@ export default function DocumentsPage() {
               >
                 Atualizar
               </Button>
-              <Button
-                icon={<Upload aria-hidden="true" size={15} />}
-                onClick={() => {
-                  setShowForm((current) => !current);
-                  setError("");
-                  setActionMessage("");
-                }}
-              >
-                Enviar documento
-              </Button>
+              {/* FE-03: upload bate em POST /documents @require_writer — só writers veem. */}
+              {canWrite && (
+                <Button
+                  icon={<Upload aria-hidden="true" size={15} />}
+                  onClick={() => {
+                    setShowForm((current) => !current);
+                    setError("");
+                    setActionMessage("");
+                  }}
+                >
+                  Enviar documento
+                </Button>
+              )}
             </div>
           }
           description="Organize documentos como insumos locais vinculados a casos. Upload é local/MVP; OCR, IA, cloud e SQS reais não estão ativos nesta tela."
@@ -352,8 +353,9 @@ export default function DocumentsPage() {
                   )}
                 </SelectInput>
               </FormField>
-              <FormField error={formErrors.file} label="Arquivo" required>
+              <FormField error={formErrors.file} htmlFor="cv-file-upload" label="Arquivo" required>
                 <input
+                  aria-describedby={formErrors.file ? "cv-file-upload-desc" : undefined}
                   aria-invalid={Boolean(formErrors.file) || undefined}
                   accept={acceptedUploadTypes}
                   className="sr-only"
@@ -376,13 +378,6 @@ export default function DocumentsPage() {
                     {selectedFile ? selectedFile.name : "Nenhum arquivo selecionado"}
                   </span>
                 </div>
-              </FormField>
-              <FormField label="Observação">
-                <TextInput
-                  onChange={(event) => updateForm("notes", event.target.value)}
-                  placeholder="Observação para o MVP local"
-                  value={form.notes}
-                />
               </FormField>
             </div>
             {selectedFile && (
@@ -555,24 +550,28 @@ export default function DocumentsPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 md:ml-auto">
+                    {/* FE-02/FE-03: download E enqueue batem em endpoints @require_writer —
+                        só writers veem os controles (o backend já nega 403 aos demais). */}
                     {canWrite && (
-                      <IconButton
-                        disabled={Boolean(actionBusyId)}
-                        label="Gerar URL temporária local"
-                        loading={actionBusyId === `download-${doc.id}`}
-                        onClick={() => void handleDownloadUrl(doc.id)}
-                      >
-                        <Download size={13} />
-                      </IconButton>
+                      <>
+                        <IconButton
+                          disabled={Boolean(actionBusyId)}
+                          label="Gerar URL temporária local"
+                          loading={actionBusyId === `download-${doc.id}`}
+                          onClick={() => void handleDownloadUrl(doc.id)}
+                        >
+                          <Download size={13} />
+                        </IconButton>
+                        <IconButton
+                          disabled={Boolean(actionBusyId)}
+                          label="Registrar processamento local"
+                          loading={actionBusyId === `enqueue-${doc.id}`}
+                          onClick={() => setPendingEnqueue(doc)}
+                        >
+                          <Send size={13} />
+                        </IconButton>
+                      </>
                     )}
-                    <IconButton
-                      disabled={Boolean(actionBusyId)}
-                      label="Registrar processamento local"
-                      loading={actionBusyId === `enqueue-${doc.id}`}
-                      onClick={() => setPendingEnqueue(doc)}
-                    >
-                      <Send size={13} />
-                    </IconButton>
                   </div>
                 </div>
               ))}

@@ -88,21 +88,26 @@ export function CaseReportTab({ finalReport, report }: CaseReportTabProps) {
           </div>
         )}
 
-        <label
-          className={`flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--bd2)] bg-[var(--surf2)] px-4 py-6 text-sm font-medium text-[var(--text2)] transition hover:border-[var(--accent)] hover:bg-[var(--surf3)] ${
-            uploading ? "pointer-events-none opacity-60" : ""
-          }`}
-        >
-          <Upload size={16} />
-          {uploading ? "Enviando..." : "Selecionar arquivo (PDF, DOCX, TXT)"}
-          <input
-            accept={acceptAttr}
-            className="hidden"
-            disabled={uploading}
-            onChange={onUpload}
-            type="file"
-          />
-        </label>
+        {/* FE-02/FE-03: o upload do relatório final bate em POST /documents @require_writer —
+            só writers veem o dropzone (não-writers já têm o banner "Modo leitura" na página). */}
+        {canWrite && (
+          <label
+            className={`flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--bd2)] bg-[var(--surf2)] px-4 py-6 text-sm font-medium text-[var(--text2)] transition hover:border-[var(--accent)] hover:bg-[var(--surf3)] ${
+              uploading ? "pointer-events-none opacity-60" : ""
+            }`}
+          >
+            <Upload size={16} />
+            {uploading ? "Enviando..." : "Selecionar arquivo (PDF, DOCX, TXT)"}
+            <input
+              accept={acceptAttr}
+              aria-label="Enviar relatório final (PDF, DOCX ou TXT)"
+              className="sr-only"
+              disabled={uploading}
+              onChange={onUpload}
+              type="file"
+            />
+          </label>
+        )}
 
         {docs.length > 0 && (
           <div className="mt-5 space-y-2">
@@ -250,13 +255,17 @@ export function CaseReportTab({ finalReport, report }: CaseReportTabProps) {
                         ? "border-red-500/20 bg-red-500/5"
                         : risk.level === "medium"
                           ? "border-[rgba(249,115,22,0.2)] bg-[var(--orange-dim)]"
-                          : "border-[rgba(32,201,151,0.2)] bg-[var(--teal-dim)]"
+                          : risk.level === "low"
+                            ? "border-[rgba(32,201,151,0.2)] bg-[var(--teal-dim)]"
+                            // UI-03: sem severidade (o backend não a envia) → moldura neutra,
+                            // nunca o verde de "baixo". O título já categoriza o risco.
+                            : "border-[var(--bd)] bg-[var(--surf2)]"
                     }`}
                     key={risk.id}
                     style={{ animationDelay: `${index * 40}ms` }}
                   >
                     <div className="flex items-center gap-2 mb-2">
-                      <StatusBadge status={risk.level} />
+                      {risk.level && <StatusBadge status={risk.level} />}
                       <p className="text-sm font-semibold text-[var(--text)]">
                         {risk.title}
                       </p>

@@ -19,6 +19,11 @@ export const viewport: Viewport = {
   ]
 };
 
+// Script inline BLOQUEANTE: aplica o tema salvo antes da hidratação para eliminar
+// o flash de tema (PERF-02). Espelha getStoredThemePreference/applyThemePreference
+// de lib/preferences.ts — manter em sincronia se aquela lógica mudar.
+const THEME_INIT_SCRIPT = `(function(){try{var s=localStorage.getItem("legaltech.theme.preference.v1");var t=(s==="light"||s==="dark")?s:(window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"dark");var e=document.documentElement;e.classList.toggle("dark",t==="dark");e.dataset.theme=t;e.style.colorScheme=t;}catch(_){}})();`;
+
 export default function RootLayout({
   children
 }: Readonly<{
@@ -32,6 +37,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

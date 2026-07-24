@@ -1,19 +1,56 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { createDocument, listDocuments, uploadDocument } from "./documents";
+import { listDocuments, uploadDocument } from "./documents";
 
 test("listDocuments maps backend documents and reports api source", async () => {
+  globalThis.fetch = (async () =>
+    // C3-04: /documents devolve envelope paginado {items,total,...}.
+    Response.json({
+      success: true,
+      data: {
+        items: [
+          {
+            id: "doc-api-1",
+            case_id: "case-api-1",
+            filename: "contrato.pdf",
+            content_type: "application/pdf",
+            size_bytes: 2048,
+            file_hash: null,
+            status: "uploaded",
+            uploaded_by: null,
+            uploaded_at: "2026-05-25T10:00:00.000Z",
+            metadata: {},
+            created_at: "2026-05-25T10:00:00.000Z",
+            updated_at: "2026-05-25T10:00:00.000Z"
+          }
+        ],
+        page: 1, page_size: 50, total: 1, total_pages: 1
+      }
+    })) as typeof fetch;
+
+  const result = await listDocuments();
+
+  assert.equal(result.source, "api");
+  assert.equal(result.data[0].id, "doc-api-1");
+  assert.equal(result.data[0].sizeLabel, "2 KB");
+  assert.equal(result.data[0].caseCode, "CASE-API-1");
+});
+
+test("listDocuments tolera o array cru legado (backend antigo) sem quebrar com undefined.map", async () => {
+  // Regressão do bug de runtime: um servidor com o contrato LEGADO devolve `data` como
+  // ARRAY (sem envelope). Antes, response.data.items era undefined -> "Cannot read
+  // properties of undefined (reading 'map')" derrubava Documentos E o Dashboard.
   globalThis.fetch = (async () =>
     Response.json({
       success: true,
       data: [
         {
-          id: "doc-api-1",
-          case_id: "case-api-1",
-          filename: "contrato.pdf",
+          id: "doc-legacy-1",
+          case_id: "case-legacy-1",
+          filename: "antigo.pdf",
           content_type: "application/pdf",
-          size_bytes: 2048,
+          size_bytes: 1024,
           file_hash: null,
           status: "uploaded",
           uploaded_by: null,
@@ -26,51 +63,15 @@ test("listDocuments maps backend documents and reports api source", async () => 
     })) as typeof fetch;
 
   const result = await listDocuments();
-
   assert.equal(result.source, "api");
-  assert.equal(result.data[0].id, "doc-api-1");
-  assert.equal(result.data[0].sizeLabel, "2 KB");
-  assert.equal(result.data[0].caseCode, "CASE-API-1");
+  assert.equal(result.data.length, 1);
+  assert.equal(result.data[0].id, "doc-legacy-1");
 });
 
-test("createDocument sends metadata-only backend payload without organization_id", async () => {
-  let requestBody = "";
-
-  globalThis.fetch = (async (_url, init) => {
-    requestBody = String(init?.body ?? "");
-
-    return Response.json(
-      {
-        success: true,
-        data: {
-          id: "doc-created",
-          case_id: "case-api-1",
-          filename: "contrato.pdf",
-          content_type: "application/pdf",
-          size_bytes: 1024,
-          file_hash: null,
-          status: "pending_upload",
-          uploaded_by: null,
-          uploaded_at: null,
-          metadata: {},
-          created_at: "2026-05-25T10:00:00.000Z",
-          updated_at: "2026-05-25T10:00:00.000Z"
-        }
-      },
-      { status: 201 }
-    );
-  }) as typeof fetch;
-
-  await createDocument({
-    case_id: "case-api-1",
-    content_type: "application/pdf",
-    filename: "contrato.pdf",
-    size_bytes: 1024
-  });
-
-  const payload = JSON.parse(requestBody);
-  assert.equal(payload.case_id, "case-api-1");
-  assert.equal(payload.organization_id, undefined);
+test("listDocuments não quebra se data vier ausente/undefined (degrada para lista vazia)", async () => {
+  globalThis.fetch = (async () => Response.json({ success: true })) as typeof fetch;
+  const result = await listDocuments();
+  assert.deepEqual(result.data, []);
 });
 
 test("uploadDocument segue o fluxo presign (registra JSON, faz PUT, busca) sem organization_id", async () => {
@@ -157,7 +158,11 @@ test("uploadDocument segue o fluxo presign (registra JSON, faz PUT, busca) sem o
   assert.equal(result.data.status, "uploaded");
   // registro é JSON (presign), nunca multipart; sem organization_id (autoridade do back)
   assert.match(registerUrl, /\/api\/v1\/documents$/);
-  assert.equal(authorizationHeader, "Bearer valid.dev.jwt");
+  assert.equal(
+    authorizationHeader,
+    null,
+    "o browser nunca deve enviar o JWT; Authorization é injetado apenas pelo BFF"
+  );
   const reg = JSON.parse(registerBody);
   assert.equal(reg.case_id, "case-api-1");
   assert.equal(reg.file_name, "contrato.pdf");

@@ -7,10 +7,13 @@ import {
   createLocalCaseFromWizard,
   findStoredLocalCase,
   getStoredLocalCases,
-  isLocalOnlyCase,
-  mergeCasesWithLocalCases,
   saveStoredLocalCase
 } from "./localCases";
+
+// SEC-FE-01: a leitura do store local agora é gateada por isMockFallbackEnabled()
+// (isProduction + flag). Este arquivo exercita o fluxo local (dev), então liga a flag.
+// O Node test runner isola cada arquivo em seu próprio processo — não vaza.
+process.env.NEXT_PUBLIC_ENABLE_API_MOCK_FALLBACK = "true";
 
 class MemoryStorage {
   private values = new Map<string, string>();
@@ -115,26 +118,15 @@ test("createLocalCaseFromWizard builds a minimal local case without sensitive pa
   assert.equal(serialized.includes("Endereco completo"), false);
 });
 
-test("local cases persist and are merged before existing cases without duplication", () => {
+test("local cases persist and dedupe by id/code", () => {
   storage.clear();
   const localCase = makeCase();
-  const existingCase = makeCase({
-    id: "case-001",
-    code: "CASO-2026-001",
-    clientName: "Caso demonstrativo"
-  });
 
   saveStoredLocalCase(localCase);
   saveStoredLocalCase(localCase);
 
   assert.equal(getStoredLocalCases().length, 1);
   assert.equal(storage.getItem(LOCAL_CASES_STORAGE_KEY)?.includes(localCase.code), true);
-
-  const merged = mergeCasesWithLocalCases([localCase, existingCase]);
-
-  assert.equal(merged.length, 2);
-  assert.equal(merged[0].id, localCase.id);
-  assert.equal(merged[1].id, existingCase.id);
 });
 
 test("local cases can be found by id or code for direct detail routes", () => {
@@ -145,5 +137,4 @@ test("local cases can be found by id or code for direct detail routes", () => {
 
   assert.equal(findStoredLocalCase(localCase.id)?.id, localCase.id);
   assert.equal(findStoredLocalCase(localCase.code)?.id, localCase.id);
-  assert.equal(isLocalOnlyCase(localCase), true);
 });

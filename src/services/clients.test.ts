@@ -80,6 +80,8 @@ test("listClients maps backend clients and reports api source", async () => {
   assert.equal(result.data[0].personType, "individual");
   assert.equal(result.data[0].contractRole, "contractor");
   assert.equal(result.data[0].createdAt, "2026-05-25T10:00:00.000Z");
+  // UI-01: o backend não envia risk_level — o mapper NÃO pode fabricar "low".
+  assert.equal(result.data[0].riskLevel, undefined); // antes vinha "low" (selo verde falso p/ todos)
 });
 
 test("listClients shows empty explicit fallback when the API is unavailable", async () => {

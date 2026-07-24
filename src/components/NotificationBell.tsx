@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/cn";
+import { useSession } from "@/lib/useSession";
 import { listCases } from "@/services/cases";
 import { listDocuments } from "@/services/documents";
 import type { Case, Document } from "@/types";
@@ -20,10 +21,14 @@ type Notice = {
   read: boolean;
 };
 
-function getReadIds(): Set<string> {
+function readNoticesKey(sessionKey: string): string {
+  return `${READ_NOTICES_KEY}:${sessionKey}`;
+}
+
+function getReadIds(sessionKey: string): Set<string> {
   if (typeof window === "undefined") return new Set();
   try {
-    const raw = localStorage.getItem(READ_NOTICES_KEY);
+    const raw = localStorage.getItem(readNoticesKey(sessionKey));
     const parsed = raw ? (JSON.parse(raw) as string[]) : [];
     return new Set(parsed);
   } catch {
@@ -31,17 +36,21 @@ function getReadIds(): Set<string> {
   }
 }
 
-function saveReadIds(ids: string[]) {
+function saveReadIds(sessionKey: string, ids: string[]) {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(READ_NOTICES_KEY, JSON.stringify(ids));
+    localStorage.setItem(readNoticesKey(sessionKey), JSON.stringify(ids));
   } catch {
     // ignore
   }
 }
 
-function buildNotices(cases: Case[], documents: Document[]): Notice[] {
-  const readIds = getReadIds();
+function buildNotices(
+  cases: Case[],
+  documents: Document[],
+  sessionKey: string
+): Notice[] {
+  const readIds = getReadIds(sessionKey);
   const notices: Notice[] = [];
 
   for (const c of cases) {
@@ -80,13 +89,46 @@ function buildNotices(cases: Case[], documents: Document[]): Notice[] {
     .slice(0, 12);
 }
 
-async function fetchNotices(): Promise<Notice[]> {
+// PERF-A7-01: o shell (AppLayout->Header->NotificationBell) remonta a CADA navegação
+// (não há layout.tsx compartilhado no App Router), então o efeito de mount refazia
+// listCases()+listDocuments() a cada clique de menu — 2 requests descartados por página,
+// só para o badge. Um cache de módulo com TTL curto guarda os DADOS BRUTOS e zera essas
+// chamadas dentro da janela; os avisos são reconstruídos a cada mount para o estado de
+// "lido" (getReadIds) ficar sempre fresco.
+const NOTICES_TTL_MS = 60_000;
+let rawCache: {
+  cases: Case[];
+  documents: Document[];
+  fetchedAt: number;
+  sessionKey: string;
+} | null = null;
+
+async function fetchRaw(): Promise<{ cases: Case[]; documents: Document[] }> {
+  const [cases, documents] = await Promise.all([
+    listCases().catch(() => ({ data: [] as Case[] })),
+    listDocuments().catch(() => ({ data: [] as Document[] })),
+  ]);
+  return { cases: cases.data ?? [], documents: documents.data ?? [] };
+}
+
+async function fetchNotices(
+  sessionKey: string,
+  force = false
+): Promise<Notice[]> {
   try {
-    const [cases, documents] = await Promise.all([
-      listCases().catch(() => ({ data: [] as Case[] })),
-      listDocuments().catch(() => ({ data: [] as Document[] })),
-    ]);
-    return buildNotices(cases.data ?? [], documents.data ?? []);
+    if (!sessionKey) return [];
+    let cache = rawCache;
+    if (
+      force ||
+      !cache ||
+      cache.sessionKey !== sessionKey ||
+      Date.now() - cache.fetchedAt >= NOTICES_TTL_MS
+    ) {
+      const raw = await fetchRaw();
+      cache = { ...raw, fetchedAt: Date.now(), sessionKey };
+      rawCache = cache;
+    }
+    return buildNotices(cache.cases, cache.documents, sessionKey);
   } catch {
     return [];
   }
@@ -94,30 +136,37 @@ async function fetchNotices(): Promise<Notice[]> {
 
 export function NotificationBell() {
   const router = useRouter();
+  const session = useSession();
+  const sessionKey = session
+    ? `${session.organizationId}:${session.userId}`
+    : "";
   const [open, setOpen] = useState(false);
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
   const ref = useRef<HTMLDivElement>(null);
+  const loadedRef = useRef(false);
 
   const unreadCount = notices.filter((n) => !n.read).length;
 
   async function loadNotices() {
     setLoading(true);
-    setNotices(await fetchNotices());
+    setNotices(await fetchNotices(sessionKey));
     setLoading(false);
+    loadedRef.current = true;
   }
 
   useEffect(() => {
     let cancelled = false;
-    fetchNotices().then((items) => {
+    fetchNotices(sessionKey).then((items) => {
       if (cancelled) return;
       setNotices(items);
       setLoading(false);
+      loadedRef.current = true;
     });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [sessionKey]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -125,15 +174,26 @@ export function NotificationBell() {
         setOpen(false);
       }
     }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    }
     if (open) {
       document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleKeyDown);
     }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, [open]);
 
+  // Não refetcha ao abrir se a carga inicial já rodou (mesmo que tenha vindo
+  // vazia) — evita fetch duplicado no clique/hover (PERF-03).
   function handleOpen() {
     setOpen(true);
-    if (notices.length === 0) {
+    if (!loadedRef.current) {
       loadNotices();
     }
   }
@@ -143,9 +203,9 @@ export function NotificationBell() {
     setNotices((prev) =>
       prev.map((n) => (ids.includes(n.id) ? { ...n, read: true } : n))
     );
-    const currentReadIds = getReadIds();
+    const currentReadIds = getReadIds(sessionKey);
     ids.forEach((id) => currentReadIds.add(id));
-    saveReadIds(Array.from(currentReadIds));
+    saveReadIds(sessionKey, Array.from(currentReadIds));
   }
 
   function handleClick(notice: Notice) {

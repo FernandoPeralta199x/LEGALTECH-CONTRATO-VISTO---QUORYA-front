@@ -19,10 +19,10 @@ export function recommendationLabel(value: unknown): string {
   return labels[value] ?? value;
 }
 
-/** Nível de risco do caso; "unknown"/vazio → "Não informado". */
+/** Nível de risco; "unknown"/vazio → "Não avaliado". Fonte ÚNICA do rótulo (UI-02). */
 export function riskLabel(value: unknown): string {
   if (typeof value !== "string" || !value || value === "unknown") {
-    return "Não informado";
+    return "Não avaliado";
   }
 
   const labels: Record<string, string> = {
@@ -34,6 +34,16 @@ export function riskLabel(value: unknown): string {
 
   return labels[value] ?? value;
 }
+
+/** Fonte ÚNICA do TOM (cv-badge-*) por nível de risco (UI-02) — antes duplicado em
+ *  clients/page.tsx, onde já havia divergido. Ausente/`unknown` → neutro. */
+export const RISK_TONE: Record<string, string> = {
+  unknown: "cv-badge-muted",
+  low: "cv-badge-teal",
+  medium: "cv-badge-orange",
+  high: "cv-badge-red",
+  critical: "cv-badge-red"
+};
 
 /** Status operacional da triagem do caso; vazio → "Não iniciada". */
 export function triageStatusLabel(value: unknown): string {
@@ -97,8 +107,18 @@ export function productLabel(value: unknown): string {
 
 /** Status do relatório do caso; null → "Não gerado". Assinatura estrutural para
  *  não acoplar este módulo de rótulos ao tipo Report. */
-export function reportStatusLabel(report: { status: string } | null): string {
-  if (!report) return "Não gerado";
+/** Fonte única do rótulo de status de relatório (lista de casos + detalhe).
+ *  Aceita um objeto `{ status }`, uma string de status crua, ou null/undefined. */
+export function reportStatusLabel(report: unknown): string {
+  const status =
+    typeof report === "string"
+      ? report
+      : report && typeof report === "object" && "status" in report
+        ? (report as { status?: unknown }).status
+        : undefined;
+  if (typeof status !== "string" || !status) {
+    return "Não gerado";
+  }
 
   const labels: Record<string, string> = {
     failed: "Falhou",
@@ -112,5 +132,24 @@ export function reportStatusLabel(report: { status: string } | null): string {
     draft: "Rascunho"
   };
 
-  return labels[report.status] ?? report.status;
+  return labels[status] ?? status;
+}
+
+/** Fonte única do rótulo do modo de origem dos dados (lista + detalhe do caso).
+ *  Origem ausente/desconhecida NÃO é "api" (seria mentir sobre a procedência do
+ *  dado); devolve um rótulo neutro e honesto. */
+export function sourceModeLabel(value: unknown): string {
+  if (typeof value !== "string" || !value) {
+    return "—";
+  }
+
+  const labels: Record<string, string> = {
+    hybrid: "híbrido",
+    local: "local",
+    mock: "mock",
+    real: "real",
+    simulated: "simulado"
+  };
+
+  return labels[value] ?? value;
 }

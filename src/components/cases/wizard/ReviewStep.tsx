@@ -4,8 +4,9 @@ import { FileText, Info } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 
-import { usePricingMatrix } from "@/components/pricing/PricingCatalogContext";
+import { usePricingLookup, usePricingMatrix } from "@/components/pricing/PricingCatalogContext";
 import { errorMessage } from "@/lib/errorMessage";
+import { formatBytes } from "@/lib/formatters";
 import { estimatePricing } from "@/services/pricing";
 import {
   computeProductBasePrice,
@@ -53,6 +54,11 @@ export function ReviewStep({
   const ativos = (Object.keys(modulos) as Modulo[]).filter((m) => modulos[m]);
   const inativos = (Object.keys(matriz) as Modulo[]).filter((m) => !modulos[m]);
   const matrix = usePricingMatrix();
+  // PRC-03: mesma fonte de preço do ModulesStep — prefere o catálogo do backend (com
+  // overrides da org) e só cai no hardcoded quando o catálogo não trouxe o item. Antes,
+  // o fallback ignorava o catálogo já carregado e mostrava um preço diferente do passo
+  // anterior quando a org tinha override.
+  const { products, modules } = usePricingLookup();
 
   const activeModuleCodes = useMemo(
     () => ativos.map((m) => MODULOS[m].code),
@@ -105,17 +111,18 @@ export function ReviewStep({
   // Fallback local: se a API ainda não respondeu ou falhou, use o cálculo
   // local baseado no catálogo estático para não deixar a tela sem valor.
   const localFallbackCents = useMemo(() => {
-    const productCents = computeProductBasePrice(produto);
+    const productCents =
+      products.get(PRODUTOS[produto].code)?.base_price_cents ?? computeProductBasePrice(produto);
     const includeRequired = produto === "reuniao_equipe";
     const optionalTotal = ativos.reduce((sum, modulo) => {
       const remote = matrix[produto]?.[modulo];
       const isRequired =
         remote?.required === true || remote?.obrigatorio === true || matriz[modulo]?.obrigatorio === true;
       if (!includeRequired && isRequired) return sum;
-      return sum + MODULOS[modulo].precoCents;
+      return sum + (modules.get(MODULOS[modulo].code)?.price_cents ?? MODULOS[modulo].precoCents);
     }, 0);
     return productCents + optionalTotal;
-  }, [produto, ativos, matrix, matriz]);
+  }, [produto, ativos, matrix, matriz, products, modules]);
 
   const valor = loading || error ? localFallbackCents : result?.totalCents ?? 0;
   const prazo = estimarPrazoHoras(produto, ativos);
@@ -174,7 +181,7 @@ export function ReviewStep({
                 {arquivo.name}
               </p>
               <p className="text-[11px] text-[var(--text3)]">
-                <span className="font-mono">{(arquivo.size / 1024 / 1024).toFixed(2)}</span> MB ·{" "}
+                <span className="font-mono">{formatBytes(arquivo.size)}</span> ·{" "}
                 {arquivo.status === "done" ? "Pronto para simulação" : "Preparando…"}
               </p>
             </div>

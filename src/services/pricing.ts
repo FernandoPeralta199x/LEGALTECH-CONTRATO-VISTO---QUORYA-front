@@ -104,6 +104,11 @@ export interface PricingEstimate {
   payment_mode: string;
 }
 
+/**
+ * NÃO suportado pela escrita: o preço do produto deriva da soma dos módulos obrigatórios,
+ * então o backend REJEITA (400) `product_overrides` no PUT /pricing/config. Mantido só para
+ * ler linhas legadas eventuais. Para ajustar preços, use `module_overrides`.
+ */
 export interface ProductOverride {
   base_price_cents: number;
 }

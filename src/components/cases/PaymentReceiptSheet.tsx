@@ -1,4 +1,5 @@
 import { centsToReaisLabel } from "@/components/CurrencyInput";
+import { isCardMethod, methodLabel } from "@/lib/paymentMethods";
 import type { InstallmentPlan } from "@/types";
 
 type PaymentReceiptSheetProps = {
@@ -9,13 +10,6 @@ type PaymentReceiptSheetProps = {
   active: boolean;
 };
 
-const METHOD_LABEL: Record<string, string> = {
-  pix: "Pix",
-  boleto: "Boleto",
-  cartao: "Cartão de crédito",
-  debito: "Cartão de débito"
-};
-
 function formatDateTime(iso: string | null): string {
   if (!iso) return "—";
   const d = new Date(iso);
@@ -23,9 +17,9 @@ function formatDateTime(iso: string | null): string {
 }
 
 function methodLine(plan: InstallmentPlan): string {
-  const label = METHOD_LABEL[plan.method] ?? plan.method;
+  const label = methodLabel(plan.method);
   const p = plan.payment;
-  if ((plan.method === "cartao" || plan.method === "debito") && p?.last4) {
+  if (isCardMethod(plan.method) && p?.last4) {
     const brand = p.brand ? `${p.brand} ` : "";
     return `${label} · ${brand}•••• ${p.last4}`.trim();
   }

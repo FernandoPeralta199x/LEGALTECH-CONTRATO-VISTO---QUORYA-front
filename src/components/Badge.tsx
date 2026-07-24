@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
 
-export type BadgeTone = "teal" | "orange" | "blue" | "muted";
+export type BadgeTone = "teal" | "orange" | "blue" | "muted" | "red";
 
 type BadgeProps = {
   children: ReactNode;
@@ -14,7 +14,9 @@ const toneClass: Record<BadgeTone, string> = {
   teal: "cv-badge-teal",
   orange: "cv-badge-orange",
   blue: "cv-badge-blue",
-  muted: "cv-badge-muted"
+  muted: "cv-badge-muted",
+  // UI-09: expõe o tom "red" (a classe .cv-badge-red já existe e é usada pelos outros badges).
+  red: "cv-badge-red"
 };
 
 export function Badge({ children, tone = "muted", className }: BadgeProps) {

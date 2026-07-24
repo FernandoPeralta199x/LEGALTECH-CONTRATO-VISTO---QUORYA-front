@@ -17,7 +17,7 @@ const triageMap: Record<string, Cfg> = {
   /* ── Dados recebidos (verde) ────────────────────────────────────── */
   completed:               { label: "Dados recebidos",         dot: "bg-emerald-500",            tone: "cv-badge-teal" },
   /* ── Erro (vermelho) ────────────────────────────────────────────── */
-  failed:                  { label: "Erro na consulta",        dot: "bg-red-500",                tone: "border-red-500/25 bg-red-500/10 text-red-300" },
+  failed:                  { label: "Erro na consulta",        dot: "bg-red-500",                tone: "cv-badge-red" },
 };
 
 const otherMap: Record<string, Cfg> = {
@@ -27,6 +27,9 @@ const otherMap: Record<string, Cfg> = {
   awaiting_triage:          { label: "Aguardando triagem",      dot: "bg-slate-400",              tone: "cv-badge-muted" },
   triage_completed:         { label: "Triagem concluída",       dot: "bg-emerald-500",            tone: "cv-badge-teal" },
   report_ready:             { label: "Relatório pronto",        dot: "bg-teal-500",               tone: "cv-badge-teal" },
+  // UI-04: 'completed' é status de CASO (concluído). Antes colidia com o 'completed' de
+  // triagem ("Dados recebidos") — a desambiguação agora é por `kind` (ver abaixo).
+  completed:                { label: "Concluído",               dot: "bg-emerald-500",            tone: "cv-badge-teal" },
   closed:                   { label: "Fechado",                 dot: "bg-slate-600",              tone: "cv-badge-muted" },
   /* ── Case ──────────────────────────────────────────────────────── */
   draft:                    { label: "Rascunho",                dot: "bg-slate-500",              tone: "cv-badge-muted" },
@@ -59,17 +62,24 @@ const otherMap: Record<string, Cfg> = {
   /* ── Risk ───────────────────────────────────────────────────────── */
   low:                      { label: "Risco baixo",             dot: "bg-green-500",              tone: "cv-badge-teal" },
   medium:                   { label: "Risco médio",             dot: "bg-amber-500",              tone: "cv-badge-orange" },
-  high:                     { label: "Risco alto",              dot: "bg-red-500",                tone: "border-red-500/25 bg-red-500/10 text-red-300" }
+  high:                     { label: "Risco alto",              dot: "bg-red-500",                tone: "cv-badge-red" }
 };
 
-const map: Record<string, Cfg> = { ...otherMap, ...triageMap };
+// UI-04: os dois mapas continuam mergeados (fallback total), mas QUEM VENCE a colisão
+// depende do domínio. Para um módulo de TRIAGEM, o triageMap vence ('completed' =
+// "Dados recebidos"); para um CASO/documento/relatório, o otherMap vence ('completed' =
+// "Concluído"). Antes, o triageMap vencia sempre e o vocabulário de triagem vazava para o caso.
+const caseMap: Record<string, Cfg> = { ...triageMap, ...otherMap };
+const triageMapMerged: Record<string, Cfg> = { ...otherMap, ...triageMap };
 
 type StatusBadgeProps = {
   status:    string;
+  kind?:     "triage" | "case";
   className?: string;
 };
 
-export function StatusBadge({ status, className }: StatusBadgeProps) {
+export function StatusBadge({ status, kind = "case", className }: StatusBadgeProps) {
+  const map = kind === "triage" ? triageMapMerged : caseMap;
   const cfg = map[status] ?? {
     label: status,
     dot:   "bg-slate-500",

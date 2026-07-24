@@ -8,18 +8,10 @@ import { CurrencyInput } from "@/components/CurrencyInput";
 import { FormField, TextInput } from "@/components/FormField";
 import { Notification } from "@/components/Notification";
 import { Switch } from "@/components/Switch";
+import { METHOD_LABELS, METHOD_ORDER } from "@/lib/paymentMethods";
+import { bpsToPercentLabel, parsePercentToBps } from "@/lib/percentBps";
 import type { InstallmentConfig, MethodRule } from "@/services/pricing";
-
-const METHOD_KEYS = ["pix", "boleto", "cartao", "debito"] as const;
-
-type MethodKey = (typeof METHOD_KEYS)[number];
-
-const METHOD_LABELS: Record<MethodKey, string> = {
-  pix: "Pix",
-  boleto: "Boleto",
-  cartao: "Cartão de crédito",
-  debito: "Cartão de débito"
-};
+import type { PaymentMethod } from "@/types";
 
 const MAX_PARCELAS_LIMIT = 24;
 
@@ -59,7 +51,7 @@ export function normalizeInstallmentConfig(
   const rawMethods = raw?.allowed_methods ?? {};
   const hasExplicitMethods = Object.keys(rawMethods).length > 0;
   const methods: Record<string, MethodRule> = {};
-  for (const key of METHOD_KEYS) {
+  for (const key of METHOD_ORDER) {
     const rule = rawMethods[key];
     // Só o cartão de crédito parcela — Pix/Boleto/Débito são sempre 1x (à vista).
     if (hasExplicitMethods) {
@@ -78,21 +70,6 @@ export function normalizeInstallmentConfig(
   }
 
   return { ...merged, allowed_methods: methods };
-}
-
-function bpsToPercentLabel(bps: number): string {
-  return (bps / 100).toLocaleString("pt-BR", { maximumFractionDigits: 2 });
-}
-
-function parsePercentToBps(raw: string): number | null {
-  const trimmed = raw.trim();
-  if (!trimmed) return null;
-  const normalized = trimmed.includes(",")
-    ? trimmed.replace(/\./g, "").replace(",", ".")
-    : trimmed;
-  const parsed = Number(normalized);
-  if (Number.isNaN(parsed) || parsed < 0) return null;
-  return Math.round(parsed * 100);
 }
 
 type IntFieldProps = {
@@ -223,7 +200,7 @@ export function InstallmentConfigCard({
     });
   };
 
-  const setMethodRule = (key: MethodKey, partial: Partial<MethodRule>) => {
+  const setMethodRule = (key: PaymentMethod, partial: Partial<MethodRule>) => {
     const current = value.allowed_methods[key] ?? { enabled: false, max_parcelas: 1 };
     onChange({
       ...value,
@@ -376,7 +353,7 @@ export function InstallmentConfigCard({
                 Cada método pode limitar o próprio número máximo de parcelas.
               </p>
               <div className="mt-3 space-y-2">
-                {METHOD_KEYS.map((key, index) => {
+                {METHOD_ORDER.map((key, index) => {
                   const rule =
                     value.allowed_methods[key] ?? { enabled: false, max_parcelas: 1 };
                   return (

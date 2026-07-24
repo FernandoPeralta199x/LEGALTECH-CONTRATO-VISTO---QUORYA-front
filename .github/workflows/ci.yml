@@ -1,0 +1,28 @@
+# DEP-07: pipeline versionado do frontend (lint, typecheck, testes, audit, build).
+# O runner é externo (GitHub Actions), mas o pipeline passa a ser versionado por commit/PR.
+name: CI
+
+on:
+  push:
+    branches: [main, "feat/**"]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          # Node 24 (alinha com o dev): o test runner (`node --test`) só expande globs como
+          # `src/**/*.test.ts` a partir do Node 21 — o Node 20 tratava o glob como caminho
+          # literal ("Could not find 'src/**/*.test.ts'") e o `npm test` falhava.
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      # Falha só em vulnerabilidades altas/críticas (ruído baixo não bloqueia).
+      - run: npm audit --audit-level=high
+      - run: npm run build

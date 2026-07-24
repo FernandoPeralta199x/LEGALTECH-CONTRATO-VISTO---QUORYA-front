@@ -1,5 +1,4 @@
 import { isValidCnpj, isValidCpf, isValidEmail } from "@/lib/cpfCnpj";
-import { decodeJwtPayload } from "./devJwt";
 
 // Regra única de e-mail (local@domínio.tld) — fonte: lib/cpfCnpj.
 export { isValidEmail };
@@ -265,55 +264,6 @@ export function validateDocumentUploadForm(input: {
   }
 
   return result(errors);
-}
-
-export function validateDevJwtForm(token: string): ValidationResult {
-  const trimmedToken = token.trim();
-
-  if (!trimmedToken) {
-    return result({
-      token: "Cole o JWT dev gerado pelo backend para acessar o ambiente local."
-    });
-  }
-
-  if (
-    trimmedToken.split(".").length !== 3 ||
-    trimmedToken.split(".").some((part) => part.length === 0)
-  ) {
-    return result({
-      token:
-        "Cole um JWT dev válido com três partes no formato header.payload.signature."
-    });
-  }
-
-  const payload = decodeJwtPayload(trimmedToken);
-  if (!payload) {
-    return result({
-      token: "O payload do JWT dev não pôde ser lido."
-    });
-  }
-
-  if (typeof payload.exp === "number" && payload.exp <= Math.floor(Date.now() / 1000)) {
-    return result({
-      token: "JWT dev expirado. Gere um novo token no backend."
-    });
-  }
-
-  const role = payload["custom:role"] ?? payload.role;
-  const organizationId = payload["custom:organization_id"] ?? payload.organization_id;
-  if (
-    payload.token_use !== "dev" ||
-    typeof payload.sub !== "string" ||
-    typeof organizationId !== "string" ||
-    typeof role !== "string"
-  ) {
-    return result({
-      token:
-        "JWT dev sem claims obrigatórias. Gere um token dev válido no backend."
-    });
-  }
-
-  return result({});
 }
 
 export function getPasswordRequirements(password: string): PasswordRequirementState {

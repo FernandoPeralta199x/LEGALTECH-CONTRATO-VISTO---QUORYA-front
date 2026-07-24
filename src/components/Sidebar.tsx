@@ -11,6 +11,7 @@ import {
   Shield,
   Upload,
   UsersRound,
+  Wallet,
   X,
   type LucideIcon
 } from "lucide-react";
@@ -20,8 +21,9 @@ import { usePathname, useRouter } from "next/navigation";
 
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/cn";
-import { clearStoredSession } from "@/lib/authStorage";
-import { useDevSession } from "@/lib/useDevSession";
+import { logoutSession } from "@/lib/sessionClient";
+import { useSession } from "@/lib/useSession";
+import { useModalA11y } from "@/lib/useModalA11y";
 
 type NavItem = {
   href: string;
@@ -29,6 +31,10 @@ type NavItem = {
   icon: LucideIcon;
   /** Visível apenas para o papel admin. */
   adminOnly?: boolean;
+  /** Se informado, visível apenas para estes papéis — deve espelhar o
+   *  allowedRoles do AuthGuard da rota, para não exibir link que leva a "Sem
+   *  permissão" (INV-01). */
+  roles?: readonly string[];
 };
 type NavGroup = { label: string; items: NavItem[] };
 
@@ -45,15 +51,16 @@ const navGroups: NavGroup[] = [
       { href: "/cases/new", label: "Novo Pedido", icon: Plus },
       { href: "/cases",     label: "Casos",       icon: BriefcaseBusiness },
       { href: "/documents", label: "Documentos",  icon: Upload },
-      { href: "/analyst",   label: "Analista",    icon: ClipboardCheck },
+      { href: "/analyst",   label: "Analista",    icon: ClipboardCheck, roles: ["admin", "analyst"] },
       { href: "/reports",   label: "Relatórios",  icon: FileText }
     ]
   },
   {
     label: "Gestão",
     items: [
-      { href: "/clients", label: "Clientes",      icon: UsersRound },
-      { href: "/admin",   label: "Administração", icon: Shield, adminOnly: true }
+      { href: "/clients",   label: "Clientes",      icon: UsersRound },
+      { href: "/admin",     label: "Administração", icon: Shield, adminOnly: true },
+      { href: "/financial", label: "Financeiro",    icon: Wallet, adminOnly: true }
     ]
   },
   {
@@ -64,13 +71,18 @@ const navGroups: NavGroup[] = [
   }
 ];
 
-/** Grupos visíveis para o papel: itens adminOnly só aparecem para admin.
+/** Grupos visíveis para o papel: itens adminOnly só aparecem para admin e itens
+ *  com `roles` só para os papéis listados (espelham o gate da rota).
  *  (Filtro de UX — a segurança real é o backend, via require_role/require_writer.) */
 function visibleNavGroups(role: string | undefined): NavGroup[] {
   return navGroups
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => !item.adminOnly || role === "admin")
+      items: group.items.filter(
+        (item) =>
+          (!item.adminOnly || role === "admin") &&
+          (!item.roles || (role !== undefined && item.roles.includes(role)))
+      )
     }))
     .filter((group) => group.items.length > 0);
 }
@@ -110,6 +122,7 @@ function NavItem({
       )}
       href={href}
       onClick={onClick}
+      aria-current={active ? "page" : undefined}
     >
       {/* Active left bar */}
       {active && (
@@ -138,7 +151,7 @@ function NavItem({
 
 export function Sidebar() {
   const pathname = usePathname();
-  const session = useDevSession();
+  const session = useSession();
   const groups = visibleNavGroups(session?.role);
 
   const isActive = (href: string) => isNavItemActive(pathname, href);
@@ -161,7 +174,7 @@ export function Sidebar() {
               Contrato Visto
             </span>
             <span className="block text-[10px] text-[var(--text2)]">
-              MVP local controlado
+              Plataforma segura
             </span>
           </div>
         </Link>
@@ -198,11 +211,11 @@ export function Sidebar() {
               <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--teal)]" />
             </span>
             <p className="text-[11px] font-semibold text-[var(--teal)]">
-              MVP local
+              Sessão protegida
             </p>
           </div>
           <p className="mt-1 text-[10px] leading-4 text-[var(--text2)]">
-            API local com fallback de desenvolvimento.
+            Acesso autenticado via BFF e cookie HttpOnly.
           </p>
         </div>
       </div>
@@ -216,15 +229,21 @@ type MobileSidebarProps = { open: boolean; onClose: () => void };
 export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const session = useDevSession();
+  const session = useSession();
   const groups = visibleNavGroups(session?.role);
+  // Foco inicial + restauração, ESC fecha e trap de Tab enquanto aberto (A11Y-04).
+  const drawerRef = useModalA11y<HTMLElement>(open, onClose);
 
   const isActive = (href: string) => isNavItemActive(pathname, href);
 
-  function handleLogout() {
-    clearStoredSession();
-    onClose();
-    router.replace("/login");
+  async function handleLogout() {
+    try {
+      await logoutSession();
+      onClose();
+      router.replace("/login");
+    } catch {
+      window.alert("Não foi possível encerrar a sessão. Tente novamente.");
+    }
   }
 
   return (
@@ -242,11 +261,16 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
 
       {/* Drawer */}
       <aside
+        aria-label="Menu de navegação"
+        aria-modal="true"
         className={cn(
           "cv-mobile-menu fixed inset-y-0 left-0 z-50 flex w-72 max-w-[88vw] flex-col backdrop-blur-lg backdrop-saturate-150 lg:hidden",
           "transition-transform duration-slow ease-smooth",
           open ? "translate-x-0" : "-translate-x-full"
         )}
+        inert={!open}
+        ref={drawerRef}
+        role="dialog"
       >
         <div className="flex items-center justify-between px-5 py-5">
           <Link
@@ -312,7 +336,7 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
             className={cn(
               "cv-btn cv-btn-secondary flex w-full items-center justify-center gap-2 text-xs font-semibold"
             )}
-            onClick={handleLogout}
+            onClick={() => void handleLogout()}
             type="button"
           >
             <LogOut size={14} />

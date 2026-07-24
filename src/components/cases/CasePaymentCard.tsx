@@ -6,24 +6,9 @@ import { useState } from "react";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { centsToReaisLabel } from "@/components/CurrencyInput";
+import { formatBps } from "@/lib/formatters";
+import { isCardMethod, methodLabel, paymentStatusLabel } from "@/lib/paymentMethods";
 import type { InstallmentPlan } from "@/types";
-
-const paymentMethodLabel: Record<string, string> = {
-  boleto: "Boleto",
-  cartao: "Cartão de crédito",
-  debito: "Cartão de débito",
-  pix: "Pix"
-};
-
-const paymentStatusLabel: Record<string, string> = {
-  canceled: "Cancelado",
-  expired: "Expirado",
-  failed: "Falhou",
-  paid: "Pago",
-  pending: "Pendente",
-  refunded: "Reembolsado",
-  simulated: "Simulado"
-};
 
 /** Formata "AAAA-MM-DD" como dd/mm/aaaa sem passar por Date (evita shift de fuso). */
 function formatDueDate(isoDate: string): string {
@@ -86,13 +71,11 @@ export function CasePaymentCard({
               },
               {
                 label: "Método",
-                value:
-                  paymentMethodLabel[installmentPlan.method] ??
-                  installmentPlan.method
+                value: methodLabel(installmentPlan.method)
               },
               {
                 label: "Status",
-                value: paymentStatusLabel[paymentStatus] ?? paymentStatus
+                value: paymentStatusLabel(paymentStatus)
               }
             ].map((item) => (
               <div key={item.label}>
@@ -109,10 +92,7 @@ export function CasePaymentCard({
             <p className="mt-3 text-[11px] text-[var(--text3)]">
               Juros de{" "}
               <span className="font-mono">
-                {(installmentPlan.jurosMensalBps / 100).toLocaleString("pt-BR", {
-                  maximumFractionDigits: 2
-                })}
-                %
+                {formatBps(installmentPlan.jurosMensalBps)}%
               </span>{" "}
               a.m. · acréscimo de{" "}
               <span className="font-mono">
@@ -175,10 +155,8 @@ export function CasePaymentCard({
                 <div className="flex justify-between gap-4">
                   <dt className="text-[var(--text3)]">Método</dt>
                   <dd className="text-right font-medium text-[var(--text)]">
-                    {paymentMethodLabel[installmentPlan.method] ??
-                      installmentPlan.method}
-                    {(installmentPlan.method === "cartao" ||
-                      installmentPlan.method === "debito") &&
+                    {methodLabel(installmentPlan.method)}
+                    {isCardMethod(installmentPlan.method) &&
                     installmentPlan.payment?.last4
                       ? ` · ${
                           installmentPlan.payment.brand
@@ -255,7 +233,7 @@ export function CasePaymentCard({
       ) : (
         <p className="text-sm text-[var(--text2)]">
           Status do pagamento:{" "}
-          {paymentStatusLabel[paymentStatus] ?? paymentStatus}.
+          {paymentStatusLabel(paymentStatus)}.
         </p>
       )}
     </Card>

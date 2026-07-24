@@ -49,6 +49,30 @@ export type LegacyCaseStatus =
 
 export type CaseStatus = StandardCaseStatus | LegacyCaseStatus;
 
+/**
+ * M8 (SSOT): status que o BACKEND realmente aceita/grava em `cases.status`.
+ * Espelha `CASE_STATUS_PATTERN` em
+ * `contrato_visto_backend/src/schemas/case_schemas.py` — o backend rejeita (400)
+ * qualquer PATCH /cases com status fora daqui.
+ *
+ * A UI usa o superconjunto `CaseStatus` (Standard ∪ Legacy) apenas para EXIBIR;
+ * ao ENVIAR um status, use este conjunto. O teste de fronteira em
+ * `contracts.test.ts` falha se este SSOT divergir do que a UI conhece
+ * (drift BE↔FE). O fim definitivo do drift é um contrato compartilhado
+ * (`@jogocerto/contracts`) gerando os dois lados — follow-up de arquitetura.
+ */
+export const BACKEND_CASE_STATUS_VALUES = [
+  "open",
+  "in_progress",
+  "awaiting_triage",
+  "triage_completed",
+  "report_ready",
+  "completed",
+  "closed"
+] as const;
+
+export type BackendCaseStatus = (typeof BACKEND_CASE_STATUS_VALUES)[number];
+
 export const MODULE_STATUS_VALUES = [
   "not_started",
   "queued",
@@ -231,7 +255,9 @@ export type Client = {
   phone: string;
   address?: string | null;
   status: ClientStatus;
-  riskLevel: RiskLevel;
+  // UI-01: opcional — o backend não avalia risco de cliente hoje. Ausente = "não avaliado"
+  // (a UI mostra um selo neutro), nunca um "baixo" fabricado.
+  riskLevel?: RiskLevel;
   sourceMode?: SourceMode;
   casesCount: number;
   metadata?: Record<string, unknown>;
@@ -386,16 +412,6 @@ export type CasePartyCreate = {
 
 export type CasePartyUpdate = Partial<CasePartyCreate>;
 
-export type DocumentCreate = {
-  case_id: string;
-  filename: string;
-  content_type: string;
-  size_bytes: number;
-  file_hash?: string | null;
-  status?: DocumentStatus;
-  metadata?: Record<string, unknown>;
-};
-
 export type TriageModule = {
   id: string;
   caseId: string;
@@ -468,7 +484,9 @@ export type Report = {
 
 export type ReportRisk = {
   id: string;
-  level: RiskLevel;
+  // UI-03: opcional — o backend não envia severidade por risco. Ausente = sem selo de
+  // severidade (o título já categoriza), nunca um "médio" fabricado.
+  level?: RiskLevel;
   title: string;
   description: string;
 };

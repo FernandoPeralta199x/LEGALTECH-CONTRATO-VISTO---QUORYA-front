@@ -25,8 +25,10 @@ import { LoadingState } from "@/components/LoadingState";
 import { Notification } from "@/components/Notification";
 import { PageTitle } from "@/components/PageTitle";
 import { StatusBadge } from "@/components/StatusBadge";
+import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/formatters";
 import { errorMessage } from "@/lib/errorMessage";
+import { riskLabel, RISK_TONE } from "@/lib/reportLabels";
 import { createClient, listClientsPaged, updateClient } from "@/services/clients";
 import { validateClientForm, type ValidationErrors } from "@/lib/validation";
 import {
@@ -44,11 +46,6 @@ import {
 } from "@/lib/clientForm";
 import type { Client } from "@/types";
 
-const riskConfig: Record<string, { label: string; className: string }> = {
-  high: { label: "Indicador local alto", className: "text-red-700 bg-red-50 border-red-200" },
-  low: { label: "Indicador local baixo", className: "text-green-700 bg-green-50 border-green-200" },
-  medium: { label: "Indicador local médio", className: "text-amber-700 bg-amber-50 border-amber-200" }
-};
 
 const contractRoleOptions = Object.entries(clientContractRoleLabels);
 
@@ -277,8 +274,8 @@ export default function ClientsPage() {
               </h2>
               <p className="text-xs leading-5 text-[var(--text2)]">
                 {editingClient
-                  ? "Edite apenas dados cadastrais. Organização e permissões continuam vindo do JWT/contexto da API local."
-                  : "Cadastre um cliente local para organizar partes e iniciar pedidos no MVP local. Organização e permissões continuam vindo do JWT/contexto da API local."}
+                  ? "Edite apenas dados cadastrais. Organização e permissões continuam vindo da sessão validada pelo backend."
+                  : "Cadastre um cliente para organizar partes e iniciar pedidos. Organização e permissões continuam vindo da sessão validada pelo backend."}
               </p>
               {editingClient && (
                 <p className="mt-1 inline-flex items-center gap-1.5 text-[11px] text-[var(--text2)]">
@@ -507,7 +504,9 @@ export default function ClientsPage() {
         ) : (
           <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
             {clients.map((client, index) => {
-              const risk = riskConfig[client.riskLevel] ?? riskConfig.low;
+              // UI-02: rótulo e tom vêm da fonte única (reportLabels), não de um mapa local.
+              const riskText = riskLabel(client.riskLevel);
+              const riskTone = RISK_TONE[client.riskLevel ?? "unknown"] ?? "cv-badge-muted";
               const displayName = client.displayName ?? client.name;
               const personTypeLabel = client.personType
                 ? clientPersonTypeLabels[client.personType]
@@ -576,11 +575,12 @@ export default function ClientsPage() {
                   </dl>
 
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--bd)] pt-4">
+                    {/* UI-08: classe base .cv-badge (padrão de todos os badges), não utilities remontadas. */}
                     <span
-                      className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold ${risk.className}`}
+                      className={cn("cv-badge", riskTone)}
                       title="Indicador operacional local; não substitui revisão jurídica."
                     >
-                      {risk.label}
+                      {riskText}
                     </span>
                     <span className="text-[11px] text-[var(--text3)]">
                       {client.sourceMode ? `Origem: ${client.sourceMode} · ` : ""}

@@ -26,7 +26,7 @@ import { PageTitle } from "@/components/PageTitle";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatDate } from "@/lib/formatters";
 import { errorMessage } from "@/lib/errorMessage";
-import { recommendationLabel } from "@/lib/reportLabels";
+import { recommendationLabel, sourceModeLabel } from "@/lib/reportLabels";
 import {
   listOperationalReports,
   type OperationalReportListItem
@@ -64,10 +64,6 @@ const statusMeta: Record<
     exportTitle: "PDF real ainda não existe nesta versão."
   }
 };
-
-function sourceLabel(value: unknown): string {
-  return typeof value === "string" && value ? value : "api";
-}
 
 function metadataText(value: unknown, fallback: string): string {
   return typeof value === "string" && value.trim() ? value : fallback;
@@ -238,7 +234,7 @@ export default function ReportsPage() {
                             {meta.delivery}
                           </span>
                           <span className="cv-badge cv-badge-muted">
-                            origem {sourceLabel(sourceMode)}
+                            origem {sourceModeLabel(sourceMode)}
                           </span>
                         </div>
                         <h2 className="text-sm font-semibold text-[var(--text)]">
@@ -298,7 +294,11 @@ export default function ReportsPage() {
                               ? "border border-red-500/25 bg-red-500/10 text-red-700 dark:text-red-300"
                               : risk.level === "medium"
                                 ? "border border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-300"
-                                : "border border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                                : risk.level === "low"
+                                  ? "border border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                                  // UI-03: sem severidade (o backend não a envia) → pílula NEUTRA, nunca o
+                                  // verde de "baixo". O título já categoriza o risco.
+                                  : "border border-[var(--bd)] bg-[var(--surf2)] text-[var(--text2)]"
                           }`}
                           key={risk.id}
                         >

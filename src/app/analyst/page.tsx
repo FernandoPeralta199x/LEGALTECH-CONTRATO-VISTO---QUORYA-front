@@ -212,7 +212,7 @@ export default function AnalystPage() {
   }, [queue, filterTab, query, sort]);
 
   return (
-    <AuthGuard>
+    <AuthGuard allowedRoles={["admin", "analyst"]}>
       <AppLayout>
         <PageTitle
           actions={

@@ -8,6 +8,7 @@ import { Card } from "@/components/Card";
 import { EmptyState } from "@/components/EmptyState";
 import { FormField, SelectInput, TextArea, TextInput } from "@/components/FormField";
 import type { PartyFormErrors } from "@/lib/useCasePartiesEditor";
+import { useModalA11y } from "@/lib/useModalA11y";
 import type { CaseParty, CasePartyCreate } from "@/types";
 
 const partyTypeOptions = [
@@ -66,6 +67,8 @@ export function CasePartiesTab({
   handlePartySubmit,
   resetPartyForm
 }: CasePartiesTabProps) {
+  const dialogRef = useModalA11y<HTMLDivElement>(showPartyForm, resetPartyForm);
+
   return (
     <div className="animate-in">
       <div className="mb-4 flex justify-end">
@@ -146,6 +149,7 @@ export function CasePartiesTab({
           aria-labelledby="party-form-title"
           aria-modal="true"
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 py-8 backdrop-blur-sm"
+          ref={dialogRef}
           role="dialog"
         >
           <form

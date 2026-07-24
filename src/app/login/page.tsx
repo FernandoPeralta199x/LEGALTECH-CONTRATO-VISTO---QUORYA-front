@@ -20,11 +20,9 @@ import { Button } from "@/components/Button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/cn";
 import { errorMessage } from "@/lib/errorMessage";
-import { saveDevSession } from "@/services/auth";
-import { login, register as registerUser, verifyEmail } from "@/services/authApi";
-import { useDevSession } from "@/lib/useDevSession";
+import { login, register as registerUser } from "@/services/authApi";
+import { sanitizeNextPath } from "@/lib/safeRedirect";
 import { validatePasswordCreate } from "@/lib/validation";
-import { DEV_ROLES, type DevRole } from "@/types/auth";
 
 type Tab = "login" | "register";
 type ToastState = {
@@ -35,8 +33,7 @@ type ToastState = {
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const nextPath = searchParams.get("next") || "/dashboard";
-  const session = useDevSession();
+  const nextPath = searchParams.get("next");  // sanitizado no uso (A6 — open redirect)
 
   const [tab, setTab] = useState<Tab>("login");
   const [toast, setToast] = useState<ToastState>(null);
@@ -52,9 +49,6 @@ function LoginContent() {
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
-  const [verificationToken, setVerificationToken] = useState("");
-  const [registeredEmail, setRegisteredEmail] = useState("");
-  const [showVerification, setShowVerification] = useState(false);
 
   const passwordValidation = validatePasswordCreate({
     password: registerPassword
@@ -68,17 +62,9 @@ function LoginContent() {
     setLoading(true);
 
     try {
-      const result = await login({
+      await login({
         email: loginEmail,
         password: loginPassword
-      });
-
-      await saveDevSession({
-        email: result.user.email,
-        role: (DEV_ROLES.includes(result.user.role as DevRole)
-          ? result.user.role
-          : "client") as DevRole,
-        token: result.access_token
       });
 
       setToast({
@@ -86,7 +72,7 @@ function LoginContent() {
         tone: "success"
       });
       await new Promise((resolve) => setTimeout(resolve, 450));
-      router.replace(nextPath.startsWith("/") ? nextPath : "/dashboard");
+      router.replace(sanitizeNextPath(nextPath));
     } catch (err) {
       setToast({
         message: errorMessage(err, "E-mail ou senha inválidos."),
@@ -122,20 +108,13 @@ function LoginContent() {
       });
       // Serverless: a conta já fica ativa após o signup (sem verificação por
       // e-mail). Faz login direto com as credenciais recém-criadas.
-      const result = await login({
+      await login({
         email: registerEmail,
         password: registerPassword
       });
-      await saveDevSession({
-        email: result.user.email,
-        role: (DEV_ROLES.includes(result.user.role as DevRole)
-          ? result.user.role
-          : "client") as DevRole,
-        token: result.access_token
-      });
       setToast({ message: "Conta criada. Redirecionando...", tone: "success" });
       await new Promise((resolve) => setTimeout(resolve, 450));
-      router.replace(nextPath.startsWith("/") ? nextPath : "/dashboard");
+      router.replace(sanitizeNextPath(nextPath));
     } catch (err) {
       setToast({
         message: errorMessage(err, "Não foi possível criar o cadastro."),
@@ -145,46 +124,9 @@ function LoginContent() {
     }
   }
 
-  async function handleVerify(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (loading) return;
-
-    setToast(null);
-    setLoading(true);
-
-    try {
-      const result = await verifyEmail({
-        email: registeredEmail,
-        token: verificationToken
-      });
-
-      await saveDevSession({
-        email: result.user.email,
-        role: (DEV_ROLES.includes(result.user.role as DevRole)
-          ? result.user.role
-          : "client") as DevRole,
-        token: result.access_token
-      });
-
-      setToast({
-        message: "E-mail confirmado. Redirecionando...",
-        tone: "success"
-      });
-      await new Promise((resolve) => setTimeout(resolve, 450));
-      router.replace(nextPath.startsWith("/") ? nextPath : "/dashboard");
-    } catch (err) {
-      setToast({
-        message: errorMessage(err, "Token de verificação inválido."),
-        tone: "error"
-      });
-      setLoading(false);
-    }
-  }
-
   function switchTab(nextTab: Tab) {
     setTab(nextTab);
     setToast(null);
-    setShowVerification(false);
   }
 
   return (
@@ -219,7 +161,7 @@ function LoginContent() {
           </p>
           <span className="cv-badge cv-badge-teal">
             <Sparkles size={12} />
-            Ambiente local
+            Sessão segura
           </span>
         </div>
 
@@ -231,6 +173,7 @@ function LoginContent() {
                 ? "bg-brand-teal text-white shadow"
                 : "text-[var(--text2)] hover:text-[var(--text)]"
             )}
+            aria-pressed={tab === "login"}
             onClick={() => switchTab("login")}
             type="button"
           >
@@ -243,6 +186,7 @@ function LoginContent() {
                 ? "bg-brand-teal text-white shadow"
                 : "text-[var(--text2)] hover:text-[var(--text)]"
             )}
+            aria-pressed={tab === "register"}
             onClick={() => switchTab("register")}
             type="button"
           >
@@ -283,11 +227,12 @@ function LoginContent() {
               />
             </Field>
 
-            <Field label="Senha" icon={<Lock size={15} />}>
+            <Field htmlFor="login-password" label="Senha" icon={<Lock size={15} />}>
               <div className="relative">
                 <input
                   autoComplete="current-password"
                   className={`${inputClass} pr-10`}
+                  id="login-password"
                   onChange={(event) => setLoginPassword(event.target.value)}
                   placeholder="Sua senha forte"
                   required
@@ -298,7 +243,6 @@ function LoginContent() {
                   aria-label={showLoginPassword ? "Ocultar senha" : "Mostrar senha"}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text3)] hover:text-[var(--text)]"
                   onClick={() => setShowLoginPassword((current) => !current)}
-                  tabIndex={-1}
                   type="button"
                 >
                   {showLoginPassword ? <EyeOff aria-hidden="true" size={16} /> : <Eye aria-hidden="true" size={16} />}
@@ -314,47 +258,6 @@ function LoginContent() {
               variant="primary"
             >
               Entrar
-            </Button>
-          </form>
-        ) : showVerification ? (
-          <form className="space-y-4" onSubmit={handleVerify}>
-            <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs text-emerald-200">
-              Cadastro criado para <strong>{registeredEmail}</strong>. Em produção o
-              link seria enviado por e-mail; no ambiente local o token está
-              disponível no log do servidor.
-            </div>
-
-            <Field label="Token de confirmação" icon={<Lock size={15} />}>
-              <input
-                className={inputClass}
-                onChange={(event) => setVerificationToken(event.target.value)}
-                placeholder="Digite o token de confirmação"
-                required
-                type="text"
-                value={verificationToken}
-              />
-            </Field>
-
-            <Button
-              className="w-full"
-              icon={<Check size={16} />}
-              loading={loading}
-              type="submit"
-              variant="primary"
-            >
-              Confirmar e acessar
-            </Button>
-
-            <Button
-              className="w-full"
-              onClick={() => {
-                setShowVerification(false);
-                setTab("login");
-              }}
-              type="button"
-              variant="ghost"
-            >
-              Já tenho uma conta
             </Button>
           </form>
         ) : (
@@ -383,11 +286,12 @@ function LoginContent() {
               />
             </Field>
 
-            <Field label="Senha" icon={<Lock size={15} />}>
+            <Field htmlFor="register-password" label="Senha" icon={<Lock size={15} />}>
               <div className="relative">
                 <input
                   autoComplete="new-password"
                   className={`${inputClass} pr-10`}
+                  id="register-password"
                   onChange={(event) => setRegisterPassword(event.target.value)}
                   placeholder="Mínimo 12 caracteres"
                   required
@@ -398,7 +302,6 @@ function LoginContent() {
                   aria-label={showRegisterPassword ? "Ocultar senha" : "Mostrar senha"}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text3)] hover:text-[var(--text)]"
                   onClick={() => setShowRegisterPassword((current) => !current)}
-                  tabIndex={-1}
                   type="button"
                 >
                   {showRegisterPassword ? <EyeOff aria-hidden="true" size={16} /> : <Eye aria-hidden="true" size={16} />}
@@ -451,10 +354,10 @@ function LoginContent() {
         )}
 
         <div className="mt-6 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-[11px] leading-5 text-amber-200">
-          <strong className="text-amber-100">Ambiente local:</strong>{" "}
-          o acesso é feito por e-mail e senha. A confirmação de cadastro é
-          simulada localmente; em produção o link será enviado por e-mail. O
-          token de sessão fica apenas no navegador.
+          <strong className="text-amber-100">Acesso protegido:</strong>{" "}
+          o token de autenticação permanece cifrado em cookie HttpOnly e não é
+          exposto ao JavaScript da página. Ações de escrita também exigem
+          validação de origem e proteção CSRF.
         </div>
 
         <div className="mt-6 flex flex-col items-center gap-2 border-t border-[var(--bd)] pt-5">
@@ -487,19 +390,37 @@ function LoginContent() {
 
 function Field({
   children,
+  htmlFor,
   icon,
   label
 }: {
   children: React.ReactNode;
+  htmlFor?: string;
   icon: React.ReactNode;
   label: string;
 }) {
+  const labelText = (
+    <span className="flex items-center gap-1.5 text-xs font-medium text-[var(--text)]">
+      {icon}
+      {label}
+    </span>
+  );
+  // Com htmlFor: associação EXPLÍCITA (o <label> aponta só ao input; controles
+  // extras como o toggle de senha ficam fora do label — A11Y-10). Sem htmlFor:
+  // label envolvente, adequado a campos de controle único.
+  if (htmlFor) {
+    return (
+      <div className="block space-y-1.5">
+        <label className="block" htmlFor={htmlFor}>
+          {labelText}
+        </label>
+        {children}
+      </div>
+    );
+  }
   return (
     <label className="block space-y-1.5">
-      <span className="flex items-center gap-1.5 text-xs font-medium text-[var(--text)]">
-        {icon}
-        {label}
-      </span>
+      {labelText}
       {children}
     </label>
   );
