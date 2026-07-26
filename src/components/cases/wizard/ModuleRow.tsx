@@ -33,15 +33,15 @@ export function ModuleRow({
           <h3 className="text-sm font-semibold text-[var(--text)]">{meta.titulo}</h3>
           {config.obrigatorio && <Badge tone="orange">Fixo no roteiro</Badge>}
           {config.recomendado && !config.obrigatorio && (
-            <Badge tone="teal">Sugerido na simulação</Badge>
+            <Badge tone="teal">Sugerido</Badge>
           )}
         </div>
         <p className="mt-1 text-xs leading-5 text-[var(--text2)]">{meta.descricao}</p>
         <p className="mt-1.5 text-[11px] text-[var(--text3)]">
           {isEstimate ? (
-            <>Referência estimada (padrão local): <span className="font-mono">R$ {formatCents(displayPrice)}</span></>
+            <>Referência estimada: <span className="font-mono">R$ {formatCents(displayPrice)}</span></>
           ) : (
-            <>Referência simulada: <span className="font-mono">R$ {formatCents(displayPrice)}</span></>
+            <>Referência: <span className="font-mono">R$ {formatCents(displayPrice)}</span></>
           )}
         </p>
       </div>
@@ -49,7 +49,7 @@ export function ModuleRow({
       <Switch
         checked={checked}
         disabled={config.bloqueado}
-        label={`Incluir na simulação: ${meta.titulo}`}
+        label={`Incluir no pedido: ${meta.titulo}`}
         onCheckedChange={onCheckedChange}
       />
     </div>

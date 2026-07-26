@@ -28,10 +28,10 @@ export function CaseQuickCreateForm({
   return (
     <form className="cv-form-card mb-6 p-4 sm:p-5" onSubmit={onSubmit}>
       <div className="mb-4 flex flex-col gap-1">
-        <h2 className="text-sm font-semibold text-[var(--text)]">Caso rápido local</h2>
+        <h2 className="text-sm font-semibold text-[var(--text)]">Caso rápido</h2>
         <p className="text-xs leading-5 text-[var(--text2)]">
-          Ação operacional direta para o MVP local. O fluxo principal continua
-          sendo Novo Pedido.
+          Cadastro direto de um caso. O fluxo principal continua sendo Novo
+          Pedido.
         </p>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
@@ -40,7 +40,7 @@ export function CaseQuickCreateForm({
             <TextInput
               invalid={Boolean(formErrors.title)}
               onChange={(event) => onFieldChange("title", event.target.value)}
-              placeholder="Análise contratual local"
+              placeholder="Ex.: Análise contratual"
               value={form.title}
             />
           </FormField>
@@ -107,7 +107,7 @@ export function CaseQuickCreateForm({
           <FormField label="Observações">
             <TextArea
               onChange={(event) => onFieldChange("notes", event.target.value)}
-              placeholder="Observação demonstrativa local"
+              placeholder="Observações (opcional)"
               value={form.notes}
             />
           </FormField>

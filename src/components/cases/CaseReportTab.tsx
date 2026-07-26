@@ -160,7 +160,7 @@ export function CaseReportTab({ finalReport, report }: CaseReportTabProps) {
               </Button>
             ) : undefined
           }
-          description="O resumo demonstrativo ainda não está disponível. Gere o parecer a partir das evidências da triagem."
+          description="O relatório ainda não foi gerado. Gere o parecer a partir das evidências da triagem."
           icon={<Shield size={20} />}
           title="Relatório preliminar não disponível"
         />
@@ -207,9 +207,8 @@ export function CaseReportTab({ finalReport, report }: CaseReportTabProps) {
                   size={16}
                 />
                 <p className="text-xs text-[var(--text2)]">
-                  Este relatório está em revisão demonstrativa. Validação humana
-                  persistida, aprovação real e entrega ao cliente ficam no
-                  roadmap.
+                  Este relatório passou por revisão automática. A validação
+                  humana e a aprovação serão habilitadas em breve.
                 </p>
               </div>
             )}
@@ -246,7 +245,7 @@ export function CaseReportTab({ finalReport, report }: CaseReportTabProps) {
           </Card>
 
           {reportData.risks.length > 0 && (
-            <Card title="Indicadores demonstrativos de risco">
+            <Card title="Indicadores de risco">
               <div className="space-y-4">
                 {reportData.risks.map((risk, index) => (
                   <div
@@ -336,11 +335,10 @@ export function CaseReportTab({ finalReport, report }: CaseReportTabProps) {
           <div className="flex items-center gap-3 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] p-4">
             <FileText className="shrink-0 text-[var(--text3)]" size={16} />
             <p className="text-xs text-[var(--text2)]">
-              PDF/exportação real ainda não está implementado nesta versão;
-              permanece como etapa planejada do roadmap.
+              A exportação em PDF será habilitada em breve.
             </p>
             <span className="ml-auto shrink-0 cv-badge cv-badge-muted">
-              Roadmap
+              Em breve
             </span>
           </div>
         </div>

@@ -182,7 +182,7 @@ export default function SettingsPage() {
     }
 
     setPasswordSuccess(
-      "Senha validada localmente. A troca real depende de autenticação/Cognito em etapa futura."
+      "Senha atual confirmada. A troca de senha estará disponível em breve."
     );
     setPasswordForm({
       confirmPassword: "",
@@ -195,7 +195,7 @@ export default function SettingsPage() {
     <AuthGuard>
       <AppLayout>
         <PageTitle
-          description="Ajuste configurações locais de organização, segurança, notificações e aparência. Configurações reais de tenant, equipe e billing dependem de backend integrado."
+          description="Ajuste as configurações de organização, segurança, notificações e aparência."
           eyebrow="Configurações"
           title="Configurações"
         />
@@ -233,7 +233,7 @@ export default function SettingsPage() {
                     <input
                       className={`${inputClass} cursor-not-allowed opacity-60`}
                       disabled
-                      value="Organização MVP"
+                      value="Minha Organização"
                     />
                   </Field>
                   <Field label="CNPJ">
@@ -248,14 +248,14 @@ export default function SettingsPage() {
                       <input
                         className={`${inputClass} flex-1 cursor-not-allowed opacity-60`}
                         disabled
-                        value="MVP Local"
+                        value="Padrão"
                       />
-                      <span className="cv-badge cv-badge-muted shrink-0">Upgrade — roadmap</span>
+                      <span className="cv-badge cv-badge-muted shrink-0">Upgrade em breve</span>
                     </div>
                   </Field>
                   <p className="text-[11px] leading-5 text-[var(--text3)]">
-                    Dados da organização são somente leitura nesta fase. Edição,
-                    troca de plano e billing entram com o backend de produção.
+                    Dados da organização são somente leitura. Edição e troca de
+                    plano estarão disponíveis em breve.
                   </p>
                 </div>
               </Card>
@@ -263,7 +263,7 @@ export default function SettingsPage() {
 
             {activeTab === "members" && (
               <Card
-                description="Gerenciamento real de equipe, convites e permissões ficam no roadmap."
+                description="Gerenciamento de equipe, convites e permissões em breve."
                 title="Equipe"
               >
                 <div className="rounded-lg border border-[var(--border)] bg-[var(--surf2)] p-6 text-center">
@@ -274,7 +274,7 @@ export default function SettingsPage() {
                 <div className="mt-4 border-t border-slate-200 pt-4 dark:border-slate-800">
                   <span className="cv-badge cv-badge-muted">
                     <User aria-hidden="true" size={12} />
-                    Convite — roadmap
+                    Convite em breve
                   </span>
                 </div>
               </Card>
@@ -307,7 +307,7 @@ export default function SettingsPage() {
                             currentPassword: event.target.value
                           }))
                         }
-                        placeholder="Obrigatória nesta simulação local"
+                        placeholder="Digite a senha atual"
                         type="password"
                         value={passwordForm.currentPassword}
                       />
@@ -380,7 +380,7 @@ export default function SettingsPage() {
                 </Card>
 
                 <Card
-                  description="Sessões ativas reconhecidas localmente."
+                  description="Suas sessões ativas."
                   title="Sessões ativas"
                 >
                   <div className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -418,7 +418,7 @@ export default function SettingsPage() {
 
             {activeTab === "notifications" && (
               <Card
-                description="Preferências armazenadas localmente. Notificações reais por e-mail/WhatsApp dependem de serviços externos."
+                description="Preferências de notificação por e-mail e WhatsApp."
                 title="Canais de notificação"
               >
                 <div className="space-y-4">

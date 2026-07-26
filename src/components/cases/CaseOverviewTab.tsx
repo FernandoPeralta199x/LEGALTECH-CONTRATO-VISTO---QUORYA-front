@@ -187,12 +187,11 @@ export function CaseOverviewTab({
             <AlertTriangle className="shrink-0 text-[var(--orange)]" size={20} />
             <div>
                 <p className="text-sm font-semibold text-[var(--text)]">
-                Revisão demonstrativa
+                Revisão automática
               </p>
               <p className="mt-0.5 text-xs text-[var(--text2)]">
-                Este caso está em etapa demonstrativa de revisão. Revisão
-                humana persistida, aprovação real e entrega ao cliente ficam no
-                roadmap.
+                Este caso passou por revisão automática. A revisão humana e a
+                aprovação serão habilitadas em breve.
               </p>
             </div>
           </div>

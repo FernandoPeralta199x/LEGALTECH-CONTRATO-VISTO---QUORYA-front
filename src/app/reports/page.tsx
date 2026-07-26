@@ -44,24 +44,24 @@ const statusMeta: Record<
   { delivery: string; exportLabel: string; exportTitle: string }
 > = {
   failed: {
-    delivery: "Falha mock/local",
+    delivery: "Falha na geração",
     exportLabel: "PDF indisponível",
-    exportTitle: "PDF/exportação real ainda não implementados nesta versão."
+    exportTitle: "Exportação em PDF em breve."
   },
   generating: {
-    delivery: "Geração mock/local",
-    exportLabel: "PDF não implementado",
-    exportTitle: "PDF real indisponível enquanto o relatório está em geração mock/local."
+    delivery: "Em geração",
+    exportLabel: "PDF (em breve)",
+    exportTitle: "Exportação indisponível durante a geração."
   },
   not_started: {
     delivery: "Não iniciado",
-    exportLabel: "PDF não implementado",
-    exportTitle: "PDF/exportação real ainda não implementados nesta versão."
+    exportLabel: "PDF (em breve)",
+    exportTitle: "Exportação em PDF em breve."
   },
   ready: {
-    delivery: "Relatório mock pronto",
-    exportLabel: "PDF roadmap",
-    exportTitle: "PDF real ainda não existe nesta versão."
+    delivery: "Relatório pronto",
+    exportLabel: "PDF (em breve)",
+    exportTitle: "Exportação em PDF em breve."
   }
 };
 
@@ -121,14 +121,14 @@ export default function ReportsPage() {
               Atualizar
             </Button>
           }
-          description="Área de entrega e revisão do MVP local. São listados apenas relatórios mock-operacionais gerados por case_id; relatórios demonstrativos fixos não aparecem aqui."
+          description="Relatórios gerados a partir dos seus casos."
           eyebrow="Relatórios"
           title="Entrega e revisão"
         />
 
         {fallbackReason && (
-          <Notification title="Fallback local ativo" tone="warning">
-            API local indisponível: a lista abaixo usa apenas dados locais explícitos deste navegador.
+          <Notification title="Sem conexão com o servidor" tone="warning">
+            Não foi possível conectar ao servidor. A lista pode estar desatualizada.
           </Notification>
         )}
 
@@ -176,7 +176,7 @@ export default function ReportsPage() {
 
         {loading ? (
           <LoadingState
-            description="Consultando casos e aggregates para localizar relatórios por case_id."
+            description="Carregando relatórios."
             label="Carregando relatórios"
           />
         ) : error ? (
@@ -190,7 +190,7 @@ export default function ReportsPage() {
                 Tentar novamente
               </Button>
             }
-            description="A listagem de relatórios não pôde ser carregada. Erros da API não são substituídos por relatórios demonstrativos."
+            description="Não foi possível carregar a lista de relatórios."
             details={error}
           />
         ) : reports.length === 0 ? (
@@ -200,7 +200,7 @@ export default function ReportsPage() {
                 Ver casos
               </Button>
             }
-            description="Nenhum relatório operacional foi gerado por case_id. Casos criados pelo Wizard aparecem em Casos; relatórios aparecem aqui somente depois da geração mock/local."
+            description="Nenhum relatório foi gerado ainda. Gere o relatório no detalhe do caso para que ele apareça aqui."
             icon={<FileText size={20} />}
             secondaryAction={<Button href="/cases/new">Novo Pedido</Button>}
             title="Nenhum relatório operacional"

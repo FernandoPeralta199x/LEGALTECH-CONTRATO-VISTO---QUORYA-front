@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   ClipboardCheck,
   FileText,
-  Info,
   Plus,
   RefreshCw,
   Upload,
@@ -55,14 +54,6 @@ export default function DashboardPage() {
   return (
     <AuthGuard>
       <AppLayout>
-        {/* ── Environment badge ── */}
-        <div className="mb-3">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-500/25 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
-            <Info aria-hidden="true" size={11} />
-            MVP local controlado
-          </span>
-        </div>
-
         {/* ── Hero ── */}
         <PageTitle
           actions={
@@ -92,16 +83,16 @@ export default function DashboardPage() {
               </Button>
             </div>
           }
-          description="Cockpit do MVP local. O fluxo começa em Novo Pedido; daqui você acompanha casos, organiza documentos como insumos locais, passa pela triagem local e consulta relatórios sem AWS, IA/OCR/RAG reais."
+          description="Acompanhe seus casos, organize documentos, faça a triagem e gere relatórios — tudo a partir de um novo pedido."
           eyebrow="Dashboard"
           title="Painel operacional"
         />
 
         {/* ── API status notifications ── */}
         {!loading && fallbackActive && (
-          <Notification title="Fallback local ativo" tone="warning">
-            O backend local não respondeu. Métricas e listas estão usando dados
-            demonstrativos do fallback local.
+          <Notification title="Sem conexão com o servidor" tone="warning">
+            Não foi possível conectar ao servidor. As métricas e listas podem
+            estar desatualizadas.
           </Notification>
         )}
         {!loading && !fallbackActive && statsDegraded && (
@@ -126,7 +117,7 @@ export default function DashboardPage() {
               className="shrink-0 text-[var(--teal)]"
               size={13}
             />
-            API local respondendo — dados carregados do backend local.
+            Dados carregados com sucesso.
           </div>
         )}
 
@@ -164,8 +155,7 @@ export default function DashboardPage() {
                   Métricas operacionais
                 </h2>
                 <p className="text-xs leading-5 text-[var(--text2)]">
-                  Dados carregados por clientes, casos e documentos já
-                  existentes no MVP local.
+                  Consolidado de clientes, casos e documentos já cadastrados.
                 </p>
               </div>
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -192,7 +182,7 @@ export default function DashboardPage() {
                       value: documents.length,
                       // documents.length é a contagem carregada (a lista é limitada), não um
                       // total consolidado como casos/clientes — rotulado para não confundir.
-                      detail: "Insumos carregados nesta lista",
+                      detail: "Documentos carregados nesta lista",
                       icon: FileText,
                       color: "text-[var(--teal)]",
                       bg: "bg-[var(--teal-dim)] border-[rgba(32,201,151,0.22)]"
@@ -254,7 +244,7 @@ export default function DashboardPage() {
                   Áreas do processo
                 </h2>
                 <p className="text-xs leading-5 text-[var(--text2)]">
-                  Atalhos para operar o ciclo sem sair do contexto do cockpit.
+                  Acesse rapidamente as áreas da operação.
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -314,7 +304,7 @@ export default function DashboardPage() {
                     <ArrowRight aria-hidden="true" size={12} />
                   </Link>
                 }
-                description="Últimos casos carregados da API local ou fallback."
+                description="Seus casos mais recentes."
                 title="Casos recentes"
               >
                 {recentCases.length === 0 ? (
@@ -324,7 +314,7 @@ export default function DashboardPage() {
                         Novo Pedido
                       </Button>
                     }
-                    description="Nenhum caso carregado. Inicie pelo wizard para validar o fluxo integrado com dados fictícios."
+                    description="Nenhum caso ainda. Crie um novo pedido para começar."
                     icon={<BriefcaseBusiness size={20} />}
                     title="Fila vazia"
                     variant="compact"
@@ -369,7 +359,7 @@ export default function DashboardPage() {
                     <ArrowRight aria-hidden="true" size={12} />
                   </Link>
                 }
-                description="Últimos documentos carregados da API local ou fallback."
+                description="Seus documentos mais recentes."
                 title="Documentos recentes"
               >
                 {recentDocuments.length === 0 ? (
@@ -379,7 +369,7 @@ export default function DashboardPage() {
                         Enviar documento
                       </Button>
                     }
-                    description="Nenhum documento carregado. Envie um arquivo fictício para validar o fluxo."
+                    description="Nenhum documento ainda. Envie um arquivo para começar."
                     icon={<FileText size={20} />}
                     title="Sem documentos"
                     variant="compact"

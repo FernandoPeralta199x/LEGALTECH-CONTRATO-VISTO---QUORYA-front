@@ -83,7 +83,7 @@ export function CasePartiesTab({
               Adicionar parte
             </Button>
           }
-          description="Cadastre partes fictícias vinculadas a este caso para validar o fluxo local."
+          description="Cadastre as partes vinculadas a este caso."
           icon={<Users size={20} />}
           title="Nenhuma parte registrada"
         />
@@ -161,7 +161,7 @@ export function CasePartiesTab({
                 {editingParty ? "Editar parte" : "Adicionar parte"}
               </h2>
               <p className="mt-1 text-xs leading-5 text-[var(--text2)]">
-                Use apenas dados fictícios. A referência de organização e caso é validada pela API local quando disponível.
+                Preencha os dados da parte vinculada a este caso.
               </p>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
@@ -169,7 +169,7 @@ export function CasePartiesTab({
                 <TextInput
                   invalid={Boolean(partyFormErrors.name)}
                   onChange={(event) => updatePartyForm("name", event.target.value)}
-                  placeholder="Parte fictícia"
+                  placeholder="Nome da parte"
                   value={partyForm.name}
                 />
               </FormField>
@@ -188,7 +188,7 @@ export function CasePartiesTab({
               </FormField>
               <FormField
                 error={partyFormErrors.document}
-                hint="Opcional. Use identificadores fictícios em ambiente local."
+                hint="Opcional. CPF ou CNPJ."
                 label="Documento"
               >
                 <TextInput
@@ -217,7 +217,7 @@ export function CasePartiesTab({
               <FormField label="Observações">
                 <TextArea
                   onChange={(event) => updatePartyForm("notes", event.target.value)}
-                  placeholder="Observações fictícias sobre a parte"
+                  placeholder="Observações sobre a parte"
                   value={partyForm.notes ?? ""}
                 />
               </FormField>

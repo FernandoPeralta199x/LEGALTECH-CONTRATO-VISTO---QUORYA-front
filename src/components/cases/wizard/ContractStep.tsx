@@ -23,9 +23,8 @@ export function ContractStep({
           Documento base do pedido
         </h2>
         <p className="mt-1 text-sm text-[var(--text2)]">
-          Selecione um contrato ou documento local para compor a simulação.
-          Nesta versão, ele fica como anexo local do MVP; upload, storage,
-          OCR e IA reais seguem no roadmap.
+          Selecione um contrato ou documento para compor o pedido. O anexo
+          fica vinculado ao pedido; OCR e IA serão habilitados em breve.
         </p>
       </div>
 

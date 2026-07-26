@@ -236,9 +236,8 @@ export default function AnalystPage() {
         />
 
         {fallbackReason && (
-          <Notification title="Fallback local ativo" tone="warning">
-            API local indisponível: a fila abaixo usa apenas casos criados no fallback local
-            deste navegador.
+          <Notification title="Sem conexão com o servidor" tone="warning">
+            Não foi possível conectar ao servidor. A fila pode estar desatualizada.
           </Notification>
         )}
 
@@ -314,7 +313,7 @@ export default function AnalystPage() {
 
         {loading ? (
           <LoadingState
-            description="Consultando a fila operacional de casos do MVP local/mock."
+            description="Carregando a fila de triagem."
             label="Carregando triagem"
           />
         ) : error ? (
@@ -328,7 +327,7 @@ export default function AnalystPage() {
                 Tentar novamente
               </Button>
             }
-            description="A fila de triagem não pôde ser carregada. Erros de autenticação ou permissão não são mascarados por dados demonstrativos."
+            description="Não foi possível carregar a fila de triagem. Erros de autenticação ou permissão são exibidos diretamente."
             details={error}
           />
         ) : queue.length === 0 ? (

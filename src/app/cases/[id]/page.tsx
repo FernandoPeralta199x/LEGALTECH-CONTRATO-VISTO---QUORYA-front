@@ -138,7 +138,7 @@ export default function CaseDetailPage({ params }: PageProps) {
                 Voltar para casos
               </Button>
             }
-            description="Não foi possível carregar o detalhe do caso. Verifique se está logado com permissões adequadas e se a API local está disponível."
+            description="Não foi possível carregar o detalhe do caso. Verifique se está logado com permissões adequadas e se o servidor está disponível."
             details={error || "Caso não encontrado."}
             title="Caso não encontrado"
           />
@@ -171,9 +171,9 @@ export default function CaseDetailPage({ params }: PageProps) {
             opcional fallbackReason — assim um retorno mock JAMAIS renderiza sem aviso,
             mesmo que alguém esqueça de preencher o motivo. */}
         {aggregateSource === "mock" && (
-          <Notification title="Fallback local do MVP" tone="warning">
+          <Notification title="Dados possivelmente desatualizados" tone="warning">
             {fallbackReason ||
-              "Detalhes carregados de dados locais/mock, não sincronizados com o backend."}
+              "Estes detalhes podem não estar sincronizados com o servidor."}
           </Notification>
         )}
         {error && (
