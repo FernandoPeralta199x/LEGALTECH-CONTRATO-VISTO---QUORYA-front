@@ -192,10 +192,10 @@ export function Sidebar() {
             />
             <Image
               alt="Contrato Visto"
-              className="relative h-14 w-14 rounded-full object-cover ring-1 ring-[rgba(95,200,152,0.35)] transition-transform duration-base group-hover:scale-105"
+              className="relative h-14 w-14 rounded-full object-cover transition-transform duration-base group-hover:scale-105"
               height={56}
               priority
-              src="/logo-mark.png"
+              src="/logo-badge.png"
               width={56}
             />
           </span>
@@ -316,9 +316,9 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
               />
               <Image
                 alt="Contrato Visto"
-                className="relative h-14 w-14 rounded-full object-cover ring-1 ring-[rgba(95,200,152,0.35)]"
+                className="relative h-14 w-14 rounded-full object-cover"
                 height={56}
-                src="/logo-mark.png"
+                src="/logo-badge.png"
                 width={56}
               />
             </span>
