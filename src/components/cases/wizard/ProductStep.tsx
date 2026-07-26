@@ -28,8 +28,7 @@ export function ProductStep({ produto, onChange }: ProductStepProps) {
           Qual produto jurídico orienta este pedido?
         </h2>
         <p className="mt-1 text-sm text-[var(--text2)]">
-          A escolha define o tipo de análise simulada e os módulos sugeridos. Nenhuma
-          consulta externa ou IA real será acionada nesta etapa.
+          A escolha define o tipo de análise e os módulos sugeridos.
         </p>
       </div>
 

@@ -227,7 +227,7 @@ export function CreditCardForm({
           </Button>
           <p className="flex items-center gap-1.5 text-[11px] text-[var(--text3)]">
             <ShieldCheck aria-hidden="true" size={12} />
-            Simulação local. Nenhum dado de cartão é transmitido ou persistido.
+            Modo de teste. Nenhum dado de cartão é transmitido ou armazenado.
           </p>
         </div>
       </form>

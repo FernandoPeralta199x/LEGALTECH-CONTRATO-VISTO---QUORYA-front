@@ -182,7 +182,7 @@ export function ReviewStep({
               </p>
               <p className="text-[11px] text-[var(--text3)]">
                 <span className="font-mono">{formatBytes(arquivo.size)}</span> ·{" "}
-                {arquivo.status === "done" ? "Pronto para simulação" : "Preparando…"}
+                {arquivo.status === "done" ? "Pronto" : "Preparando…"}
               </p>
             </div>
           </div>
@@ -193,22 +193,22 @@ export function ReviewStep({
         )}
       </Section>
 
-      <Section label="Módulos simulados">
+      <Section label="Módulos do pedido">
         <div className="space-y-3 text-xs">
           <div>
             <p className="font-semibold text-[var(--text)]">
-              Incluídos na simulação (<span className="font-mono">{ativos.length}</span>)
+              Incluídos (<span className="font-mono">{ativos.length}</span>)
             </p>
             <p className="mt-1 text-[var(--text2)]">
               {ativos.length
                 ? ativos.map((m) => MODULOS[m].titulo).join(", ")
-                : "Nenhum módulo incluído na simulação."}
+                : "Nenhum módulo incluído."}
             </p>
           </div>
           {inativos.length > 0 && (
             <div>
               <p className="font-semibold text-[var(--text2)]">
-                Fora da simulação (<span className="font-mono">{inativos.length}</span>)
+                Fora do pedido (<span className="font-mono">{inativos.length}</span>)
               </p>
               <p className="mt-1 text-[var(--text3)]">
                 {inativos.map((m) => MODULOS[m].titulo).join(", ")}
@@ -228,16 +228,15 @@ export function ReviewStep({
       {error && (
         <div className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-200">
           <Info className="mt-0.5 shrink-0" size={14} />
-          <span>{error} Valor exibido é uma referência local.</span>
+          <span>{error} Valor exibido é uma referência.</span>
         </div>
       )}
 
       <div className="flex items-start gap-2 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] px-3 py-2.5">
         <Info className="mt-0.5 shrink-0 text-[var(--text2)]" size={14} />
         <p className="text-xs leading-5 text-[var(--text2)]">
-          O registro cria dados operacionais no backend local/mock e não aciona
-          IA, OCR ou integrações externas reais. Após concluir, a operação abre
-          o caso criado pelo mesmo case_id.
+          Ao concluir, o pedido é registrado e o caso é aberto. Integrações de
+          IA e OCR serão habilitadas em breve.
         </p>
       </div>
     </div>

@@ -448,7 +448,7 @@ export default function FinancialPage() {
       <AdminGuard>
         <AppLayout>
           <PageTitle
-            description="Visão financeira do programa: vendas, pagamentos, recebíveis, reembolsos, custos de API, tributos, notas e relatórios. Estrutura inicial — os dados reais são integrados por fases."
+            description="Visão financeira do programa: vendas, pagamentos, recebíveis, reembolsos, custos de API, tributos, notas e relatórios."
             eyebrow="Financeiro"
             title="Painel financeiro"
           />
@@ -458,15 +458,14 @@ export default function FinancialPage() {
             <Info aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--blue)]" size={16} />
             <div className="min-w-0">
               <p className="text-sm font-semibold text-[var(--text)]">
-                Módulo Financeiro — dados reais (Fases 3–6)
+                Módulo Financeiro
               </p>
               <p className="mt-1 text-xs leading-5 text-[var(--text2)]">
                 Visão Geral, Vendas, Pagamentos, Recebíveis, Serviços, Clientes, Gastos com APIs,
                 Tributos e Notas e Relatórios são{" "}
-                <strong className="font-semibold text-[var(--text)]">calculados pelo backend</strong>{" "}
-                a partir dos dados reais da organização. Indicadores ainda sem fonte (receita
-                líquida, margem) e a aba de Reembolsos aparecem vazios até serem integrados nas
-                próximas fases.
+                <strong className="font-semibold text-[var(--text)]">calculados</strong>{" "}
+                a partir dos dados da organização. Alguns indicadores (receita líquida, margem)
+                e a aba de Reembolsos serão habilitados em breve.
               </p>
             </div>
           </div>

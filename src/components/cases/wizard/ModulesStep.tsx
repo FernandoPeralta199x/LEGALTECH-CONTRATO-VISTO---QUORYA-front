@@ -96,12 +96,11 @@ export function ModulesStep({ produto, state, onChange }: ModulesStepProps) {
     <div className="space-y-5">
       <div>
         <h2 className="text-lg font-semibold tracking-tight text-[var(--text)]">
-          Ajuste a composição simulada
+          Ajuste a composição do pedido
         </h2>
         <p className="mt-1 text-sm text-[var(--text2)]">
-          Inclua módulos na simulação do pedido. Eles compõem o roteiro local
-          e não acionam consulta externa, IA/OCR/RAG ou integração real nesta
-          versão; essas capacidades seguem no roadmap.
+          Inclua módulos no pedido. Eles compõem o roteiro de análise;
+          integrações externas e IA/OCR serão habilitadas em breve.
         </p>
       </div>
 

@@ -77,7 +77,7 @@ export function TriagePrintSheet({
         <div style={{ fontSize: "12px", color: "#555", marginTop: "4px" }}>
           Evidências da triagem · {target === "all" ? `${toPrint.length} módulos` : "1 módulo"} ·
           {" "}
-          gerado em {new Date().toLocaleString("pt-BR")} · dados simulados (MVP local)
+          gerado em {new Date().toLocaleString("pt-BR")} · documento preliminar, pendente de revisão humana
         </div>
       </div>
       {toPrint.map((module) => (

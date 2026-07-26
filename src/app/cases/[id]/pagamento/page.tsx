@@ -317,8 +317,8 @@ export default function CasePaymentPage({ params }: PageProps) {
                 Voltar ao caso
               </Button>
             }
-            description="Este caso existe apenas no fallback local. O pagamento exige a API local ativa — sem fallback, por regra do fluxo de pagamento."
-            title="Pagamento indisponível no fallback local"
+            description="O pagamento exige conexão com o servidor. Reconecte para continuar."
+            title="Pagamento indisponível offline"
           />
         </AppLayout>
       </AuthGuard>
@@ -409,8 +409,8 @@ export default function CasePaymentPage({ params }: PageProps) {
           ) : (
             <div className="space-y-6">
               {estimate?.payment_mode === "mock" && (
-                <Notification title="Ambiente de simulação" tone="warning">
-                  Pagamento simulado para testes. Nenhuma cobrança real será
+                <Notification title="Modo de teste" tone="warning">
+                  Pagamento em modo de teste. Nenhuma cobrança real será
                   gerada.
                 </Notification>
               )}

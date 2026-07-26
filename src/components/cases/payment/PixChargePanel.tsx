@@ -105,7 +105,7 @@ export function PixChargePanel({
             <div className="flex h-48 w-48 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--bd)] bg-[var(--surf2)] px-3 text-center">
               <QrCode className="text-[var(--text3)]" size={40} />
               <p className="text-[10px] leading-4 text-[var(--text3)]">
-                QR de simulação — use o código Copia e Cola abaixo
+                QR em modo de teste — use o código Copia e Cola abaixo
               </p>
             </div>
           )}
@@ -157,10 +157,10 @@ export function PixChargePanel({
       {isMock && onSimulate && !expired && status === "PENDING_PAYMENT" && (
         <div className="flex flex-col items-center gap-1 border-t border-dashed border-[var(--bd)] pt-4">
           <Button loading={simulating} onClick={onSimulate} size="sm">
-            Simular pagamento (dev)
+            Confirmar pagamento (teste)
           </Button>
           <p className="text-[10px] text-[var(--text3)]">
-            Ambiente de simulação — dispara o webhook assinado do mock.
+            Modo de teste — confirma o pagamento automaticamente.
           </p>
         </div>
       )}

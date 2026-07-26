@@ -57,7 +57,7 @@ export const ACTIVE_STATUSES = new Set<string>([
 export const processAreas = [
   {
     title: "Novo Pedido",
-    description: "Entrada principal pelo wizard MVP local.",
+    description: "Ponto de entrada para criar um novo pedido.",
     href: "/cases/new",
     icon: Plus,
     badge: "Entrada" as ActionBadge,
@@ -73,7 +73,7 @@ export const processAreas = [
   },
   {
     title: "Documentos",
-    description: "Arquivos locais e metadados como insumos.",
+    description: "Arquivos e metadados vinculados aos casos.",
     href: "/documents",
     icon: Upload,
     badge: "Insumos" as ActionBadge,
@@ -81,7 +81,7 @@ export const processAreas = [
   },
   {
     title: "Analista",
-    description: "Triagem local e revisão conceitual.",
+    description: "Triagem e revisão dos casos.",
     href: "/analyst",
     icon: ClipboardCheck,
     badge: "Governança" as ActionBadge,
@@ -89,7 +89,7 @@ export const processAreas = [
   },
   {
     title: "Relatórios",
-    description: "Entrega e revisão do MVP local.",
+    description: "Geração e entrega de relatórios.",
     href: "/reports",
     icon: FileText,
     badge: "Entrega" as ActionBadge,
@@ -105,7 +105,7 @@ export const processAreas = [
   },
   {
     title: "Administração",
-    description: "Governança local e papéis demonstrativos.",
+    description: "Gestão de usuários, papéis e permissões.",
     href: "/admin",
     icon: Shield,
     badge: "Governança" as ActionBadge,

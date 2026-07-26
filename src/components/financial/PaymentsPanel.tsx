@@ -200,10 +200,10 @@ export function PaymentsPanel({
         </div>
       </div>
 
-      {/* Nota honesta: sem gateway real nesta fase (taxa = R$ 0,00, líquido = valor). */}
+      {/* Nota honesta: em modo de teste não há gateway (taxa = R$ 0,00, líquido = valor). */}
       <p className="flex items-center gap-2 px-1 text-[11px] text-[var(--text3)]">
         <CreditCard aria-hidden="true" size={12} />
-        Valor = cobrado (com juros). Sem gateway real nesta fase: taxa R$ 0,00 e líquido = valor.
+        Valor = cobrado (com juros). Em modo de teste: taxa R$ 0,00 e líquido = valor.
       </p>
 
       <FinancialTable

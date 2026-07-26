@@ -75,10 +75,10 @@ function uploadPhaseLabel(phase: UploadProgress["phase"]): string {
 
 function documentSourceLabel(document: Document): string {
   if (document.status === "uploaded") {
-    return "Anexo local do caso";
+    return "Anexo do caso";
   }
 
-  return "Metadados do MVP local";
+  return "Metadados do documento";
 }
 
 export default function DocumentsPage() {
@@ -210,7 +210,7 @@ export default function DocumentsPage() {
       );
       setDocuments((current) => [result.data, ...current]);
       setFallbackReason("");
-      setActionMessage("Documento enviado e vinculado ao caso no armazenamento local do MVP.");
+      setActionMessage("Documento enviado e vinculado ao caso.");
       setShowForm(false);
       setForm((current) => ({ ...emptyDocumentForm, caseId: current.caseId }));
       clearSelectedFile();
@@ -233,8 +233,8 @@ export default function DocumentsPage() {
       setFallbackReason(result.source === "mock" ? result.fallbackReason ?? fallbackReason : fallbackReason);
       setActionMessage(
         result.source === "mock"
-          ? "Backend local indisponível: URL temporária simulada para desenvolvimento."
-          : `URL temporária gerada pela API local. Expiração: ${result.data.expires_in_seconds}s.`
+          ? "Sem conexão com o servidor: link de download indisponível."
+          : `Link temporário gerado. Expira em ${result.data.expires_in_seconds}s.`
       );
     } catch (err) {
       setError(errorMessage(err, "Não foi possível gerar o link de download."));
@@ -255,7 +255,7 @@ export default function DocumentsPage() {
 
     try {
       const result = await enqueueDocumentProcessing(documentId);
-      setActionMessage(`Job local/MVP de processamento registrado: ${result.data.job_id}.`);
+      setActionMessage(`Processamento registrado: ${result.data.job_id}.`);
       setPendingEnqueue(null);
       // FE-07: reflete o novo estado do documento na lista sem exigir refresh manual.
       void refreshDocuments();
@@ -302,14 +302,14 @@ export default function DocumentsPage() {
               )}
             </div>
           }
-          description="Organize documentos como insumos locais vinculados a casos. Upload é local/MVP; OCR, IA, cloud e SQS reais não estão ativos nesta tela."
+          description="Organize documentos e anexos vinculados aos casos."
           eyebrow="Documentos"
-          title="Insumos e anexos jurídicos"
+          title="Documentos e anexos jurídicos"
         />
 
         {fallbackReason && (
-          <Notification title="Fallback local ativo" tone="warning">
-            A API local não respondeu. A listagem pode usar dados demonstrativos do fallback local.
+          <Notification title="Sem conexão com o servidor" tone="warning">
+            Não foi possível conectar ao servidor. A lista pode estar desatualizada.
           </Notification>
         )}
         {error && !loading && (
@@ -318,7 +318,7 @@ export default function DocumentsPage() {
           </Notification>
         )}
         {actionMessage && (
-          <Notification onDismiss={() => setActionMessage("")} title="Ação local do MVP" tone="success">
+          <Notification onDismiss={() => setActionMessage("")} title="Ação registrada" tone="success">
             {actionMessage}
           </Notification>
         )}
@@ -331,7 +331,7 @@ export default function DocumentsPage() {
             <div className="mb-4 flex flex-col gap-1">
               <h2 className="text-sm font-semibold text-[var(--text)]">Enviar documento ao caso</h2>
               <p className="text-xs leading-5 text-[var(--text2)]">
-                Vincule um arquivo ao caso selecionado para organizar insumos do MVP local. O envio local não executa OCR, IA, storage cloud ou SQS real.
+                Vincule um arquivo ao caso selecionado.
               </p>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
@@ -477,7 +477,7 @@ export default function DocumentsPage() {
                   Tentar novamente
                 </Button>
               }
-              description="A listagem de documentos não pôde ser carregada. Erros da API local são exibidos sem fallback indevido."
+              description="Não foi possível carregar a lista de documentos."
               details={error}
             />
           ) : visibleDocuments.length === 0 ? (
@@ -580,13 +580,13 @@ export default function DocumentsPage() {
         </Card>
 
         <ConfirmDialog
-          confirmLabel="Registrar localmente"
-          description="A API local valida o contexto do caso e documento quando disponível antes de registrar o job local/MVP. Esta ação não promete OCR, IA ou análise jurídica automática nesta tela."
+          confirmLabel="Registrar processamento"
+          description="O caso e o documento são validados antes de registrar o processamento."
           loading={Boolean(actionBusyId)}
           onCancel={() => setPendingEnqueue(null)}
           onConfirm={() => void confirmEnqueue()}
           open={Boolean(pendingEnqueue)}
-          title={`Registrar processamento local de ${pendingEnqueue?.filename ?? "documento"}?`}
+          title={`Registrar processamento de ${pendingEnqueue?.filename ?? "documento"}?`}
         />
       </AppLayout>
     </AuthGuard>
