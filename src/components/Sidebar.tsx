@@ -161,14 +161,24 @@ export function Sidebar() {
       {/* Logo */}
       <div className="px-5 pt-6 pb-4">
         <Link className="group flex items-center gap-3" href="/">
-          <Image
-            alt="Contrato Visto"
-            className="h-14 w-14 shrink-0 rounded-lg object-contain transition-transform duration-base group-hover:scale-105"
-            height={56}
-            priority
-            src="/logo-contrato-visto.png"
-            width={56}
-          />
+          <span className="relative shrink-0">
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute -inset-1.5 rounded-full opacity-70 blur-md"
+              style={{
+                background:
+                  "radial-gradient(circle, rgba(46,209,163,0.4), transparent 70%)"
+              }}
+            />
+            <Image
+              alt="Contrato Visto"
+              className="relative h-14 w-14 rounded-full object-cover ring-1 ring-[rgba(95,200,152,0.35)] transition-transform duration-base group-hover:scale-105"
+              height={56}
+              priority
+              src="/logo-mark.png"
+              width={56}
+            />
+          </span>
           <div>
             <span className="block text-[13px] font-bold text-[var(--text)]">
               Contrato Visto
@@ -275,13 +285,23 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
             href="/"
             onClick={onClose}
           >
-            <Image
-              alt="Contrato Visto"
-              className="h-14 w-14 rounded-lg object-contain"
-              height={56}
-              src="/logo-contrato-visto.png"
-              width={56}
-            />
+            <span className="relative shrink-0">
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute -inset-1.5 rounded-full opacity-70 blur-md"
+                style={{
+                  background:
+                    "radial-gradient(circle, rgba(46,209,163,0.4), transparent 70%)"
+                }}
+              />
+              <Image
+                alt="Contrato Visto"
+                className="relative h-14 w-14 rounded-full object-cover ring-1 ring-[rgba(95,200,152,0.35)]"
+                height={56}
+                src="/logo-mark.png"
+                width={56}
+              />
+            </span>
             <span className="text-[13px] font-bold text-[var(--text)]">
               Contrato Visto
             </span>
