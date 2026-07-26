@@ -37,13 +37,13 @@ test("login sela o JWT em cookie HttpOnly e não o devolve ao browser", async ()
   globalThis.fetch = (async (input) => {
     const url = String(input);
     requested.push(url);
-    if (url.endsWith("/api/v1/auth/login")) {
+    if (url.endsWith("/auth/login")) {
       return Response.json({
         data: { access_token: rawToken, expires_in: 900 },
         success: true
       });
     }
-    if (url.endsWith("/api/v1/me")) {
+    if (url.endsWith("/me")) {
       return Response.json({
         data: {
           email: "admin@example.test",
@@ -128,7 +128,7 @@ test("proxy valida CSRF e injeta Authorization somente no servidor", async () =>
     assert.equal(authorization, `Bearer ${rawToken}`);
     assert.equal(
       upstreamUrl,
-      "http://backend.test/api/v1/cases?source=real"
+      "http://backend.test/cases?source=real"
     );
   } finally {
     restore();
