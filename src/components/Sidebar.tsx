@@ -163,11 +163,11 @@ export function Sidebar() {
         <Link className="group flex items-center gap-3" href="/">
           <Image
             alt="Contrato Visto"
-            className="h-12 w-12 shrink-0 rounded-lg object-contain transition-transform duration-base group-hover:scale-105"
-            height={48}
+            className="h-14 w-14 shrink-0 rounded-lg object-contain transition-transform duration-base group-hover:scale-105"
+            height={56}
             priority
             src="/logo-contrato-visto.png"
-            width={48}
+            width={56}
           />
           <div>
             <span className="block text-[13px] font-bold text-[var(--text)]">
@@ -277,10 +277,10 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
           >
             <Image
               alt="Contrato Visto"
-              className="h-12 w-12 rounded-lg object-contain"
-              height={48}
+              className="h-14 w-14 rounded-lg object-contain"
+              height={56}
               src="/logo-contrato-visto.png"
-              width={48}
+              width={56}
             />
             <span className="text-[13px] font-bold text-[var(--text)]">
               Contrato Visto
