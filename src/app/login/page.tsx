@@ -57,6 +57,21 @@ function LoginContent() {
   });
   const passwordsMatch =
     registerPassword.length > 0 && registerPassword === confirmPassword;
+  const strengthScore =
+    registerPassword.length === 0
+      ? 0
+      : Object.values(passwordValidation.requirements).filter(Boolean).length;
+  const strengthMeta =
+    strengthScore >= 5
+      ? { label: "Forte", text: "text-emerald-600 dark:text-emerald-300", bar: "bg-emerald-500" }
+      : strengthScore >= 3
+        ? { label: "Média", text: "text-amber-600 dark:text-amber-300", bar: "bg-amber-500" }
+        : { label: "Fraca", text: "text-red-500 dark:text-red-300", bar: "bg-red-500" };
+  const canSubmitRegister =
+    name.trim().length > 0 &&
+    registerEmail.length > 0 &&
+    passwordValidation.valid &&
+    passwordsMatch;
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -88,22 +103,8 @@ function LoginContent() {
 
   async function handleRegister(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (loading) return;
-
-    if (!passwordValidation.valid) {
-      setToast({
-        message:
-          passwordValidation.errors.newPassword ??
-          "A senha não atende aos requisitos mínimos.",
-        tone: "error"
-      });
-      return;
-    }
-
-    if (registerPassword !== confirmPassword) {
-      setToast({ message: "As senhas não coincidem.", tone: "error" });
-      return;
-    }
+    // O botão fica desabilitado enquanto inválido; este guard é só defesa (ex.: Enter).
+    if (loading || !canSubmitRegister) return;
 
     setToast(null);
     setLoading(true);
@@ -223,8 +224,11 @@ function LoginContent() {
         )}
 
         {tab === "login" ? (
-          <form className="space-y-4" onSubmit={handleLogin}>
-            <Field label="E-mail" icon={<Mail size={15} />}>
+          <form
+            className="space-y-4 duration-200 animate-in fade-in slide-in-from-bottom-1 motion-reduce:animate-none"
+            onSubmit={handleLogin}
+          >
+            <Field label="E-mail" icon={<Mail size={15} />} required>
               <input
                 autoComplete="email"
                 className={inputClass}
@@ -236,7 +240,7 @@ function LoginContent() {
               />
             </Field>
 
-            <Field htmlFor="login-password" label="Senha" icon={<Lock size={15} />}>
+            <Field htmlFor="login-password" label="Senha" icon={<Lock size={15} />} required>
               <div className="relative">
                 <input
                   autoComplete="current-password"
@@ -270,8 +274,11 @@ function LoginContent() {
             </Button>
           </form>
         ) : (
-          <form className="space-y-4" onSubmit={handleRegister}>
-            <Field label="Nome completo" icon={<User size={15} />}>
+          <form
+            className="space-y-4 duration-200 animate-in fade-in slide-in-from-bottom-1 motion-reduce:animate-none"
+            onSubmit={handleRegister}
+          >
+            <Field label="Nome completo" icon={<User size={15} />} required>
               <input
                 autoComplete="name"
                 className={inputClass}
@@ -283,7 +290,7 @@ function LoginContent() {
               />
             </Field>
 
-            <Field label="E-mail" icon={<Mail size={15} />}>
+            <Field label="E-mail" icon={<Mail size={15} />} required>
               <input
                 autoComplete="email"
                 className={inputClass}
@@ -295,7 +302,7 @@ function LoginContent() {
               />
             </Field>
 
-            <Field htmlFor="register-password" label="Senha" icon={<Lock size={15} />}>
+            <Field htmlFor="register-password" label="Senha" icon={<Lock size={15} />} required>
               <div className="relative">
                 <input
                   autoComplete="new-password"
@@ -318,39 +325,7 @@ function LoginContent() {
               </div>
             </Field>
 
-            <div className="space-y-1.5">
-              {passwordRequirements.map(([key, label]) => {
-                const met =
-                  passwordValidation.requirements[
-                    key as keyof typeof passwordValidation.requirements
-                  ];
-                return (
-                  <div className="flex items-center gap-2 text-xs" key={key}>
-                    <span
-                      className={cn(
-                        "flex h-4 w-4 items-center justify-center rounded-full border text-[10px] font-bold",
-                        met
-                          ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-600 dark:text-emerald-300"
-                          : "border-slate-300 bg-slate-100 text-slate-400 dark:border-slate-700 dark:bg-slate-900"
-                      )}
-                    >
-                      {met ? <Check size={10} /> : "·"}
-                    </span>
-                    <span
-                      className={cn(
-                        met
-                          ? "text-emerald-700 dark:text-emerald-300"
-                          : "text-slate-600 dark:text-slate-400"
-                      )}
-                    >
-                      {label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-
-            <Field htmlFor="register-confirm-password" label="Repetir senha" icon={<Lock size={15} />}>
+            <Field htmlFor="register-confirm-password" label="Repetir senha" icon={<Lock size={15} />} required>
               <div className="relative">
                 <input
                   autoComplete="new-password"
@@ -392,8 +367,61 @@ function LoginContent() {
               )}
             </Field>
 
+            {registerPassword.length > 0 && (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-[var(--text3)]">Força da senha</span>
+                  <span className={cn("font-semibold", strengthMeta.text)}>
+                    {strengthMeta.label}
+                  </span>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--surf3)]">
+                  <div
+                    className={cn(
+                      "h-full rounded-full transition-all duration-300",
+                      strengthMeta.bar
+                    )}
+                    style={{ width: `${(strengthScore / 5) * 100}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              {passwordRequirements.map(([key, label]) => {
+                const met =
+                  passwordValidation.requirements[
+                    key as keyof typeof passwordValidation.requirements
+                  ];
+                return (
+                  <div className="flex items-center gap-2 text-xs" key={key}>
+                    <span
+                      className={cn(
+                        "flex h-4 w-4 items-center justify-center rounded-full border text-[10px] font-bold",
+                        met
+                          ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-600 dark:text-emerald-300"
+                          : "border-slate-300 bg-slate-100 text-slate-400 dark:border-slate-700 dark:bg-slate-900"
+                      )}
+                    >
+                      {met ? <Check size={10} /> : "·"}
+                    </span>
+                    <span
+                      className={cn(
+                        met
+                          ? "text-emerald-700 dark:text-emerald-300"
+                          : "text-slate-600 dark:text-slate-400"
+                      )}
+                    >
+                      {label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
             <Button
               className="w-full"
+              disabled={!canSubmitRegister}
               icon={<ArrowRight size={16} />}
               loading={loading}
               type="submit"
@@ -436,17 +464,24 @@ function Field({
   children,
   htmlFor,
   icon,
-  label
+  label,
+  required
 }: {
   children: React.ReactNode;
   htmlFor?: string;
   icon: React.ReactNode;
   label: string;
+  required?: boolean;
 }) {
   const labelText = (
     <span className="flex items-center gap-1.5 text-xs font-medium text-[var(--text)]">
       {icon}
       {label}
+      {required && (
+        <span aria-hidden="true" className="text-red-500">
+          *
+        </span>
+      )}
     </span>
   );
   // Com htmlFor: associação EXPLÍCITA (o <label> aponta só ao input; controles
