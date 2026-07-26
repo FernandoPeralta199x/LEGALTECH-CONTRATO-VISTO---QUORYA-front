@@ -206,17 +206,14 @@ export function Sidebar() {
       <div className="border-t border-[var(--bd)] px-4 py-4">
         <div className="rounded-lg border border-[rgba(32,201,151,0.22)] bg-[var(--teal-dim)] px-3 py-3">
           <div className="flex items-center gap-2">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--teal)] opacity-40" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--teal)]" />
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--teal)] opacity-75 motion-reduce:animate-none" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--teal)]" />
             </span>
             <p className="text-[11px] font-semibold text-[var(--teal)]">
               Sessão protegida
             </p>
           </div>
-          <p className="mt-1 text-[10px] leading-4 text-[var(--text2)]">
-            Acesso autenticado via BFF e cookie HttpOnly.
-          </p>
         </div>
       </div>
     </aside>
