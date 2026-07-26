@@ -115,35 +115,55 @@ function NavItem({
     <Link
       className={cn(
         "group relative flex min-h-11 items-center gap-3 rounded-lg px-3 text-[13px] font-medium",
-        "transition-all duration-base ease-smooth",
+        "transition-[background-color,color,box-shadow] duration-200 ease-smooth",
+        "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--teal)]",
         active
-          ? "bg-[var(--teal-dim)] text-[var(--text)] shadow-[inset_0_0_0_1px_rgba(32,201,151,0.18)]"
-          : "text-[var(--text2)] hover:bg-[var(--surf3)] hover:text-[var(--text)]"
+          ? "text-[var(--text)] shadow-[inset_0_0_0_1px_rgba(32,201,151,0.22)]"
+          : "text-[var(--text2)] hover:text-[var(--text)] hover:bg-[rgba(32,201,151,0.07)]"
       )}
       href={href}
       onClick={onClick}
       aria-current={active ? "page" : undefined}
+      style={
+        active
+          ? {
+              backgroundImage:
+                "linear-gradient(90deg, rgba(32,201,151,0.17), rgba(32,201,151,0.05) 55%, transparent)"
+            }
+          : undefined
+      }
     >
-      {/* Active left bar */}
-      {active && (
-        <span className="absolute left-0 top-1.5 h-6 w-0.5 rounded-r-full bg-[var(--teal)] shadow-glow-teal" />
-      )}
+      {/* Barra de acento à esquerda: cheia no ativo, "peek" no hover */}
+      <span
+        aria-hidden="true"
+        className={cn(
+          "absolute left-0 top-1/2 w-[3px] -translate-y-1/2 rounded-r-full",
+          "bg-gradient-to-b from-[var(--teal)] to-[rgba(32,201,151,0.35)] transition-all duration-200",
+          active
+            ? "h-6 opacity-100 shadow-glow-teal"
+            : "h-3 opacity-0 group-hover:h-5 group-hover:opacity-60"
+        )}
+      />
 
       <Icon
         aria-hidden="true"
         className={cn(
-          "shrink-0 transition-all duration-base",
+          "shrink-0 transition-all duration-200",
           active
-            ? "text-[var(--teal)]"
-            : "text-[var(--text3)] group-hover:text-[var(--text2)]"
+            ? "text-[var(--teal)] drop-shadow-[0_0_6px_rgba(32,201,151,0.55)]"
+            : "text-[var(--text3)] group-hover:text-[var(--teal)]"
         )}
         size={15}
       />
 
-      <span className="flex-1 truncate">{label}</span>
+      <span className="flex-1 truncate tracking-[0.01em]">{label}</span>
 
+      {/* Indicador "ativo" — ponto com pulso (respeita reduce-motion) */}
       {active && (
-        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--teal)] opacity-80" />
+        <span className="relative flex h-1.5 w-1.5 shrink-0">
+          <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--teal)] opacity-60 motion-safe:animate-ping" />
+          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--teal)]" />
+        </span>
       )}
     </Link>
   );
