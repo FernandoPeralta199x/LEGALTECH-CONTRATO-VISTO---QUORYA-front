@@ -179,7 +179,6 @@ export function NewCaseWizard() {
     <PricingCatalogProvider>
       <WizardShell
         backHref="/cases"
-        description="Preencha as informações do pedido. Ao concluir, o backend operacional cria o request, o caso e os recursos locais vinculados ao mesmo case_id."
         step={step}
         title={STEP_TITLES[step]}
         totalSteps={TOTAL_STEPS}
