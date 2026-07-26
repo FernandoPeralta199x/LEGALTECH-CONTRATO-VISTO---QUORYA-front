@@ -158,12 +158,15 @@ function LoginContent() {
         aria-label="Autenticação"
         className="cv-login-card relative z-10 w-full max-w-md px-4 pb-8 pt-14 backdrop-blur-lg backdrop-saturate-150 sm:px-10 sm:pb-12 sm:pt-16"
       >
-        <div aria-hidden="true" className="absolute -top-11 left-1/2 h-[88px] w-[88px] -translate-x-1/2">
+        <div aria-hidden="true" className="absolute -top-[54px] left-1/2 h-[108px] w-[108px] -translate-x-1/2">
           <div className="absolute -inset-3 animate-pulse rounded-full bg-[radial-gradient(circle,rgba(95,200,152,0.24)_0%,transparent_68%)]" />
           <div className="absolute -inset-[3px] animate-spin-slow rounded-full bg-[conic-gradient(from_0deg,transparent_0%,transparent_28%,rgba(95,200,152,.12)_40%,rgba(95,200,152,.88)_53%,rgba(190,255,225,1)_57%,rgba(95,200,152,.88)_61%,rgba(95,200,152,.12)_72%,transparent_84%,transparent_100%)]" />
-          <div className="cv-login-avatar absolute inset-0 flex items-center justify-center rounded-full bg-[linear-gradient(148deg,#2a6068,#021f23)] text-emerald-100">
-            <ShieldCheck size={34} />
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            alt="Contrato Visto — QUORYA"
+            className="cv-login-avatar absolute inset-0 h-full w-full rounded-full object-cover"
+            src="/logo-badge.png"
+          />
         </div>
 
         <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
