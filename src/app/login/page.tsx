@@ -49,10 +49,14 @@ function LoginContent() {
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const passwordValidation = validatePasswordCreate({
     password: registerPassword
   });
+  const passwordsMatch =
+    registerPassword.length > 0 && registerPassword === confirmPassword;
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -93,6 +97,11 @@ function LoginContent() {
           "A senha não atende aos requisitos mínimos.",
         tone: "error"
       });
+      return;
+    }
+
+    if (registerPassword !== confirmPassword) {
+      setToast({ message: "As senhas não coincidem.", tone: "error" });
       return;
     }
 
@@ -341,6 +350,48 @@ function LoginContent() {
               })}
             </div>
 
+            <Field htmlFor="register-confirm-password" label="Repetir senha" icon={<Lock size={15} />}>
+              <div className="relative">
+                <input
+                  autoComplete="new-password"
+                  className={cn(
+                    `${inputClass} pr-10`,
+                    confirmPassword.length > 0 &&
+                      (passwordsMatch
+                        ? "border-emerald-500/60 focus:border-emerald-500"
+                        : "border-red-500/60 focus:border-red-500")
+                  )}
+                  id="register-confirm-password"
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  placeholder="Repita a senha"
+                  required
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                />
+                <button
+                  aria-label={showConfirmPassword ? "Ocultar senha" : "Mostrar senha"}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text3)] hover:text-[var(--text)]"
+                  onClick={() => setShowConfirmPassword((current) => !current)}
+                  type="button"
+                >
+                  {showConfirmPassword ? <EyeOff aria-hidden="true" size={16} /> : <Eye aria-hidden="true" size={16} />}
+                </button>
+              </div>
+              {confirmPassword.length > 0 && (
+                <p
+                  className={cn(
+                    "flex items-center gap-1.5 text-xs",
+                    passwordsMatch
+                      ? "text-emerald-700 dark:text-emerald-300"
+                      : "text-red-500 dark:text-red-300"
+                  )}
+                >
+                  {passwordsMatch ? <Check size={12} /> : <X size={12} />}
+                  {passwordsMatch ? "As senhas coincidem" : "As senhas não coincidem"}
+                </p>
+              )}
+            </Field>
+
             <Button
               className="w-full"
               icon={<ArrowRight size={16} />}
@@ -428,7 +479,7 @@ const passwordRequirements = [
 ] as const;
 
 const inputClass =
-  "w-full rounded-lg border border-[var(--border)] bg-[var(--surf2)] px-3 py-2.5 text-sm text-[var(--text)] placeholder:text-[var(--text3)] focus:outline-none focus:ring-2 focus:ring-brand-teal/30";
+  "w-full rounded-xl border border-[var(--border)] bg-[var(--surf2)] px-3.5 py-3 text-sm text-[var(--text)] placeholder:text-[var(--text3)] shadow-[inset_0_1px_2px_rgba(0,0,0,0.12)] transition-[border-color,box-shadow] duration-200 hover:border-brand-teal/40 focus:border-[var(--teal)] focus:outline-none focus:ring-2 focus:ring-brand-teal/25";
 
 export default function LoginPage() {
   return (
