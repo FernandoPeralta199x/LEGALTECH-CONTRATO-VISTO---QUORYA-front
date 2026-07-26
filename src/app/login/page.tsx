@@ -17,6 +17,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useState } from "react";
 
 import { Button } from "@/components/Button";
+import { Globe } from "@/components/Globe";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/cn";
 import { errorMessage } from "@/lib/errorMessage";
@@ -454,6 +455,7 @@ function LoginContent() {
             </p>
             <p className="mt-1 text-[13px] text-[var(--text3)]">© 2026</p>
           </div>
+          <Globe size={132} />
         </div>
       </section>
     </main>
