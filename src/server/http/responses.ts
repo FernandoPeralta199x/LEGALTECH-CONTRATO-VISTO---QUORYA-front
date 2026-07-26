@@ -41,6 +41,7 @@ export function requestSecurityErrorResponse(error: unknown): NextResponse {
       message: error.message
     });
   }
+  console.error("[BFF] Erro não tratado:", error);
   return apiError(500, {
     code: "BFF_CONFIGURATION_ERROR",
     message: "Configuração segura do frontend indisponível."

@@ -51,7 +51,10 @@ export function buildBackendUrl(
     throw new Error("Caminho de API não permitido.");
   }
 
-  const segments = pathname.split("/").filter(Boolean);
+  // O backend real (AWS) não usa o prefixo /api/v1 — ele existe só como
+  // convenção pública do frontend/proxy. Removemos os 2 primeiros
+  // segmentos ("api","v1") antes de montar a URL de destino real.
+  const segments = pathname.split("/").filter(Boolean).slice(2);
   const encodedPath = segments
     .map((segment) => {
       const decoded = decodeURIComponent(segment);
