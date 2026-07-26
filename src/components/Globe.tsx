@@ -14,6 +14,32 @@ const DESTS: [number, number][] = [
   [-33.87, 151.21] // Sydney — Oceania
 ];
 
+// Interpolação por great-circle (slerp) para as linhas crescerem sobre a
+// própria trajetória, e não numa reta em lat/long que "torce".
+function toVec([lat, lon]: [number, number]): [number, number, number] {
+  const la = (lat * Math.PI) / 180;
+  const lo = (lon * Math.PI) / 180;
+  return [Math.cos(la) * Math.cos(lo), Math.cos(la) * Math.sin(lo), Math.sin(la)];
+}
+function toLatLon([x, y, z]: [number, number, number]): [number, number] {
+  return [(Math.asin(z) * 180) / Math.PI, (Math.atan2(y, x) * 180) / Math.PI];
+}
+function slerp(
+  a: [number, number, number],
+  b: [number, number, number],
+  t: number
+): [number, number, number] {
+  const dot = Math.max(-1, Math.min(1, a[0] * b[0] + a[1] * b[1] + a[2] * b[2]));
+  const omega = Math.acos(dot);
+  if (omega < 1e-6) return a;
+  const s = Math.sin(omega);
+  const s1 = Math.sin((1 - t) * omega) / s;
+  const s2 = Math.sin(t * omega) / s;
+  return [a[0] * s1 + b[0] * s2, a[1] * s1 + b[1] * s2, a[2] * s1 + b[2] * s2];
+}
+const SP_VEC = toVec(SP);
+const DEST_VECS = DESTS.map(toVec);
+
 /**
  * Globo WebGL decorativo (cobe v2) no teal da marca, com arcos animados de
  * conexão saindo de São Paulo (narrativa "alcance / inteligência para vendas").
@@ -69,28 +95,34 @@ export function Globe({ size = 148 }: { size?: number }) {
       };
     }
 
-    // Pulso por destino: a linha cresce do Brasil até o continente, segura
-    // e recolhe; destinos defasados para fluxo contínuo (transform/opacity
-    // do WebGL, sem reflow). O cobe não anima arcos, então interpolamos o
-    // ponto final de cada arco a cada frame.
+    // Pulso que FLUI e SAI (sem rebobinar): a linha desenha do Brasil ao
+    // continente (q:0→1), segura cheia, e então a cauda descola do Brasil e
+    // voa até o continente (q:1→2). Um "pacote" luminoso (marker) lidera a
+    // ponta; destinos defasados numa varredura oeste→leste. Saída mais
+    // rápida que a entrada. O cobe não anima arcos: recalculamos por frame.
     const easeOut = (x: number) => 1 - (1 - x) * (1 - x);
     const easeIn = (x: number) => x * x;
-    const GROW = 1.1;
-    const HOLD = 1.0;
-    const RETRACT = 0.8;
-    const GAP = 1.5;
-    const CYCLE = GROW + HOLD + RETRACT + GAP;
+    const GROW = 1.0;
+    const HOLD = 0.7;
+    const EXIT = 0.8;
+    const GAP = 1.4;
+    const CYCLE = GROW + HOLD + EXIT + GAP;
     const stagger = CYCLE / DESTS.length;
 
-    const progress = (t: number) => {
+    const travel = (t: number) => {
       const tl = ((t % CYCLE) + CYCLE) % CYCLE;
-      if (tl < GROW) return easeOut(tl / GROW);
-      if (tl < GROW + HOLD) return 1;
-      if (tl < GROW + HOLD + RETRACT) {
-        return 1 - easeIn((tl - GROW - HOLD) / RETRACT);
+      if (tl < GROW) return easeOut(tl / GROW); // 0→1 (desenha)
+      if (tl < GROW + HOLD) return 1; // segura cheia
+      if (tl < GROW + HOLD + EXIT) {
+        return 1 + easeIn((tl - GROW - HOLD) / EXIT); // 1→2 (sai)
       }
-      return 0;
+      return -1; // inativo
     };
+
+    const baseMarkers = [
+      { location: SP, size: 0.09 },
+      ...DESTS.map((location) => ({ location, size: 0.05 }))
+    ];
 
     const frame = () => {
       phi += 0.0035;
@@ -98,16 +130,19 @@ export function Globe({ size = 148 }: { size?: number }) {
         typeof performance !== "undefined" ? performance.now() : Date.now();
       const elapsed = (now - start) / 1000;
       const arcs: { from: [number, number]; to: [number, number] }[] = [];
+      const tips: { location: [number, number]; size: number }[] = [];
       for (let i = 0; i < DESTS.length; i++) {
-        const p = progress(elapsed - i * stagger);
-        if (p < 0.02) continue;
-        const dest = DESTS[i];
-        arcs.push({
-          from: SP,
-          to: [SP[0] + (dest[0] - SP[0]) * p, SP[1] + (dest[1] - SP[1]) * p]
-        });
+        const q = travel(elapsed - i * stagger);
+        if (q < 0) continue;
+        const head = Math.min(q, 1);
+        const tail = Math.max(q - 1, 0);
+        if (head - tail < 0.02) continue;
+        const from = toLatLon(slerp(SP_VEC, DEST_VECS[i], tail));
+        const to = toLatLon(slerp(SP_VEC, DEST_VECS[i], head));
+        arcs.push({ from, to });
+        if (head < 0.999) tips.push({ location: to, size: 0.06 });
       }
-      globe.update({ phi, arcs });
+      globe.update({ phi, arcs, markers: [...baseMarkers, ...tips] });
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
