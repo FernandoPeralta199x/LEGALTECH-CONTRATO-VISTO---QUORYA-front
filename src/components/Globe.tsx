@@ -61,8 +61,6 @@ export function Globe({ size = 148 }: { size?: number }) {
     const start =
       typeof performance !== "undefined" ? performance.now() : Date.now();
 
-    const fullArcs = DESTS.map((to) => ({ from: SP, to }));
-
     const globe = createGlobe(canvas, {
       devicePixelRatio: 2,
       width: size * 2,
@@ -80,16 +78,12 @@ export function Globe({ size = 148 }: { size?: number }) {
       markers: [
         { location: SP, size: 0.09 },
         ...DESTS.map((location) => ({ location, size: 0.05 }))
-      ],
-      arcs: fullArcs,
-      arcColor: [0.42, 1, 0.8],
-      arcWidth: 0.4,
-      arcHeight: 0.4
+      ]
     });
 
-    // Reduced-motion: globo estático com todas as linhas já desenhadas.
+    // Reduced-motion: globo estático só com os nós dos continentes.
     if (reduceMotion) {
-      globe.update({ phi: 0.5, arcs: fullArcs });
+      globe.update({ phi: 0.5 });
       return () => {
         globe.destroy();
       };
@@ -102,9 +96,8 @@ export function Globe({ size = 148 }: { size?: number }) {
     // arco, então o rastro é montado com markers por frame.
     const easeOut = (x: number) => 1 - (1 - x) * (1 - x);
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-    const TAIL = 0.4; // extensão total do meteoro (fração do caminho)
-    const CORE = 0.12; // núcleo brilhante contínuo logo atrás da cabeça
-    const TRAIL_N = 7; // partículas do rastro que esmaece
+    const TAIL = 0.4; // extensão total do rastro (fração do caminho)
+    const TRAIL_N = 11; // partículas do rastro que esmaece
     const TRAVEL = 1.7; // duração do voo
     const GAP = 2.1; // intervalo entre disparos
     const CYCLE = TRAVEL + GAP;
@@ -134,41 +127,35 @@ export function Globe({ size = 148 }: { size?: number }) {
       const now =
         typeof performance !== "undefined" ? performance.now() : Date.now();
       const elapsed = (now - start) / 1000;
-      const arcs: { from: [number, number]; to: [number, number] }[] = [];
       const markers: Mk[] = baseMarkers.slice();
       for (let i = 0; i < DESTS.length; i++) {
         const q = headAt(elapsed - i * stagger);
         if (q < 0) continue;
         const head = Math.min(q, 1);
         const end = Math.max(q - TAIL, 0);
-        if (head - end < 0.02) continue;
-        const coreStart = Math.max(head - CORE, end);
-        // núcleo brilhante (linha curta e nítida na frente)
-        arcs.push({ from: at(i, coreStart), to: at(i, head) });
-        // rastro que esmaece atrás do núcleo
-        const trailSpan = coreStart - end;
-        if (trailSpan > 0.004) {
-          for (let k = 1; k <= TRAIL_N; k++) {
-            const u = k / TRAIL_N; // 0→1 ao longo do rastro
-            const a = 1 - u; // brilho: 1 perto do núcleo, 0 na cauda
-            const a2 = a * a;
-            markers.push({
-              location: at(i, coreStart - u * trailSpan),
-              size: lerp(0.008, 0.03, a),
-              color: [lerp(0.12, 0.5, a2), lerp(0.26, 1, a2), lerp(0.2, 0.85, a2)]
-            });
-          }
+        const span = head - end;
+        if (span < 0.02) continue;
+        // rastro só de partículas, da cabeça ao fim, esmaecendo (sem linha)
+        for (let k = 1; k <= TRAIL_N; k++) {
+          const u = k / TRAIL_N; // 0→1 (0 = cabeça)
+          const a = 1 - u; // brilho: 1 perto da cabeça, 0 na cauda
+          const a2 = a * a;
+          markers.push({
+            location: at(i, head - u * span),
+            size: lerp(0.006, 0.03, a),
+            color: [lerp(0.1, 0.5, a2), lerp(0.22, 1, a2), lerp(0.18, 0.85, a2)]
+          });
         }
         // cabeça branco-quente
         if (head < 0.999) {
           markers.push({
             location: at(i, head),
-            size: 0.055,
+            size: 0.052,
             color: [0.85, 1, 0.95]
           });
         }
       }
-      globe.update({ phi, arcs, markers });
+      globe.update({ phi, markers });
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
