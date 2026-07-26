@@ -6,10 +6,12 @@ import {
   Eye,
   EyeOff,
   Lock,
+  LogIn,
   Mail,
   ShieldCheck,
   Sparkles,
   User,
+  UserPlus,
   X
 } from "lucide-react";
 import Link from "next/link";
@@ -179,31 +181,49 @@ function LoginContent() {
           </span>
         </div>
 
-        <div className="mb-6 grid grid-cols-2 gap-1 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] p-1">
-          <button
+        <div
+          className="relative mb-6 flex rounded-xl border border-[var(--bd)] bg-[var(--surf2)] p-1 shadow-[inset_0_1px_2px_rgba(0,0,0,0.28)]"
+          role="tablist"
+        >
+          {/* Pílula deslizante: indicador ativo com gradiente + glow e realce glassy */}
+          <span
+            aria-hidden="true"
             className={cn(
-              "rounded-md px-3 py-2 text-xs font-semibold transition",
-              tab === "login"
-                ? "bg-brand-teal text-white shadow"
-                : "text-[var(--text2)] hover:text-[var(--text)]"
+              "pointer-events-none absolute inset-y-1 left-1 w-[calc(50%_-_0.25rem)] rounded-lg",
+              "bg-[linear-gradient(135deg,var(--teal),#0e9e77)]",
+              "shadow-[0_6px_18px_-4px_rgba(32,201,151,0.5),inset_0_1px_0_rgba(255,255,255,0.18)]",
+              "transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none",
+              tab === "register" && "translate-x-full"
             )}
+          />
+          <button
             aria-pressed={tab === "login"}
+            className={cn(
+              "relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-xs font-semibold tracking-wide",
+              "transition-[color,background-color,transform] duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40",
+              tab === "login"
+                ? "text-white"
+                : "text-[var(--text2)] hover:bg-white/[0.04] hover:text-[var(--text)]"
+            )}
             onClick={() => switchTab("login")}
             type="button"
           >
+            <LogIn aria-hidden="true" size={13} />
             Login
           </button>
           <button
-            className={cn(
-              "rounded-md px-3 py-2 text-xs font-semibold transition",
-              tab === "register"
-                ? "bg-brand-teal text-white shadow"
-                : "text-[var(--text2)] hover:text-[var(--text)]"
-            )}
             aria-pressed={tab === "register"}
+            className={cn(
+              "relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-xs font-semibold tracking-wide",
+              "transition-[color,background-color,transform] duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40",
+              tab === "register"
+                ? "text-white"
+                : "text-[var(--text2)] hover:bg-white/[0.04] hover:text-[var(--text)]"
+            )}
             onClick={() => switchTab("register")}
             type="button"
           >
+            <UserPlus aria-hidden="true" size={13} />
             Cadastro
           </button>
         </div>
