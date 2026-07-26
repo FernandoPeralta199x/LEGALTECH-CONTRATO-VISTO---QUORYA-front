@@ -95,28 +95,22 @@ export function Globe({ size = 148 }: { size?: number }) {
       };
     }
 
-    // Pulso que FLUI e SAI (sem rebobinar): a linha desenha do Brasil ao
-    // continente (q:0→1), segura cheia, e então a cauda descola do Brasil e
-    // voa até o continente (q:1→2). Um "pacote" luminoso (marker) lidera a
-    // ponta; destinos defasados numa varredura oeste→leste. Saída mais
-    // rápida que a entrada. O cobe não anima arcos: recalculamos por frame.
+    // "Estrela cadente": um traço curto (cabeça + rastro) dispara do Brasil e
+    // viaja pelo great-circle até o continente, sumindo ao chegar — a linha
+    // NÃO é contínua. Destinos defasados (oeste→leste), intermitentes.
+    // O cobe não anima arcos: recalculamos cabeça/cauda por frame.
     const easeOut = (x: number) => 1 - (1 - x) * (1 - x);
-    const easeIn = (x: number) => x * x;
-    const GROW = 1.0;
-    const HOLD = 0.7;
-    const EXIT = 0.8;
-    const GAP = 1.4;
-    const CYCLE = GROW + HOLD + EXIT + GAP;
+    const TAIL = 0.32; // comprimento do rastro (fração do caminho)
+    const TRAVEL = 1.5; // duração do voo
+    const GAP = 2.3; // intervalo entre disparos
+    const CYCLE = TRAVEL + GAP;
     const stagger = CYCLE / DESTS.length;
 
-    const travel = (t: number) => {
+    // posição da cabeça no caminho (0 → 1+TAIL); < 0 = inativo (intervalo)
+    const headAt = (t: number) => {
       const tl = ((t % CYCLE) + CYCLE) % CYCLE;
-      if (tl < GROW) return easeOut(tl / GROW); // 0→1 (desenha)
-      if (tl < GROW + HOLD) return 1; // segura cheia
-      if (tl < GROW + HOLD + EXIT) {
-        return 1 + easeIn((tl - GROW - HOLD) / EXIT); // 1→2 (sai)
-      }
-      return -1; // inativo
+      if (tl >= TRAVEL) return -1;
+      return easeOut(tl / TRAVEL) * (1 + TAIL);
     };
 
     const baseMarkers = [
@@ -132,15 +126,15 @@ export function Globe({ size = 148 }: { size?: number }) {
       const arcs: { from: [number, number]; to: [number, number] }[] = [];
       const tips: { location: [number, number]; size: number }[] = [];
       for (let i = 0; i < DESTS.length; i++) {
-        const q = travel(elapsed - i * stagger);
+        const q = headAt(elapsed - i * stagger);
         if (q < 0) continue;
         const head = Math.min(q, 1);
-        const tail = Math.max(q - 1, 0);
+        const tail = Math.max(q - TAIL, 0);
         if (head - tail < 0.02) continue;
-        const from = toLatLon(slerp(SP_VEC, DEST_VECS[i], tail));
         const to = toLatLon(slerp(SP_VEC, DEST_VECS[i], head));
-        arcs.push({ from, to });
-        if (head < 0.999) tips.push({ location: to, size: 0.06 });
+        arcs.push({ from: toLatLon(slerp(SP_VEC, DEST_VECS[i], tail)), to });
+        // cabeça luminosa (a "estrela") enquanto o rastro viaja
+        if (head < 0.999) tips.push({ location: to, size: 0.07 });
       }
       globe.update({ phi, arcs, markers: [...baseMarkers, ...tips] });
       raf = requestAnimationFrame(frame);
