@@ -353,13 +353,6 @@ function LoginContent() {
           </form>
         )}
 
-        <div className="mt-6 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-[11px] leading-5 text-amber-200">
-          <strong className="text-amber-100">Acesso protegido:</strong>{" "}
-          o token de autenticação permanece cifrado em cookie HttpOnly e não é
-          exposto ao JavaScript da página. Ações de escrita também exigem
-          validação de origem e proteção CSRF.
-        </div>
-
         <div className="mt-6 flex flex-col items-center gap-2 border-t border-[var(--bd)] pt-5">
           <div className="relative h-16 w-16">
             <span
