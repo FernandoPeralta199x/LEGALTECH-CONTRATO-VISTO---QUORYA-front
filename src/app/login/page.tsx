@@ -158,7 +158,7 @@ function LoginContent() {
 
       <section
         aria-label="Autenticação"
-        className="cv-login-card relative z-10 w-full max-w-md px-4 pb-8 pt-14 backdrop-blur-lg backdrop-saturate-150 sm:px-10 sm:pb-12 sm:pt-16"
+        className="cv-login-card relative z-10 w-full max-w-md px-4 pb-6 pt-12 backdrop-blur-lg backdrop-saturate-150 sm:px-9 sm:pb-8 sm:pt-14"
       >
         <div aria-hidden="true" className="absolute -top-[54px] left-1/2 h-[108px] w-[108px] -translate-x-1/2">
           <div className="absolute -inset-3 animate-pulse rounded-full bg-[radial-gradient(circle,rgba(95,200,152,0.24)_0%,transparent_68%)]" />
@@ -171,7 +171,7 @@ function LoginContent() {
           />
         </div>
 
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <p className="text-[10px] font-bold uppercase text-[var(--text3)]">
             Acesso à plataforma
           </p>
@@ -182,7 +182,7 @@ function LoginContent() {
         </div>
 
         <div
-          className="relative mb-6 flex rounded-xl border border-[var(--bd)] bg-[var(--surf2)] p-1 shadow-[inset_0_1px_2px_rgba(0,0,0,0.28)]"
+          className="relative mb-5 flex rounded-xl border border-[var(--bd)] bg-[var(--surf2)] p-1 shadow-[inset_0_1px_2px_rgba(0,0,0,0.28)]"
           role="tablist"
         >
           {/* Pílula deslizante: indicador ativo com gradiente + glow e realce glassy */}
@@ -249,7 +249,7 @@ function LoginContent() {
 
         {tab === "login" ? (
           <form
-            className="space-y-4 duration-200 animate-in fade-in slide-in-from-bottom-1 motion-reduce:animate-none"
+            className="space-y-3 duration-200 animate-in fade-in slide-in-from-bottom-1 motion-reduce:animate-none"
             onSubmit={handleLogin}
           >
             <Field label="E-mail" icon={<Mail size={15} />} required>
@@ -299,7 +299,7 @@ function LoginContent() {
           </form>
         ) : (
           <form
-            className="space-y-4 duration-200 animate-in fade-in slide-in-from-bottom-1 motion-reduce:animate-none"
+            className="space-y-3 duration-200 animate-in fade-in slide-in-from-bottom-1 motion-reduce:animate-none"
             onSubmit={handleRegister}
           >
             <Field label="Nome completo" icon={<User size={15} />} required>
@@ -456,8 +456,8 @@ function LoginContent() {
           </form>
         )}
 
-        <div className="mt-6 flex flex-col items-center gap-2 border-t border-[var(--bd)] pt-5">
-          <div className="relative h-16 w-16">
+        <div className="mt-5 flex flex-col items-center gap-1.5 border-t border-[var(--bd)] pt-4">
+          <div className="relative h-12 w-12">
             <span
               aria-hidden="true"
               className="absolute -inset-[3px] rounded-full border border-[rgba(95,200,152,0.4)]"
@@ -465,7 +465,7 @@ function LoginContent() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               alt="QUORYA — Inteligência para Vendas"
-              className="h-16 w-16 rounded-full object-cover"
+              className="h-12 w-12 rounded-full object-cover"
               src="/quorya-emblem.png"
             />
           </div>
@@ -476,9 +476,12 @@ function LoginContent() {
             <p className="mt-1 text-[13px] text-[var(--teal)]">
               Inteligência para Vendas
             </p>
-            <p className="mt-1 text-[13px] text-[var(--text3)]">© 2026</p>
+            <p className="mt-1 text-[13px] text-[var(--text2)]">
+              Um produto Quorya
+            </p>
+            <p className="mt-3 text-[13px] text-[var(--text3)]">© 2026</p>
           </div>
-          <Globe size={132} />
+          <Globe size={104} />
         </div>
       </section>
     </main>
