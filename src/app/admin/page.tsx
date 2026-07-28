@@ -62,7 +62,7 @@ export default function AdminPage() {
               </Link>
             </>
           }
-          description="Visão de governança local do MVP. Convites, gerenciamento real de usuários, RBAC, sessões, auditoria e billing dependem de backend e auth aprovados para produção."
+          description="Gestão de equipe, papéis e permissões da operação."
           eyebrow="Administração"
           title="Governança operacional"
         />
@@ -73,20 +73,19 @@ export default function AdminPage() {
             <Lock className="mt-0.5 shrink-0 text-amber-400" size={16} />
             <div className="min-w-0">
               <p className="text-sm font-semibold text-[var(--text)]">
-                Governança local — operação administrativa real em construção
+                Recursos em desenvolvimento
               </p>
               <p className="mt-1 text-xs leading-5 text-[var(--text2)]">
-                Esta tela é uma leitura do MVP local. Os recursos abaixo dependem de
-                backend/auth/serviços e serão habilitados numa etapa futura:
+                Os recursos abaixo serão habilitados em breve:
               </p>
               <div className="mt-2.5 flex flex-wrap gap-1.5">
                 {[
                   "Equipe & convites",
                   "Organizações / Tenants",
-                  "Auditoria real",
+                  "Auditoria",
                   "Billing",
-                  "Sessões reais",
-                  "RBAC real",
+                  "Sessões",
+                  "RBAC",
                   "Notificações"
                 ].map((item) => (
                   <span
@@ -107,8 +106,7 @@ export default function AdminPage() {
             Atalhos da operação
           </p>
           <p className="mt-1 text-xs leading-5 text-[var(--text2)]">
-            Revise a operação sem sair da governança; estes atalhos não criam vínculo
-            administrativo novo nem acionam serviços externos.
+            Acesse rapidamente as áreas da operação.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {[
@@ -132,26 +130,26 @@ export default function AdminPage() {
 
         <div>
           <Card
-            title="Roles e permissões como referência local"
-            description="Leitura conceitual dos papéis do MVP. Não altera guards, claims, RBAC técnico ou permissões reais."
+            title="Papéis e permissões"
+            description="Visão geral dos papéis de acesso da operação."
           >
             <div className="grid gap-3 sm:grid-cols-2">
               {[
                 {
                   role: "admin",
-                  desc: "Referência de governança: organiza a leitura local de equipe, organização e limites do MVP."
+                  desc: "Acesso total: gestão de equipe, organização e limites da operação."
                 },
                 {
                   role: "analyst",
-                  desc: "Referência operacional: acompanha triagem e revisão conceitual sem aprovação persistida."
+                  desc: "Acompanha a triagem e a revisão dos casos."
                 },
                 {
                   role: "client",
-                  desc: "Referência de relacionamento: inicia pedidos, acompanha casos e documentos quando o fluxo existir."
+                  desc: "Inicia pedidos e acompanha os próprios casos e documentos."
                 },
                 {
                   role: "viewer",
-                  desc: "Referência de leitura: acompanha informações sem permissões técnicas novas nesta tela."
+                  desc: "Acesso somente leitura às informações."
                 }
               ].map((item, index) => (
                 <div
@@ -176,13 +174,12 @@ export default function AdminPage() {
                 <TrendingUp className="mt-0.5 shrink-0 text-brand-teal" size={16} />
                 <div>
                   <p className="text-xs font-semibold text-[var(--text)]">
-                    Roadmap administrativo
+                    Próximos recursos
                   </p>
                   <p className="mt-1 text-xs leading-5 text-[var(--text2)]">
-                    Membros funcionais, convite/cadastro por e-mail, verificação
-                    de e-mail, criação de senha, sessões reais com localização
-                    aproximada e notificações por e-mail/WhatsApp ficam para uma
-                    etapa com backend, auth e serviços externos definidos.
+                    Gestão de membros, convites por e-mail, criação de senha,
+                    sessões com localização e notificações por e-mail/WhatsApp
+                    serão habilitadas em breve.
                   </p>
                 </div>
               </div>

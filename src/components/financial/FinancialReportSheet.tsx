@@ -235,8 +235,8 @@ export function FinancialReportSheet({ report }: { report: ExecutiveReport }) {
         <KeyVal
           rows={[
             ["Receita bruta", money(o.gross_cents)],
-            ["Receita líquida", o.net_cents === null ? "— (sem fonte nesta fase)" : money(o.net_cents)],
-            ["Margem estimada", o.margin_cents === null ? "— (sem fonte nesta fase)" : money(o.margin_cents)]
+            ["Receita líquida", o.net_cents === null ? "— (indisponível)" : money(o.net_cents)],
+            ["Margem estimada", o.margin_cents === null ? "— (indisponível)" : money(o.margin_cents)]
           ]}
         />
       </Section>

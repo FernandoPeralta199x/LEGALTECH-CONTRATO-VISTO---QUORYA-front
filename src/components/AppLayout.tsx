@@ -3,7 +3,6 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 
-import { EnvBanner } from "@/components/EnvBanner";
 import { Header } from "@/components/Header";
 import { MobileSidebar, Sidebar } from "@/components/Sidebar";
 
@@ -31,7 +30,6 @@ export function AppLayout({ children }: AppLayoutProps) {
             id="conteudo-principal"
             tabIndex={-1}
           >
-            <EnvBanner />
             {children}
           </main>
         </div>

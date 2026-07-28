@@ -6,10 +6,12 @@ import {
   Eye,
   EyeOff,
   Lock,
+  LogIn,
   Mail,
   ShieldCheck,
   Sparkles,
   User,
+  UserPlus,
   X
 } from "lucide-react";
 import Link from "next/link";
@@ -17,6 +19,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useState } from "react";
 
 import { Button } from "@/components/Button";
+import { Globe } from "@/components/Globe";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/cn";
 import { errorMessage } from "@/lib/errorMessage";
@@ -49,10 +52,29 @@ function LoginContent() {
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const passwordValidation = validatePasswordCreate({
     password: registerPassword
   });
+  const passwordsMatch =
+    registerPassword.length > 0 && registerPassword === confirmPassword;
+  const strengthScore =
+    registerPassword.length === 0
+      ? 0
+      : Object.values(passwordValidation.requirements).filter(Boolean).length;
+  const strengthMeta =
+    strengthScore >= 5
+      ? { label: "Forte", text: "text-emerald-600 dark:text-emerald-300", bar: "bg-emerald-500" }
+      : strengthScore >= 3
+        ? { label: "Média", text: "text-amber-600 dark:text-amber-300", bar: "bg-amber-500" }
+        : { label: "Fraca", text: "text-red-500 dark:text-red-300", bar: "bg-red-500" };
+  const canSubmitRegister =
+    name.trim().length > 0 &&
+    registerEmail.length > 0 &&
+    passwordValidation.valid &&
+    passwordsMatch;
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -84,17 +106,8 @@ function LoginContent() {
 
   async function handleRegister(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (loading) return;
-
-    if (!passwordValidation.valid) {
-      setToast({
-        message:
-          passwordValidation.errors.newPassword ??
-          "A senha não atende aos requisitos mínimos.",
-        tone: "error"
-      });
-      return;
-    }
+    // O botão fica desabilitado enquanto inválido; este guard é só defesa (ex.: Enter).
+    if (loading || !canSubmitRegister) return;
 
     setToast(null);
     setLoading(true);
@@ -145,17 +158,20 @@ function LoginContent() {
 
       <section
         aria-label="Autenticação"
-        className="cv-login-card relative z-10 w-full max-w-md px-4 pb-8 pt-14 backdrop-blur-lg backdrop-saturate-150 sm:px-10 sm:pb-12 sm:pt-16"
+        className="cv-login-card relative z-10 w-full max-w-md px-4 pb-6 pt-12 backdrop-blur-lg backdrop-saturate-150 sm:px-9 sm:pb-8 sm:pt-14"
       >
-        <div aria-hidden="true" className="absolute -top-11 left-1/2 h-[88px] w-[88px] -translate-x-1/2">
+        <div aria-hidden="true" className="absolute -top-[54px] left-1/2 h-[108px] w-[108px] -translate-x-1/2">
           <div className="absolute -inset-3 animate-pulse rounded-full bg-[radial-gradient(circle,rgba(95,200,152,0.24)_0%,transparent_68%)]" />
           <div className="absolute -inset-[3px] animate-spin-slow rounded-full bg-[conic-gradient(from_0deg,transparent_0%,transparent_28%,rgba(95,200,152,.12)_40%,rgba(95,200,152,.88)_53%,rgba(190,255,225,1)_57%,rgba(95,200,152,.88)_61%,rgba(95,200,152,.12)_72%,transparent_84%,transparent_100%)]" />
-          <div className="cv-login-avatar absolute inset-0 flex items-center justify-center rounded-full bg-[linear-gradient(148deg,#2a6068,#021f23)] text-emerald-100">
-            <ShieldCheck size={34} />
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            alt="Contrato Visto — QUORYA"
+            className="cv-login-avatar absolute inset-0 h-full w-full rounded-full object-cover"
+            src="/logo-badge.png"
+          />
         </div>
 
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <p className="text-[10px] font-bold uppercase text-[var(--text3)]">
             Acesso à plataforma
           </p>
@@ -165,31 +181,49 @@ function LoginContent() {
           </span>
         </div>
 
-        <div className="mb-6 grid grid-cols-2 gap-1 rounded-lg border border-[var(--bd)] bg-[var(--surf2)] p-1">
-          <button
+        <div
+          className="relative mb-5 flex rounded-xl border border-[var(--bd)] bg-[var(--surf2)] p-1 shadow-[inset_0_1px_2px_rgba(0,0,0,0.28)]"
+          role="tablist"
+        >
+          {/* Pílula deslizante: indicador ativo com gradiente + glow e realce glassy */}
+          <span
+            aria-hidden="true"
             className={cn(
-              "rounded-md px-3 py-2 text-xs font-semibold transition",
-              tab === "login"
-                ? "bg-brand-teal text-white shadow"
-                : "text-[var(--text2)] hover:text-[var(--text)]"
+              "pointer-events-none absolute inset-y-1 left-1 w-[calc(50%_-_0.25rem)] rounded-lg",
+              "bg-[linear-gradient(135deg,var(--teal),#0e9e77)]",
+              "shadow-[0_6px_18px_-4px_rgba(32,201,151,0.5),inset_0_1px_0_rgba(255,255,255,0.18)]",
+              "transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none",
+              tab === "register" && "translate-x-full"
             )}
+          />
+          <button
             aria-pressed={tab === "login"}
+            className={cn(
+              "relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-xs font-semibold tracking-wide",
+              "transition-[color,background-color,transform] duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40",
+              tab === "login"
+                ? "text-white"
+                : "text-[var(--text2)] hover:bg-white/[0.04] hover:text-[var(--text)]"
+            )}
             onClick={() => switchTab("login")}
             type="button"
           >
+            <LogIn aria-hidden="true" size={13} />
             Login
           </button>
           <button
-            className={cn(
-              "rounded-md px-3 py-2 text-xs font-semibold transition",
-              tab === "register"
-                ? "bg-brand-teal text-white shadow"
-                : "text-[var(--text2)] hover:text-[var(--text)]"
-            )}
             aria-pressed={tab === "register"}
+            className={cn(
+              "relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-xs font-semibold tracking-wide",
+              "transition-[color,background-color,transform] duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/40",
+              tab === "register"
+                ? "text-white"
+                : "text-[var(--text2)] hover:bg-white/[0.04] hover:text-[var(--text)]"
+            )}
             onClick={() => switchTab("register")}
             type="button"
           >
+            <UserPlus aria-hidden="true" size={13} />
             Cadastro
           </button>
         </div>
@@ -214,8 +248,11 @@ function LoginContent() {
         )}
 
         {tab === "login" ? (
-          <form className="space-y-4" onSubmit={handleLogin}>
-            <Field label="E-mail" icon={<Mail size={15} />}>
+          <form
+            className="space-y-3 duration-200 animate-in fade-in slide-in-from-bottom-1 motion-reduce:animate-none"
+            onSubmit={handleLogin}
+          >
+            <Field label="E-mail" icon={<Mail size={15} />} required>
               <input
                 autoComplete="email"
                 className={inputClass}
@@ -227,7 +264,7 @@ function LoginContent() {
               />
             </Field>
 
-            <Field htmlFor="login-password" label="Senha" icon={<Lock size={15} />}>
+            <Field htmlFor="login-password" label="Senha" icon={<Lock size={15} />} required>
               <div className="relative">
                 <input
                   autoComplete="current-password"
@@ -261,8 +298,11 @@ function LoginContent() {
             </Button>
           </form>
         ) : (
-          <form className="space-y-4" onSubmit={handleRegister}>
-            <Field label="Nome completo" icon={<User size={15} />}>
+          <form
+            className="space-y-3 duration-200 animate-in fade-in slide-in-from-bottom-1 motion-reduce:animate-none"
+            onSubmit={handleRegister}
+          >
+            <Field label="Nome completo" icon={<User size={15} />} required>
               <input
                 autoComplete="name"
                 className={inputClass}
@@ -274,7 +314,7 @@ function LoginContent() {
               />
             </Field>
 
-            <Field label="E-mail" icon={<Mail size={15} />}>
+            <Field label="E-mail" icon={<Mail size={15} />} required>
               <input
                 autoComplete="email"
                 className={inputClass}
@@ -286,7 +326,7 @@ function LoginContent() {
               />
             </Field>
 
-            <Field htmlFor="register-password" label="Senha" icon={<Lock size={15} />}>
+            <Field htmlFor="register-password" label="Senha" icon={<Lock size={15} />} required>
               <div className="relative">
                 <input
                   autoComplete="new-password"
@@ -308,6 +348,68 @@ function LoginContent() {
                 </button>
               </div>
             </Field>
+
+            <Field htmlFor="register-confirm-password" label="Repetir senha" icon={<Lock size={15} />} required>
+              <div className="relative">
+                <input
+                  autoComplete="new-password"
+                  className={cn(
+                    `${inputClass} pr-10`,
+                    confirmPassword.length > 0 &&
+                      (passwordsMatch
+                        ? "border-emerald-500/60 focus:border-emerald-500"
+                        : "border-red-500/60 focus:border-red-500")
+                  )}
+                  id="register-confirm-password"
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  placeholder="Repita a senha"
+                  required
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                />
+                <button
+                  aria-label={showConfirmPassword ? "Ocultar senha" : "Mostrar senha"}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text3)] hover:text-[var(--text)]"
+                  onClick={() => setShowConfirmPassword((current) => !current)}
+                  type="button"
+                >
+                  {showConfirmPassword ? <EyeOff aria-hidden="true" size={16} /> : <Eye aria-hidden="true" size={16} />}
+                </button>
+              </div>
+              {confirmPassword.length > 0 && (
+                <p
+                  className={cn(
+                    "flex items-center gap-1.5 text-xs",
+                    passwordsMatch
+                      ? "text-emerald-700 dark:text-emerald-300"
+                      : "text-red-500 dark:text-red-300"
+                  )}
+                >
+                  {passwordsMatch ? <Check size={12} /> : <X size={12} />}
+                  {passwordsMatch ? "As senhas coincidem" : "As senhas não coincidem"}
+                </p>
+              )}
+            </Field>
+
+            {registerPassword.length > 0 && (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-[var(--text3)]">Força da senha</span>
+                  <span className={cn("font-semibold", strengthMeta.text)}>
+                    {strengthMeta.label}
+                  </span>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--surf3)]">
+                  <div
+                    className={cn(
+                      "h-full rounded-full transition-all duration-300",
+                      strengthMeta.bar
+                    )}
+                    style={{ width: `${(strengthScore / 5) * 100}%` }}
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="space-y-1.5">
               {passwordRequirements.map(([key, label]) => {
@@ -343,6 +445,7 @@ function LoginContent() {
 
             <Button
               className="w-full"
+              disabled={!canSubmitRegister}
               icon={<ArrowRight size={16} />}
               loading={loading}
               type="submit"
@@ -353,15 +456,8 @@ function LoginContent() {
           </form>
         )}
 
-        <div className="mt-6 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-[11px] leading-5 text-amber-200">
-          <strong className="text-amber-100">Acesso protegido:</strong>{" "}
-          o token de autenticação permanece cifrado em cookie HttpOnly e não é
-          exposto ao JavaScript da página. Ações de escrita também exigem
-          validação de origem e proteção CSRF.
-        </div>
-
-        <div className="mt-6 flex flex-col items-center gap-2 border-t border-[var(--bd)] pt-5">
-          <div className="relative h-16 w-16">
+        <div className="mt-5 flex flex-col items-center gap-1.5 border-t border-[var(--bd)] pt-4">
+          <div className="relative h-12 w-12">
             <span
               aria-hidden="true"
               className="absolute -inset-[3px] rounded-full border border-[rgba(95,200,152,0.4)]"
@@ -369,7 +465,7 @@ function LoginContent() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               alt="QUORYA — Inteligência para Vendas"
-              className="h-16 w-16 rounded-full object-cover"
+              className="h-12 w-12 rounded-full object-cover"
               src="/quorya-emblem.png"
             />
           </div>
@@ -380,8 +476,12 @@ function LoginContent() {
             <p className="mt-1 text-[13px] text-[var(--teal)]">
               Inteligência para Vendas
             </p>
-            <p className="mt-1 text-[13px] text-[var(--text3)]">© 2026</p>
+            <p className="mt-1 text-[13px] text-[var(--text2)]">
+              Um produto Quorya
+            </p>
+            <p className="mt-3 text-[13px] text-[var(--text3)]">© 2026</p>
           </div>
+          <Globe size={104} />
         </div>
       </section>
     </main>
@@ -392,17 +492,24 @@ function Field({
   children,
   htmlFor,
   icon,
-  label
+  label,
+  required
 }: {
   children: React.ReactNode;
   htmlFor?: string;
   icon: React.ReactNode;
   label: string;
+  required?: boolean;
 }) {
   const labelText = (
     <span className="flex items-center gap-1.5 text-xs font-medium text-[var(--text)]">
       {icon}
       {label}
+      {required && (
+        <span aria-hidden="true" className="text-red-500">
+          *
+        </span>
+      )}
     </span>
   );
   // Com htmlFor: associação EXPLÍCITA (o <label> aponta só ao input; controles
@@ -435,7 +542,7 @@ const passwordRequirements = [
 ] as const;
 
 const inputClass =
-  "w-full rounded-lg border border-[var(--border)] bg-[var(--surf2)] px-3 py-2.5 text-sm text-[var(--text)] placeholder:text-[var(--text3)] focus:outline-none focus:ring-2 focus:ring-brand-teal/30";
+  "w-full rounded-xl border border-[var(--border)] bg-[var(--surf2)] px-3.5 py-3 text-sm text-[var(--text)] placeholder:text-[var(--text3)] shadow-[inset_0_1px_2px_rgba(0,0,0,0.12)] transition-[border-color,box-shadow] duration-200 hover:border-brand-teal/40 focus:border-[var(--teal)] focus:outline-none focus:ring-2 focus:ring-brand-teal/25";
 
 export default function LoginPage() {
   return (

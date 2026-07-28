@@ -52,7 +52,7 @@ export function WizardShell({
               </p>
             )}
             <p className="text-xs text-[var(--text3)]">
-              Etapa {step} de {totalSteps} · dados fictícios; ao concluir, cria o caso no backend local.
+              Etapa {step} de {totalSteps} · ao concluir, o caso é criado.
             </p>
           </div>
         </div>

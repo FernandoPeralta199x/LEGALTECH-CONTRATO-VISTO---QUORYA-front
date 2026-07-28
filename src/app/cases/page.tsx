@@ -119,18 +119,18 @@ export default function CasesPage() {
               </Button>
             </div>
           }
-          description="Acompanhe registros existentes, abra detalhes para analisar e editar, e use Novo Pedido como fluxo principal de entrada do MVP local."
+          description="Acompanhe seus casos, abra os detalhes para analisar e editar, ou crie um novo pedido."
           eyebrow="Casos"
           title="Operação de casos"
         />
 
         {fallbackReason && (
-          <Notification title="Fallback local ativo" tone="warning">
-            A API local não respondeu. A lista usa dados demonstrativos e não substitui validação com PostgreSQL local.
+          <Notification title="Sem conexão com o servidor" tone="warning">
+            Não foi possível conectar ao servidor. A lista pode estar desatualizada.
           </Notification>
         )}
         {successMessage && (
-          <Notification onDismiss={() => setSuccessMessage("")} title="Ação local registrada" tone="success">
+          <Notification onDismiss={() => setSuccessMessage("")} title="Ação registrada" tone="success">
             {successMessage}
           </Notification>
         )}
@@ -168,7 +168,7 @@ export default function CasesPage() {
 
         {loading ? (
           <LoadingState
-            description="Carregando clientes e casos da API local ou fallback local."
+            description="Carregando clientes e casos."
             label="Carregando casos"
           />
         ) : error && cases.length === 0 ? (
@@ -178,7 +178,7 @@ export default function CasesPage() {
                 Tentar novamente
               </Button>
             }
-            description="A listagem de casos não pôde ser carregada pela API local. Se for 401/403, faça login novamente com uma conta autorizada."
+            description="Não foi possível carregar os casos. Se o erro persistir, faça login novamente com uma conta autorizada."
             details={error}
           />
         ) : cases.length === 0 ? (
@@ -207,13 +207,13 @@ export default function CasesPage() {
             }
             description={
               query || filter
-                ? "Nenhum registro existente corresponde à busca atual. Limpe os filtros ou inicie uma nova simulação em Novo Pedido."
+                ? "Nenhum caso corresponde à busca atual. Limpe os filtros ou crie um novo pedido."
                 : clients.length === 0
-                  ? "Use Novo Pedido para simular o fluxo principal. O caso rápido exige um cliente já disponível no MVP local."
-                  : "Use Novo Pedido para compor uma simulação frontend-first ou crie um caso rápido para validação operacional local."
+                  ? "Use Novo Pedido para o fluxo completo. O caso rápido exige um cliente já cadastrado."
+                  : "Use Novo Pedido para o fluxo completo ou crie um caso rápido."
             }
             icon={<BriefcaseBusiness size={20} />}
-            title={query || filter ? "Nenhum caso corresponde aos filtros" : "Nenhum registro operacional ainda"}
+            title={query || filter ? "Nenhum caso corresponde aos filtros" : "Nenhum caso ainda"}
           />
         ) : (
           <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">

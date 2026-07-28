@@ -35,8 +35,8 @@ const STEP_TITLES: Record<number, string> = {
   1: "Identifique partes e cliente",
   2: "Anexe contrato ou documento",
   3: "Escolha o produto jurídico",
-  4: "Ajuste os módulos da simulação",
-  5: "Revise a simulação"
+  4: "Ajuste os módulos do pedido",
+  5: "Revise o pedido"
 };
 
 function makeIdempotencyKey(): string {
@@ -153,12 +153,12 @@ export function NewCaseWizard() {
         tone: result.source === "api" ? "success" : "warning",
         title:
           result.source === "api"
-            ? "Pedido operacional criado"
-            : "Fallback local registrado",
+            ? "Pedido criado"
+            : "Salvo sem conexão",
         description:
           result.source === "api"
-            ? `Caso ${result.data.caseCode} criado no backend operacional local. Abrindo a operação do caso.`
-            : `Backend indisponível; caso ${result.data.caseCode} salvo neste navegador como fallback local. Abrindo a operação do caso local.`
+            ? `Caso ${result.data.caseCode} criado. Abrindo o caso.`
+            : `Sem conexão: o caso ${result.data.caseCode} foi salvo apenas neste navegador e não sincronizado. Abrindo o caso.`
       });
       await new Promise((resolve) => setTimeout(resolve, 600));
       router.push(`/cases/${result.data.caseId}`);
@@ -179,7 +179,6 @@ export function NewCaseWizard() {
     <PricingCatalogProvider>
       <WizardShell
         backHref="/cases"
-        description="Preencha as informações do pedido. Ao concluir, o backend operacional cria o request, o caso e os recursos locais vinculados ao mesmo case_id."
         step={step}
         title={STEP_TITLES[step]}
         totalSteps={TOTAL_STEPS}

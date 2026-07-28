@@ -199,11 +199,11 @@ export default function ClientsPage() {
       setSuccessMessage(
         result.source === "mock"
           ? editingClient
-            ? "Registro local atualizado no fallback de desenvolvimento."
-            : "Fallback local explícito criado no navegador de desenvolvimento."
+            ? "Cliente atualizado sem conexão — sincronização com o servidor pendente."
+            : "Cliente criado sem conexão — sincronização com o servidor pendente."
           : editingClient
-            ? "Registro de cliente atualizado pela API local."
-            : "Registro de cliente criado pela API local."
+            ? "Cliente atualizado com sucesso."
+            : "Cliente criado com sucesso."
       );
       resetFormState();
     } catch (err) {
@@ -242,14 +242,14 @@ export default function ClientsPage() {
               </Button>
             </div>
           }
-          description="Organize a base de relacionamento jurídico do MVP local e use esses dados como referência para Novo Pedido, Casos, Documentos e Relatórios."
+          description="Organize sua base de clientes e use esses dados em Novo Pedido, Casos, Documentos e Relatórios."
           eyebrow="Clientes"
           title="Base de relacionamento jurídico"
         />
 
         {fallbackReason && (
-          <Notification title="Fallback local ativo" tone="warning">
-            A API não respondeu. A lista não usa clientes demonstrativos; novos cadastros em fallback ficam explícitos neste navegador de desenvolvimento.
+          <Notification title="Sem conexão com o servidor" tone="warning">
+            Não foi possível conectar ao servidor. A lista pode estar desatualizada.
           </Notification>
         )}
         {successMessage && (
@@ -472,7 +472,7 @@ export default function ClientsPage() {
                 Tentar novamente
               </Button>
             }
-            description="A listagem de clientes não pôde ser carregada. Erros de autorização e validação da API local são exibidos sem fallback."
+            description="Não foi possível carregar a lista de clientes."
             details={error}
           />
         ) : clients.length === 0 ? (
@@ -495,11 +495,11 @@ export default function ClientsPage() {
             }
             description={
               query
-                ? "Nenhum cliente corresponde à busca atual. Limpe a busca ou inicie um Novo Pedido quando o atendimento precisar seguir."
-                : "Cadastre clientes locais para organizar contatos e partes, ou inicie Novo Pedido como fluxo principal do MVP local."
+                ? "Nenhum cliente corresponde à busca atual. Limpe a busca ou crie um novo pedido."
+                : "Cadastre clientes para organizar contatos e partes, ou crie um novo pedido."
             }
             icon={<UsersRound size={20} />}
-            title={query ? "Busca sem resultados" : "Sem clientes na base local"}
+            title={query ? "Busca sem resultados" : "Nenhum cliente cadastrado"}
           />
         ) : (
           <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
@@ -578,7 +578,7 @@ export default function ClientsPage() {
                     {/* UI-08: classe base .cv-badge (padrão de todos os badges), não utilities remontadas. */}
                     <span
                       className={cn("cv-badge", riskTone)}
-                      title="Indicador operacional local; não substitui revisão jurídica."
+                      title="Indicador operacional; não substitui revisão jurídica."
                     >
                       {riskText}
                     </span>

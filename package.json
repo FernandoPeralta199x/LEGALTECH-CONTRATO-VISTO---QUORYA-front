@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "cobe": "^2.0.1",
     "geist": "^1.7.2",
     "lucide-react": "^1.16.0",
     "next": "16.2.11",
@@ -22,22 +23,16 @@
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.4.19",
-    "eslint": "^9.39.1",
-    "eslint-config-next": "16.2.11",
-    "postcss": "^8.4.39",
+    "eslint": "^10.8.0",
+    "eslint-config-next": "^0.2.4",
+    "postcss": "^8.5.23",
     "tailwindcss": "^3.4.4",
     "tsx": "^4.21.0",
     "typescript": "^6.0.3"
   },
   "overrides": {
-    "minimatch@>=3.0.0 <4": {
-      "brace-expansion": "1.1.16"
-    },
-    "minimatch@>=10.0.0 <11": {
-      "brace-expansion": "5.0.7"
-    },
+    "postcss": "$postcss",
     "next": {
-      "postcss": "8.5.15",
       "sharp": "0.35.2"
     }
   }
