@@ -31,7 +31,7 @@ import { useSession } from "@/lib/useSession";
 
 export default function DashboardPage() {
   const session = useSession();
-  // Atalhos adminOnly só para admin (espelha o gate do Sidebar/AdminGuard).
+  // Atalhos adminOnly só para admin (eixo role) — espelha o gate do Sidebar.
   const visibleAreas = processAreas.filter(
     (area) => !("adminOnly" in area) || session?.role === "admin"
   );

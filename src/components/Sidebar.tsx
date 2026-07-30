@@ -1,102 +1,17 @@
 "use client";
 
-import {
-  BriefcaseBusiness,
-  ClipboardCheck,
-  FileText,
-  LayoutDashboard,
-  LogOut,
-  Plus,
-  Settings,
-  Shield,
-  Upload,
-  UsersRound,
-  Wallet,
-  X,
-  type LucideIcon
-} from "lucide-react";
+import { LogOut, X, type LucideIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/cn";
+import { isNavItemActive, visibleNavGroups } from "@/lib/nav";
 import { logoutSession } from "@/lib/sessionClient";
 import { useSession } from "@/lib/useSession";
 import { useModalA11y } from "@/lib/useModalA11y";
 
-type NavItem = {
-  href: string;
-  label: string;
-  icon: LucideIcon;
-  /** Visível apenas para o papel admin. */
-  adminOnly?: boolean;
-  /** Se informado, visível apenas para estes papéis — deve espelhar o
-   *  allowedRoles do AuthGuard da rota, para não exibir link que leva a "Sem
-   *  permissão" (INV-01). */
-  roles?: readonly string[];
-};
-type NavGroup = { label: string; items: NavItem[] };
-
-const navGroups: NavGroup[] = [
-  {
-    label: "Visão Geral",
-    items: [
-      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }
-    ]
-  },
-  {
-    label: "Operação",
-    items: [
-      { href: "/cases/new", label: "Novo Pedido", icon: Plus },
-      { href: "/cases",     label: "Casos",       icon: BriefcaseBusiness },
-      { href: "/documents", label: "Documentos",  icon: Upload },
-      { href: "/analyst",   label: "Analista",    icon: ClipboardCheck, roles: ["admin", "analyst"] },
-      { href: "/reports",   label: "Relatórios",  icon: FileText }
-    ]
-  },
-  {
-    label: "Gestão",
-    items: [
-      { href: "/clients",   label: "Clientes",      icon: UsersRound },
-      { href: "/admin",     label: "Administração", icon: Shield, adminOnly: true },
-      { href: "/financial", label: "Financeiro",    icon: Wallet, adminOnly: true }
-    ]
-  },
-  {
-    label: "Sistema",
-    items: [
-      { href: "/settings", label: "Configurações", icon: Settings }
-    ]
-  }
-];
-
-/** Grupos visíveis para o papel: itens adminOnly só aparecem para admin e itens
- *  com `roles` só para os papéis listados (espelham o gate da rota).
- *  (Filtro de UX — a segurança real é o backend, via require_role/require_writer.) */
-function visibleNavGroups(role: string | undefined): NavGroup[] {
-  return navGroups
-    .map((group) => ({
-      ...group,
-      items: group.items.filter(
-        (item) =>
-          (!item.adminOnly || role === "admin") &&
-          (!item.roles || (role !== undefined && item.roles.includes(role)))
-      )
-    }))
-    .filter((group) => group.items.length > 0);
-}
-
-function isNavItemActive(pathname: string, href: string) {
-  if (href === "/cases") {
-    return (
-      pathname === "/cases" ||
-      (pathname.startsWith("/cases/") && !pathname.startsWith("/cases/new"))
-    );
-  }
-
-  return pathname === href || (href !== "/" && pathname.startsWith(href));
-}
 
 function NavItem({
   href,
@@ -172,7 +87,7 @@ function NavItem({
 export function Sidebar() {
   const pathname = usePathname();
   const session = useSession();
-  const groups = visibleNavGroups(session?.role);
+  const groups = visibleNavGroups(session?.telas, session?.role);
 
   const isActive = (href: string) => isNavItemActive(pathname, href);
 
@@ -257,7 +172,7 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const session = useSession();
-  const groups = visibleNavGroups(session?.role);
+  const groups = visibleNavGroups(session?.telas, session?.role);
   // Foco inicial + restauração, ESC fecha e trap de Tab enquanto aberto (A11Y-04).
   const drawerRef = useModalA11y<HTMLElement>(open, onClose);
 
