@@ -87,7 +87,7 @@ function NavItem({
 export function Sidebar() {
   const pathname = usePathname();
   const session = useSession();
-  const groups = visibleNavGroups(session?.role, session?.perfil);
+  const groups = visibleNavGroups(session?.telas, session?.role);
 
   const isActive = (href: string) => isNavItemActive(pathname, href);
 
@@ -172,7 +172,7 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const session = useSession();
-  const groups = visibleNavGroups(session?.role, session?.perfil);
+  const groups = visibleNavGroups(session?.telas, session?.role);
   // Foco inicial + restauração, ESC fecha e trap de Tab enquanto aberto (A11Y-04).
   const drawerRef = useModalA11y<HTMLElement>(open, onClose);
 

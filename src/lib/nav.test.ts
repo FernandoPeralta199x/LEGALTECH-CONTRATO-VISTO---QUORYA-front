@@ -1,21 +1,34 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import type { SessionPerfil } from "@/types/auth";
-
 import { visibleNavGroups } from "./nav";
 
+// Espelha o backend PERFIL_TELAS (src/utils/context.py).
+const ALL_TELAS = [
+  "dashboard",
+  "novo_pedido",
+  "casos",
+  "documentos",
+  "analista",
+  "relatorios",
+  "clientes",
+  "administracao",
+  "financeiro",
+  "configuracoes"
+];
+const BASE_CLIENTE = ["novo_pedido", "casos", "relatorios", "configuracoes"];
+
 function visibleHrefs(
-  role: string | undefined,
-  perfil: SessionPerfil | undefined
+  telas: readonly string[] | undefined,
+  role: string | undefined
 ): string[] {
-  return visibleNavGroups(role, perfil)
+  return visibleNavGroups(telas, role)
     .flatMap((group) => group.items.map((item) => item.href))
     .sort();
 }
 
-test("administrador enxerga todas as telas", () => {
-  const hrefs = visibleHrefs("admin", "administrador");
+test("administrador (todas as telas) vê tudo", () => {
+  const hrefs = visibleHrefs(ALL_TELAS, "admin");
   for (const href of [
     "/dashboard",
     "/cases/new",
@@ -28,38 +41,27 @@ test("administrador enxerga todas as telas", () => {
     "/financial",
     "/settings"
   ]) {
-    assert.ok(hrefs.includes(href), `administrador deveria ver ${href}`);
+    assert.ok(hrefs.includes(href), `deveria ver ${href}`);
   }
 });
 
-test("empresarial não vê Analista, Clientes, Administração nem Financeiro", () => {
-  // role=admin é o pior caso p/ vazamento: mesmo assim o perfil deve esconder.
-  const hrefs = visibleHrefs("admin", "empresarial");
-  assert.deepEqual(hrefs, [
-    "/cases",
-    "/cases/new",
-    "/dashboard",
-    "/documents",
-    "/reports",
-    "/settings"
-  ]);
-});
-
-test("cliente_comum só vê Novo Pedido, Casos, Relatórios e Configurações", () => {
-  const hrefs = visibleHrefs("admin", "cliente_comum");
+test("cliente_comum base vê só Novo Pedido, Casos, Relatórios e Configurações", () => {
+  const hrefs = visibleHrefs(BASE_CLIENTE, "admin");
   assert.deepEqual(hrefs, ["/cases", "/cases/new", "/reports", "/settings"]);
 });
 
-test("perfil ausente esconde as telas perfil-restritas (fail-closed)", () => {
-  const hrefs = visibleHrefs("admin", undefined);
-  for (const restrito of [
-    "/admin",
-    "/financial",
-    "/dashboard",
-    "/documents",
-    "/analyst",
-    "/clients"
-  ]) {
-    assert.ok(!hrefs.includes(restrito), `perfil ausente não deveria ver ${restrito}`);
-  }
+test("aba liberada pelo admin (documentos) passa a aparecer para o cliente", () => {
+  const hrefs = visibleHrefs([...BASE_CLIENTE, "documentos"], "admin");
+  assert.ok(hrefs.includes("/documents"));
+  // não vaza telas da firma só por liberar uma aba
+  assert.ok(!hrefs.includes("/admin") && !hrefs.includes("/financial"));
+});
+
+test("Analista exige role admin/analyst além da tela", () => {
+  assert.ok(!visibleHrefs(ALL_TELAS, "viewer").includes("/analyst"));
+  assert.ok(visibleHrefs(ALL_TELAS, "analyst").includes("/analyst"));
+});
+
+test("telas ausentes (sessão carregando/legada) => nada (fail-closed)", () => {
+  assert.deepEqual(visibleHrefs(undefined, "admin"), []);
 });

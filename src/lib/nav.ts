@@ -18,105 +18,74 @@ export type NavItemDef = {
   href: string;
   label: string;
   icon: LucideIcon;
-  /** Visível apenas para o papel admin (eixo `role`). */
-  adminOnly?: boolean;
-  /** Se informado, visível apenas para estes papéis (eixo `role`) — deve
-   *  espelhar o allowedRoles do AuthGuard da rota (INV-01). */
+  /** Id da tela no backend (PERFIL_TELAS / telas efetivas). O item aparece só se
+   *  este id estiver nas `telas` efetivas da sessão — fonte da verdade é o backend
+   *  (Modelo B: base do perfil ∪ abas liberadas); a sidebar apenas espelha (SEC-FE). */
+  tela: string;
+  /** Gate ADICIONAL por role (eixo escrita/operação). Ex.: Analista exige admin/analyst,
+   *  espelhando o allowedRoles do AuthGuard da rota (INV-01). */
   roles?: readonly string[];
-  /** Perfis (eixo `perfil`) que enxergam a tela. Espelha a matriz do backend
-   *  (`require_perfil` é a autoridade — a sidebar só reflete, SEC-FE).
-   *  Ausente = visível para todos os perfis. */
-  perfis?: readonly SessionPerfil[];
 };
 
 export type NavGroupDef = { label: string; items: NavItemDef[] };
 
-// Matriz de telas por perfil (PERFIS_ACESSO_SPEC §2):
-//   administrador → tudo · empresarial → sem Analista/Clientes/Admin/Financeiro
-//   cliente_comum → Novo Pedido, Casos, Relatórios, Configurações
 export const navGroups: NavGroupDef[] = [
   {
     label: "Visão Geral",
     items: [
-      {
-        href: "/dashboard",
-        label: "Dashboard",
-        icon: LayoutDashboard,
-        perfis: ["administrador", "empresarial"]
-      }
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, tela: "dashboard" }
     ]
   },
   {
     label: "Operação",
     items: [
-      { href: "/cases/new", label: "Novo Pedido", icon: Plus },
-      { href: "/cases", label: "Casos", icon: BriefcaseBusiness },
-      {
-        href: "/documents",
-        label: "Documentos",
-        icon: Upload,
-        perfis: ["administrador", "empresarial"]
-      },
+      { href: "/cases/new", label: "Novo Pedido", icon: Plus, tela: "novo_pedido" },
+      { href: "/cases", label: "Casos", icon: BriefcaseBusiness, tela: "casos" },
+      { href: "/documents", label: "Documentos", icon: Upload, tela: "documentos" },
       {
         href: "/analyst",
         label: "Analista",
         icon: ClipboardCheck,
-        roles: ["admin", "analyst"],
-        perfis: ["administrador"]
+        tela: "analista",
+        roles: ["admin", "analyst"]
       },
-      { href: "/reports", label: "Relatórios", icon: FileText }
+      { href: "/reports", label: "Relatórios", icon: FileText, tela: "relatorios" }
     ]
   },
   {
     label: "Gestão",
     items: [
-      {
-        href: "/clients",
-        label: "Clientes",
-        icon: UsersRound,
-        perfis: ["administrador"]
-      },
-      {
-        href: "/admin",
-        label: "Administração",
-        icon: Shield,
-        adminOnly: true,
-        perfis: ["administrador"]
-      },
-      {
-        href: "/financial",
-        label: "Financeiro",
-        icon: Wallet,
-        adminOnly: true,
-        perfis: ["administrador"]
-      }
+      { href: "/clients", label: "Clientes", icon: UsersRound, tela: "clientes" },
+      { href: "/admin", label: "Administração", icon: Shield, tela: "administracao" },
+      { href: "/financial", label: "Financeiro", icon: Wallet, tela: "financeiro" }
     ]
   },
   {
     label: "Sistema",
-    items: [{ href: "/settings", label: "Configurações", icon: Settings }]
+    items: [
+      { href: "/settings", label: "Configurações", icon: Settings, tela: "configuracoes" }
+    ]
   }
 ];
 
 /**
- * Grupos/itens visíveis para o par (role, perfil). Filtro de UX que ESPELHA a
- * autoridade do backend (require_role + require_perfil) — a segurança real é
- * server-side; a sidebar nunca decide sozinha (SEC-FE). Perfil ausente esconde
- * as telas perfil-restritas (fail-closed no que é sensível).
+ * Grupos/itens visíveis para as `telas` efetivas + o `role`. Filtro de UX que ESPELHA
+ * a autoridade do backend (require_tela/require_perfil + require_role) — a segurança
+ * real é server-side; a sidebar nunca decide sozinha (SEC-FE). `telas` ausente
+ * (sessão carregando/legada) => nada aparece (fail-closed).
  */
 export function visibleNavGroups(
-  role: string | undefined,
-  perfil: SessionPerfil | undefined
+  telas: readonly string[] | undefined,
+  role: string | undefined
 ): NavGroupDef[] {
+  const allowed = new Set(telas ?? []);
   return navGroups
     .map((group) => ({
       ...group,
       items: group.items.filter(
         (item) =>
-          (!item.adminOnly || role === "admin") &&
-          (!item.roles || (role !== undefined && item.roles.includes(role))) &&
-          (!item.perfis ||
-            (perfil !== undefined && item.perfis.includes(perfil)))
+          allowed.has(item.tela) &&
+          (!item.roles || (role !== undefined && item.roles.includes(role)))
       )
     }))
     .filter((group) => group.items.length > 0);
@@ -134,9 +103,9 @@ export function isNavItemActive(pathname: string, href: string): boolean {
 }
 
 /**
- * Rota-casa por perfil — destino seguro ao redirecionar um usuário bloqueado
- * por rota. `/cases` é visível a TODOS os perfis, então é o fallback universal
- * (nunca gera loop de redirecionamento).
+ * Rota-casa por perfil — destino seguro ao redirecionar um usuário bloqueado por
+ * rota. `/cases` é visível a TODOS os perfis, então é o fallback universal (nunca
+ * gera loop de redirecionamento).
  */
 export function defaultRouteForPerfil(
   perfil: SessionPerfil | undefined

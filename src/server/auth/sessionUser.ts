@@ -9,6 +9,7 @@ type BackendCurrentUser = {
   organization_id?: unknown;
   role?: unknown;
   perfil?: unknown;
+  telas?: unknown;
 };
 
 function isSessionRole(value: unknown): value is SessionRole {
@@ -25,6 +26,13 @@ function isSessionPerfil(value: unknown): value is SessionPerfil {
   );
 }
 
+/** Telas efetivas do /me: array de ids-de-tela. Filtra a strings; não-array => undefined. */
+function cleanTelas(value: unknown): readonly string[] | undefined {
+  return Array.isArray(value)
+    ? value.filter((tela): tela is string => typeof tela === "string")
+    : undefined;
+}
+
 export function buildPublicSession(
   user: BackendCurrentUser,
   issuedAt: number,
@@ -39,6 +47,7 @@ export function buildPublicSession(
     return null;
   }
 
+  const telas = cleanTelas(user.telas);
   return {
     email: user.email,
     expiresAt: new Date(expiresAt).toISOString(),
@@ -47,6 +56,7 @@ export function buildPublicSession(
       ? { name: user.name }
       : {}),
     ...(isSessionPerfil(user.perfil) ? { perfil: user.perfil } : {}),
+    ...(telas ? { telas } : {}),
     organizationId: user.organization_id,
     role: user.role,
     userId: user.id
