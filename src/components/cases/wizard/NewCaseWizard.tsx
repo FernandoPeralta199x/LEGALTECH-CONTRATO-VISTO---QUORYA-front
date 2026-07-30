@@ -13,6 +13,7 @@ import {
   type Modulo,
   type Produto
 } from "@/lib/produtoConfig";
+import { useSession } from "@/lib/useSession";
 import { submitWizardRequest } from "@/services/cases";
 import { listClientsPaged } from "@/services/clients";
 import type { Client } from "@/types";
@@ -28,8 +29,6 @@ import {
   type Party,
   type WizardFile
 } from "./types";
-
-const TOTAL_STEPS = 5;
 
 const STEP_TITLES: Record<number, string> = {
   1: "Identifique partes e cliente",
@@ -58,7 +57,19 @@ function defaultModulesFor(produto: Produto): Record<Modulo, boolean> {
 
 export function NewCaseWizard() {
   const router = useRouter();
-  const [step, setStep] = useState(1);
+  const session = useSession();
+  // cliente_comum: fluxo SIMPLIFICADO — pula "Ajuste os módulos" (usa o preset padrão
+  // do produto, já aplicado por handleProductChange). Admin/empresarial: wizard completo.
+  const skipModules = session?.perfil === "cliente_comum";
+  const stepOrder = useMemo(
+    () => (skipModules ? [1, 2, 3, 5] : [1, 2, 3, 4, 5]),
+    [skipModules]
+  );
+  const [stepIndex, setStepIndex] = useState(0);
+  const boundedIndex = Math.min(stepIndex, stepOrder.length - 1);
+  const step = stepOrder[boundedIndex];
+  const totalSteps = stepOrder.length;
+  const displayStep = boundedIndex + 1;
   const [submitting, setSubmitting] = useState(false);
   const [submitNotice, setSubmitNotice] = useState<{
     tone: "error" | "success" | "warning";
@@ -179,9 +190,9 @@ export function NewCaseWizard() {
     <PricingCatalogProvider>
       <WizardShell
         backHref="/cases"
-        step={step}
+        step={displayStep}
         title={STEP_TITLES[step]}
-        totalSteps={TOTAL_STEPS}
+        totalSteps={totalSteps}
       >
         {submitNotice && (
           <Notification compact tone={submitNotice.tone} title={submitNotice.title}>
@@ -245,13 +256,13 @@ export function NewCaseWizard() {
 
         <WizardActions
           canAdvance={canAdvance}
-          onBack={() => setStep((s) => Math.max(1, s - 1))}
-          onNext={() => setStep((s) => Math.min(TOTAL_STEPS, s + 1))}
+          onBack={() => setStepIndex((i) => Math.max(0, i - 1))}
+          onNext={() => setStepIndex((i) => Math.min(totalSteps - 1, i + 1))}
           onSubmit={handleSubmit}
           submitLabel="Registrar pedido"
-          step={step}
+          step={displayStep}
           submitting={submitting}
-          totalSteps={TOTAL_STEPS}
+          totalSteps={totalSteps}
         />
       </WizardShell>
     </PricingCatalogProvider>

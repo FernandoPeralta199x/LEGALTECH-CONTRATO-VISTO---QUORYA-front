@@ -3,11 +3,12 @@ import {
   DollarSign,
   Lock,
   Settings,
+  SlidersHorizontal,
   TrendingUp
 } from "lucide-react";
 import Link from "next/link";
 
-import { AdminGuard } from "@/components/AdminGuard";
+import { PerfilGuard } from "@/components/PerfilGuard";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Card } from "@/components/Card";
@@ -34,7 +35,7 @@ const roleLabels: Record<string, string> = {
 export default function AdminPage() {
   return (
     <AuthGuard>
-      <AdminGuard>
+      <PerfilGuard allowed={["administrador"]}>
       <AppLayout>
         <PageTitle
           actions={
@@ -59,6 +60,13 @@ export default function AdminPage() {
               >
                 <DollarSign size={15} />
                 Pricing
+              </Link>
+              <Link
+                className="pressable inline-flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surf)] px-3.5 py-2.5 text-sm font-medium text-[var(--text)] transition hover:border-brand-teal/40"
+                href="/admin/perfis"
+              >
+                <SlidersHorizontal size={15} />
+                Configuração de Perfil
               </Link>
             </>
           }
@@ -187,7 +195,7 @@ export default function AdminPage() {
           </Card>
         </div>
       </AppLayout>
-      </AdminGuard>
+      </PerfilGuard>
     </AuthGuard>
   );
 }

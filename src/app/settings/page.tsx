@@ -96,6 +96,15 @@ const requirementLabels = [
 
 export default function SettingsPage() {
   const session = useSession();
+  const isClienteComum = session?.perfil === "cliente_comum";
+  // cliente_comum vê Configurações REDUZIDA: só Segurança e Aparência (PERFIS_ACESSO_SPEC §2).
+  const visibleTabs = useMemo(
+    () =>
+      isClienteComum
+        ? TABS.filter((tab) => tab.id === "security" || tab.id === "appearance")
+        : TABS,
+    [isClienteComum]
+  );
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]["id"]>("org");
   const [theme, setTheme] = useState<ThemePreference>(() => getStoredThemePreference());
   const [notificationPreferences, setNotificationPreferences] =
@@ -113,6 +122,12 @@ export default function SettingsPage() {
   useEffect(() => {
     applyThemePreference(theme);
   }, [theme]);
+
+  // Aba EFETIVA (derivada, sem setState em efeito): se a ativa não é visível para o
+  // perfil (ex.: default "org" p/ cliente_comum), usa a primeira visível.
+  const effectiveTab = visibleTabs.some((tab) => tab.id === activeTab)
+    ? activeTab
+    : visibleTabs[0].id;
 
   const sessions = useMemo(() => {
     const currentName = session?.email
@@ -202,9 +217,9 @@ export default function SettingsPage() {
 
         <div className="flex flex-col gap-6 lg:flex-row">
           <nav className="flex shrink-0 gap-1 overflow-x-auto lg:w-52 lg:flex-col">
-            {TABS.map((tab) => {
+            {visibleTabs.map((tab) => {
               const Icon = tab.icon;
-              const active = activeTab === tab.id;
+              const active = effectiveTab ===tab.id;
 
               return (
                 <button
@@ -226,7 +241,7 @@ export default function SettingsPage() {
           </nav>
 
           <div className="min-w-0 flex-1">
-            {activeTab === "org" && (
+            {effectiveTab ==="org" && (
               <Card title="Dados da organização">
                 <div className="max-w-lg space-y-4">
                   <Field label="Nome da organização">
@@ -261,7 +276,7 @@ export default function SettingsPage() {
               </Card>
             )}
 
-            {activeTab === "members" && (
+            {effectiveTab ==="members" && (
               <Card
                 description="Gerenciamento de equipe, convites e permissões em breve."
                 title="Equipe"
@@ -280,7 +295,7 @@ export default function SettingsPage() {
               </Card>
             )}
 
-            {activeTab === "security" && (
+            {effectiveTab ==="security" && (
               <div className="space-y-4">
                 <Card
                   description="Validação local para desenvolvimento. Não aciona Cognito nem endpoint real."
@@ -416,7 +431,7 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {activeTab === "notifications" && (
+            {effectiveTab ==="notifications" && (
               <Card
                 description="Preferências de notificação por e-mail e WhatsApp."
                 title="Canais de notificação"
@@ -454,7 +469,7 @@ export default function SettingsPage() {
               </Card>
             )}
 
-            {activeTab === "appearance" && (
+            {effectiveTab ==="appearance" && (
               <Card title="Aparência">
                 <p className="mb-4 text-sm text-[var(--text2)]">
                   Escolha como a interface é exibida neste dispositivo.

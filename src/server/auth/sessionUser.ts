@@ -1,6 +1,6 @@
 import { extractBackendData, fetchBackend, readBackendJson } from "@/server/backend/client";
-import type { Session, SessionRole } from "@/types/auth";
-import { SESSION_ROLES } from "@/types/auth";
+import type { Session, SessionPerfil, SessionRole } from "@/types/auth";
+import { SESSION_PERFIS, SESSION_ROLES } from "@/types/auth";
 
 type BackendCurrentUser = {
   email?: unknown;
@@ -8,6 +8,8 @@ type BackendCurrentUser = {
   name?: unknown;
   organization_id?: unknown;
   role?: unknown;
+  perfil?: unknown;
+  telas?: unknown;
 };
 
 function isSessionRole(value: unknown): value is SessionRole {
@@ -15,6 +17,20 @@ function isSessionRole(value: unknown): value is SessionRole {
     typeof value === "string" &&
     (SESSION_ROLES as readonly string[]).includes(value)
   );
+}
+
+function isSessionPerfil(value: unknown): value is SessionPerfil {
+  return (
+    typeof value === "string" &&
+    (SESSION_PERFIS as readonly string[]).includes(value)
+  );
+}
+
+/** Telas efetivas do /me: array de ids-de-tela. Filtra a strings; não-array => undefined. */
+function cleanTelas(value: unknown): readonly string[] | undefined {
+  return Array.isArray(value)
+    ? value.filter((tela): tela is string => typeof tela === "string")
+    : undefined;
 }
 
 export function buildPublicSession(
@@ -31,6 +47,7 @@ export function buildPublicSession(
     return null;
   }
 
+  const telas = cleanTelas(user.telas);
   return {
     email: user.email,
     expiresAt: new Date(expiresAt).toISOString(),
@@ -38,6 +55,8 @@ export function buildPublicSession(
     ...(typeof user.name === "string" && user.name.trim()
       ? { name: user.name }
       : {}),
+    ...(isSessionPerfil(user.perfil) ? { perfil: user.perfil } : {}),
+    ...(telas ? { telas } : {}),
     organizationId: user.organization_id,
     role: user.role,
     userId: user.id

@@ -29,7 +29,7 @@ import {
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
-import { AdminGuard } from "@/components/AdminGuard";
+import { PerfilGuard } from "@/components/PerfilGuard";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { EmptyState } from "@/components/EmptyState";
@@ -445,7 +445,7 @@ export default function FinancialPage() {
 
   return (
     <AuthGuard>
-      <AdminGuard>
+      <PerfilGuard allowed={["administrador"]}>
         <AppLayout>
           <PageTitle
             description="Visão financeira do programa: vendas, pagamentos, recebíveis, reembolsos, custos de API, tributos, notas e relatórios."
@@ -502,7 +502,7 @@ export default function FinancialPage() {
             {panel}
           </div>
         </AppLayout>
-      </AdminGuard>
+      </PerfilGuard>
     </AuthGuard>
   );
 }
