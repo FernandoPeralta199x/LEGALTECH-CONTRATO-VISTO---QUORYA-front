@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-import { AdminGuard } from "@/components/AdminGuard";
+import { PerfilGuard } from "@/components/PerfilGuard";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Card } from "@/components/Card";
@@ -34,7 +34,7 @@ const roleLabels: Record<string, string> = {
 export default function AdminPage() {
   return (
     <AuthGuard>
-      <AdminGuard>
+      <PerfilGuard allowed={["administrador"]}>
       <AppLayout>
         <PageTitle
           actions={
@@ -187,7 +187,7 @@ export default function AdminPage() {
           </Card>
         </div>
       </AppLayout>
-      </AdminGuard>
+      </PerfilGuard>
     </AuthGuard>
   );
 }

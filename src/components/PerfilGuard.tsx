@@ -6,33 +6,42 @@ import type { ReactNode } from "react";
 import { useEffect } from "react";
 
 import { Button } from "@/components/Button";
+import { defaultRouteForPerfil } from "@/lib/nav";
 import { useSessionState } from "@/lib/useSession";
+import type { SessionPerfil } from "@/types/auth";
 
-type AdminGuardProps = {
+type PerfilGuardProps = {
+  /** Perfis (RBAC) que podem ver a rota. Espelha a matriz do backend. */
+  allowed: readonly SessionPerfil[];
   children: ReactNode;
 };
 
-/** Restringe a rota ao papel admin. Redireciona não-admins para o dashboard.
- *  É conforto/UX — a segurança real das ações fica no backend (require_role). */
-export function AdminGuard({ children }: AdminGuardProps) {
+/**
+ * Restringe a rota aos perfis informados (eixo `perfil`, ortogonal ao `role`).
+ * Bloqueados são redirecionados à sua rota-casa. É conforto/UX + SEC-FE — a
+ * segurança real das ações/dados é server-side (`require_perfil`). Perfil
+ * ausente ⇒ bloqueado (fail-closed) nas telas sensíveis.
+ */
+export function PerfilGuard({ allowed, children }: PerfilGuardProps) {
   const router = useRouter();
   const { session, status } = useSessionState();
-  const isAdmin = session?.role === "admin";
+  const perfil = session?.perfil;
+  const isAllowed = perfil !== undefined && allowed.includes(perfil);
 
   useEffect(() => {
     if (status === "loading" || status === "error") {
       return;
     }
-    if (!isAdmin) {
-      router.replace("/dashboard");
+    if (!isAllowed) {
+      router.replace(defaultRouteForPerfil(perfil));
     }
-  }, [status, isAdmin, router]);
+  }, [status, isAllowed, perfil, router]);
 
   if (status === "loading" || status === "error") {
     return null;
   }
 
-  if (isAdmin) {
+  if (isAllowed) {
     return children;
   }
 
@@ -46,10 +55,10 @@ export function AdminGuard({ children }: AdminGuardProps) {
           Acesso restrito
         </h1>
         <p className="mt-2 text-sm leading-6 text-[var(--text2)]">
-          A área de Administração é exclusiva para o perfil administrador.
+          Esta área não está disponível para o seu perfil de acesso.
         </p>
-        <Button className="mt-6" href="/dashboard">
-          Voltar ao dashboard
+        <Button className="mt-6" href={defaultRouteForPerfil(perfil)}>
+          Voltar
         </Button>
       </section>
     </main>

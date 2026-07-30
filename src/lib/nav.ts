@@ -132,3 +132,17 @@ export function isNavItemActive(pathname: string, href: string): boolean {
 
   return pathname === href || (href !== "/" && pathname.startsWith(href));
 }
+
+/**
+ * Rota-casa por perfil — destino seguro ao redirecionar um usuário bloqueado
+ * por rota. `/cases` é visível a TODOS os perfis, então é o fallback universal
+ * (nunca gera loop de redirecionamento).
+ */
+export function defaultRouteForPerfil(
+  perfil: SessionPerfil | undefined
+): string {
+  if (perfil === "administrador" || perfil === "empresarial") {
+    return "/dashboard";
+  }
+  return "/cases";
+}
