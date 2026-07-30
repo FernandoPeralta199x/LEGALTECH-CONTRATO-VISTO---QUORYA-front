@@ -1,6 +1,6 @@
 import { extractBackendData, fetchBackend, readBackendJson } from "@/server/backend/client";
-import type { Session, SessionRole } from "@/types/auth";
-import { SESSION_ROLES } from "@/types/auth";
+import type { Session, SessionPerfil, SessionRole } from "@/types/auth";
+import { SESSION_PERFIS, SESSION_ROLES } from "@/types/auth";
 
 type BackendCurrentUser = {
   email?: unknown;
@@ -8,12 +8,20 @@ type BackendCurrentUser = {
   name?: unknown;
   organization_id?: unknown;
   role?: unknown;
+  perfil?: unknown;
 };
 
 function isSessionRole(value: unknown): value is SessionRole {
   return (
     typeof value === "string" &&
     (SESSION_ROLES as readonly string[]).includes(value)
+  );
+}
+
+function isSessionPerfil(value: unknown): value is SessionPerfil {
+  return (
+    typeof value === "string" &&
+    (SESSION_PERFIS as readonly string[]).includes(value)
   );
 }
 
@@ -38,6 +46,7 @@ export function buildPublicSession(
     ...(typeof user.name === "string" && user.name.trim()
       ? { name: user.name }
       : {}),
+    ...(isSessionPerfil(user.perfil) ? { perfil: user.perfil } : {}),
     organizationId: user.organization_id,
     role: user.role,
     userId: user.id
