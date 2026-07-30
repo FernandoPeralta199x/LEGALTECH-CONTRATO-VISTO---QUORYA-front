@@ -807,6 +807,74 @@ textarea:-webkit-autofill:focus {
   }
 }
 
+/* ── Landing pública (Dr. Thyago Affonso) ──────────────────────────────────
+   Tokens escopados em .cv-public-shell: paleta navy + dourado da landing
+   original, isolada do tema teal do app logado. Nenhum destes nomes colide
+   com os tokens/classes já mapeados acima (--teal, slate-*, brand-teal, etc.)
+   nem com o tailwind.config.ts do app (confirmado via grep antes de aplicar). */
+.cv-public-shell {
+  --gold: 42 62% 55%;
+  --gold-hover: 43 60% 45%;
+  --gold-soft: 42 70% 70%;
+  --gold-foreground: 216 65% 10%;
+  --primary-deep: 216 70% 7%;
+  --primary-glow: 211 56% 23%;
+  --corporate: 211 56% 23%;
+  --corporate-foreground: 0 0% 100%;
+  --bg-light: 45 36% 96%;
+  --background: 0 0% 100%;
+  --foreground: 216 65% 10%;
+  --muted: 210 20% 96%;
+  --muted-foreground: 216 35% 24%;
+  --border: 214 22% 90%;
+  --input: 214 22% 90%;
+  --ring: 42 62% 55%;
+  --gradient-hero: linear-gradient(135deg, hsl(216 65% 10%) 0%, hsl(211 56% 23%) 100%);
+  --gradient-navy: linear-gradient(180deg, hsl(211 56% 23%) 0%, hsl(216 65% 10%) 100%);
+  --gradient-gold: linear-gradient(90deg, hsl(42 62% 55%) 0%, hsl(42 70% 65%) 100%);
+  --shadow-elegant: 0 20px 50px -20px hsl(216 65% 10% / 0.20);
+  --shadow-gold: 0 10px 30px -10px hsl(42 62% 55% / 0.35);
+}
+
+.cv-public-shell h1,
+.cv-public-shell h2,
+.cv-public-shell h3,
+.cv-public-shell .font-serif {
+  font-family: "Cormorant Garamond", Georgia, serif;
+}
+
+.cv-public-shell .bg-gradient-hero { background: var(--gradient-hero); }
+.cv-public-shell .bg-gradient-navy { background: var(--gradient-navy); }
+.cv-public-shell .bg-gradient-gold { background: var(--gradient-gold); }
+.cv-public-shell .shadow-elegant { box-shadow: var(--shadow-elegant); }
+.cv-public-shell .shadow-gold { box-shadow: var(--shadow-gold); }
+.cv-public-shell .text-gold { color: hsl(var(--gold)); }
+.cv-public-shell .bg-gold { background-color: hsl(var(--gold)); }
+.cv-public-shell .border-gold { border-color: hsl(var(--gold)); }
+.cv-public-shell .bg-background { background-color: hsl(var(--background)); }
+.cv-public-shell .text-foreground { color: hsl(var(--foreground)); }
+.cv-public-shell .border-input { border-color: hsl(var(--input)); }
+.cv-public-shell .text-muted-foreground { color: hsl(var(--muted-foreground)); }
+.cv-public-shell .ring-ring { --tw-ring-color: hsl(var(--ring)); }
+.cv-public-shell .ring-offset-background { --tw-ring-offset-color: hsl(var(--background)); }
+
+.cv-public-shell .cv-btn-gold {
+  background: var(--gradient-gold);
+  color: hsl(var(--gold-foreground));
+}
+.cv-public-shell .cv-btn-gold:hover {
+  background: hsl(var(--gold-hover));
+}
+.cv-public-shell .cv-btn-outline-gold {
+  background: transparent;
+  color: hsl(var(--gold));
+  border: 1px solid hsl(var(--gold));
+}
+.cv-public-shell .cv-btn-outline-light {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
 @keyframes slideUpFade {
   from {
     opacity: 0;

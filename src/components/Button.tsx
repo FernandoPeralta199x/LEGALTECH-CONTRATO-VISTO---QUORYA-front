@@ -3,8 +3,8 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
-export type ButtonSize = "sm" | "md" | "lg";
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "gold" | "outlineGold" | "outlineLight";
+export type ButtonSize = "sm" | "md" | "lg" | "xl";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   fullWidth?: boolean;
@@ -26,14 +26,18 @@ const base =
 const sizes: Record<ButtonSize, string> = {
   sm: "min-h-11 px-3 text-xs gap-1.5",
   md: "min-h-11 px-4 text-sm",
-  lg: "min-h-12 px-6 text-base gap-2.5"
+  lg: "min-h-12 px-6 text-base gap-2.5",
+  xl: "min-h-14 px-8 text-lg gap-3"
 };
 
 const variants: Record<ButtonVariant, string> = {
   primary: "cv-btn-primary focus-visible:outline-[var(--teal)]",
   secondary: "cv-btn-secondary focus-visible:outline-[var(--teal)]",
   ghost: "cv-btn-ghost focus-visible:outline-[var(--teal)]",
-  danger: "cv-btn-danger focus-visible:outline-red-500"
+  danger: "cv-btn-danger focus-visible:outline-red-500",
+  gold: "cv-btn-gold focus-visible:outline-[var(--gold)]",
+  outlineGold: "cv-btn-outline-gold focus-visible:outline-[var(--gold)]",
+  outlineLight: "cv-btn-outline-light focus-visible:outline-white"
 };
 
 const Spinner = () => (
